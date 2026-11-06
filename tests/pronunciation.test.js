@@ -34,6 +34,18 @@ test('pronunciation scoring stays disabled until explicitly enabled with server 
     AZURE_SPEECH_REGION: 'westeurope'
   }), true);
   assert.equal(pronunciationConfigured({
+    AZURE_SPEECH_ENABLED: 'true',
+    AZURE_SPEECH_KEY: 'not-a-real-key-value',
+    AZURE_SPEECH_REGION: 'westeurope',
+    AZURE_SPEECH_GUARDIAN_APPROVED: 'false'
+  }), false);
+  assert.equal(pronunciationConfigured({
+    AZURE_SPEECH_ENABLED: 'true',
+    AZURE_SPEECH_KEY: 'not-a-real-key-value',
+    AZURE_SPEECH_REGION: 'westeurope',
+    AZURE_SPEECH_GUARDIAN_APPROVED: 'true'
+  }), true);
+  assert.equal(pronunciationConfigured({
     AZURE_SPEECH_ENABLED: 'false',
     AZURE_SPEECH_KEY: 'not-a-real-key-value',
     AZURE_SPEECH_REGION: 'westeurope'
@@ -83,5 +95,6 @@ test('pronunciation response exposes bounded scores and phoneme details only', (
   assert.equal(result.words[0].phonemes[0].expected, 'ɛ');
   assert.equal(result.words[0].phonemes[0].alternative, 'ə');
   assert.equal('audio' in result, false);
+  assert.equal(toPublicPronunciationResult({ RecognitionStatus: 0, NBest: [{ PronunciationAssessment: { PronScore: 90 } }] }).pronunciationScore, 90);
   assert.throws(() => toPublicPronunciationResult({ RecognitionStatus: 'NoMatch' }));
 });
