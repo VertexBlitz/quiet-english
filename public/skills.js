@@ -262,7 +262,7 @@
   function renderListening(task) {
     const intro = document.createElement('p');
     intro.className = 'copy';
-    intro.textContent = 'Сначала прослушай текст. Можно повторить запись несколько раз. Вопросы проверят понимание деталей.';
+    intro.textContent = 'Сначала прослушай запись, не открывая расшифровку. Можно повторять её и менять скорость или голос.';
     const toolbar = document.createElement('div');
     toolbar.className = 'skill-toolbar';
     const play = document.createElement('button');
@@ -275,29 +275,51 @@
     repeat.textContent = '↻ Повторить';
     const rate = document.createElement('select');
     rate.setAttribute('aria-label', 'Скорость озвучивания');
-    [['0.85','Медленно'],['1','Обычная'],['1.1','Быстрее']].forEach(([value,label]) => {
-      const option=document.createElement('option'); option.value=value; option.textContent=label; rate.appendChild(option);
+    [['0.8','Медленно'],['0.95','Чуть медленнее'],['1','Обычная'],['1.1','Быстрее']].forEach(([value,label]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      rate.appendChild(option);
     });
+    const accent = document.createElement('select');
+    accent.setAttribute('aria-label', 'Вариант английского');
+    [['en-GB','Британский английский'],['en-US','Американский английский'],['en-AU','Австралийский английский']].forEach(([value,label]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      accent.appendChild(option);
+    });
+    const voiceSelect = document.createElement('select');
+    voiceSelect.setAttribute('aria-label', 'Голос');
+    const defaultVoice = document.createElement('option');
+    defaultVoice.value = '';
+    defaultVoice.textContent = 'Автоматический голос';
+    voiceSelect.appendChild(defaultVoice);
+    const loadVoices = () => {
+      if (!('speechSynthesis' in window)) return;
+      const selected = voiceSelect.value;
+      voiceSelect.replaceChildren(defaultVoice);
+      window.speechSynthesis.getVoices()
+        .filter(voice => /^en(-|$)/i.test(voice.lang))
+        .forEach(voice => {
+          const option = document.createElement('option');
+          option.value = voice.name;
+          option.textContent = voice.name + ' · ' + voice.lang;
+          voiceSelect.appendChild(option);
+        });
+      if ([...voiceSelect.options].some(option => option.value === selected)) voiceSelect.value = selected;
+    };
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      window.speechSynthesis.addEventListener?.('voiceschanged', loadVoices);
+    } else {
+      play.disabled = true;
+      repeat.disabled = true;
+      voiceSelect.disabled = true;
+      accent.disabled = true;
+    }
     const audioMessage = document.createElement('p');
     audioMessage.className = 'skill-status';
-    const speak = () => {
-      if (!('speechSynthesis' in window)) {
-        audioMessage.textContent = 'В этом браузере нет встроенного озвучивания. Открой текст ниже и выполни задание в режиме чтения.';
-        transcriptButton.hidden = false;
-        return;
-      }
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(task.transcript);
-      utterance.lang = 'en-GB';
-      utterance.rate = Number(rate.value);
-      utterance.onstart = () => { audioMessage.textContent = 'Воспроизводится английский текст…'; };
-      utterance.onend = () => { audioMessage.textContent = 'Прослушивание завершено. Можно ответить на вопросы.'; };
-      utterance.onerror = () => { audioMessage.textContent = 'Не удалось воспроизвести текст. Попробуй ещё раз или открой расшифровку.'; };
-      window.speechSynthesis.speak(utterance);
-    };
-    play.addEventListener('click', speak);
-    repeat.addEventListener('click', speak);
-    toolbar.append(play, repeat, rate);
     const transcriptButton = document.createElement('button');
     transcriptButton.type = 'button';
     transcriptButton.className = 'text-link';
@@ -307,6 +329,26 @@
     passage.className = 'skill-passage';
     passage.textContent = task.transcript;
     passage.hidden = true;
+    const speak = () => {
+      if (!('speechSynthesis' in window)) {
+        audioMessage.textContent = 'В этом браузере нет встроенного озвучивания. Открой расшифровку и выполни задание в режиме чтения.';
+        transcriptButton.hidden = false;
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(task.transcript);
+      const chosenVoice = window.speechSynthesis.getVoices().find(voice => voice.name === voiceSelect.value);
+      utterance.lang = chosenVoice?.lang || accent.value;
+      if (chosenVoice) utterance.voice = chosenVoice;
+      utterance.rate = Number(rate.value);
+      utterance.onstart = () => { audioMessage.textContent = 'Воспроизводится английская речь…'; };
+      utterance.onend = () => { audioMessage.textContent = 'Прослушивание завершено. Теперь ответь на вопросы.'; };
+      utterance.onerror = () => { audioMessage.textContent = 'Не удалось воспроизвести текст. Попробуй другой голос или открой расшифровку.'; };
+      window.speechSynthesis.speak(utterance);
+    };
+    play.addEventListener('click', speak);
+    repeat.addEventListener('click', speak);
+    toolbar.append(play, repeat, rate, accent, voiceSelect);
     transcriptButton.addEventListener('click', () => {
       passage.hidden = !passage.hidden;
       transcriptButton.textContent = passage.hidden ? 'Показать расшифровку' : 'Скрыть расшифровку';
@@ -330,7 +372,7 @@
       passage.hidden = false;
       transcriptButton.textContent = 'Скрыть расшифровку';
       await recordAttempt({ skill:'listening', task_id:task.id, score, word_count:0 });
-      setStatus('Задание завершено. Статистика занятия сохранена без аудиозаписи и ответов.', 'success-text');
+      setStatus('Задание завершено. В статистику добавлена только оценка и длительность занятия.', 'success-text');
       form.querySelector('button[type="submit"]').disabled = true;
     });
     task.questions.forEach((question, index) => {
@@ -478,6 +520,305 @@
     });
     toolbar.append(start, stop);
     taskContent.append(prompt, tips, toolbar, voiceStatus, text, submit);
+  }
+
+  function renderPronunciation(task) {
+    const intro = document.createElement('p');
+    intro.className = 'copy';
+    intro.textContent = 'Прочитай образец вслух в обычном темпе. Система сравнит запись с текстом и покажет точность отдельных звуков, беглость, полноту и интонацию.';
+    const reference = document.createElement('div');
+    reference.className = 'skill-passage pronunciation-reference';
+    reference.textContent = task.referenceText;
+    const consent = document.createElement('label');
+    consent.className = 'check-row pronunciation-consent';
+    const consentInput = document.createElement('input');
+    consentInput.type = 'checkbox';
+    const consentText = document.createElement('span');
+    consentText.textContent = 'Я согласен(на) отправить эту запись в Microsoft Azure Speech для проверки произношения. Запись не сохраняется Quiet English. Если мне нет 18 лет, у меня есть разрешение родителя или опекуна на использование внешней проверки голоса.';
+    consent.append(consentInput, consentText);
+
+    const controls = document.createElement('div');
+    controls.className = 'skill-toolbar';
+    const startButton = document.createElement('button');
+    startButton.type = 'button';
+    startButton.className = 'button';
+    startButton.textContent = '🎙 Начать запись';
+    const stopButton = document.createElement('button');
+    stopButton.type = 'button';
+    stopButton.className = 'button secondary';
+    stopButton.textContent = 'Остановить';
+    stopButton.disabled = true;
+    const preview = document.createElement('audio');
+    preview.controls = true;
+    preview.hidden = true;
+    preview.className = 'pronunciation-audio';
+    const analyseButton = document.createElement('button');
+    analyseButton.type = 'button';
+    analyseButton.className = 'button';
+    analyseButton.textContent = 'Оценить произношение ↗';
+    analyseButton.disabled = true;
+    const engineStatus = document.createElement('p');
+    engineStatus.className = 'skill-status';
+    const audioStatus = document.createElement('p');
+    audioStatus.className = 'skill-status';
+    let configured = false;
+    let recorder = null;
+    let stream = null;
+    let chunks = [];
+    let wavBlob = null;
+    let wavUrl = null;
+    let stopTimer = null;
+
+    function releaseAudio() {
+      if (wavUrl) URL.revokeObjectURL(wavUrl);
+      wavUrl = null;
+      wavBlob = null;
+      preview.removeAttribute('src');
+      preview.hidden = true;
+    }
+
+    startButton.disabled = true;
+    fetch('/api/speech/pronunciation/status', { credentials:'same-origin' })
+      .then(response => response.ok ? response.json() : { configured:false })
+      .then(data => {
+        configured = data.configured === true;
+        startButton.disabled = !configured;
+        engineStatus.textContent = configured
+          ? 'Модуль оценки готов. Модель английского — en-US. Для полной проверки нужны 3–25 секунд чёткой речи.'
+          : 'Облачный модуль оценки ещё не подключён. Список заданий можно просматривать, но запись не отправляется, пока администратор не настроит речевой сервис.';
+      })
+      .catch(() => {
+        engineStatus.textContent = 'Не удалось проверить доступность речевого сервиса.';
+      });
+
+    startButton.addEventListener('click', async () => {
+      if (!configured) return;
+      if (!consentInput.checked) {
+        setStatus('Сначала подтверди согласие на отправку записи и разрешение родителя или опекуна, если оно требуется.', 'error-text');
+        return;
+      }
+      if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+        setStatus('Запись в этом браузере не поддерживается. Попробуй современный браузер с доступом к микрофону.', 'error-text');
+        return;
+      }
+      releaseAudio();
+      chunks = [];
+      startButton.disabled = true;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+        });
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
+            ? 'audio/ogg;codecs=opus'
+            : '';
+        recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        recorder.ondataavailable = event => { if (event.data?.size) chunks.push(event.data); };
+        recorder.onerror = () => {
+          audioStatus.textContent = 'Ошибка записи. Проверь разрешение на микрофон и попробуй ещё раз.';
+          startButton.disabled = false;
+          stopButton.disabled = true;
+        };
+        recorder.onstop = async () => {
+          clearTimeout(stopTimer);
+          stopButton.disabled = true;
+          stream?.getTracks().forEach(track => track.stop());
+          stream = null;
+          try {
+            const sourceBlob = new Blob(chunks, { type:recorder.mimeType || 'audio/webm' });
+            wavBlob = await convertToPcmWav(sourceBlob);
+            wavUrl = URL.createObjectURL(wavBlob);
+            preview.src = wavUrl;
+            preview.hidden = false;
+            analyseButton.disabled = false;
+            audioStatus.textContent = 'Запись готова. Прослушай её и нажми «Оценить произношение». Максимальная длина — 25 секунд.';
+          } catch (error) {
+            audioStatus.textContent = error.message || 'Не удалось подготовить запись. Повтори попытку.';
+          } finally {
+            recorder = null;
+            chunks = [];
+            startButton.disabled = !configured;
+          }
+        };
+        recorder.start(250);
+        stopButton.disabled = false;
+        audioStatus.textContent = 'Идёт запись. Прочитай текст естественно и не торопись. Запись остановится автоматически через 25 секунд.';
+        stopTimer = setTimeout(() => {
+          if (recorder?.state === 'recording') recorder.stop();
+        }, 25_000);
+      } catch (error) {
+        stream?.getTracks().forEach(track => track.stop());
+        stream = null;
+        startButton.disabled = !configured;
+        stopButton.disabled = true;
+        audioStatus.textContent = error.name === 'NotAllowedError'
+          ? 'Доступ к микрофону не разрешён. Измени разрешение сайта в настройках браузера.'
+          : 'Не удалось начать запись. Проверь подключение микрофона.';
+      }
+    });
+
+    stopButton.addEventListener('click', () => {
+      if (recorder?.state === 'recording') recorder.stop();
+    });
+
+    analyseButton.addEventListener('click', async () => {
+      if (!wavBlob || !consentInput.checked) return;
+      analyseButton.disabled = true;
+      startButton.disabled = true;
+      setStatus('Проверяем звуки, темп и интонацию…');
+      try {
+        const response = await fetch('/api/speech/pronunciation/' + encodeURIComponent(task.id), {
+          method:'POST',
+          credentials:'same-origin',
+          headers:{ 'Content-Type':'audio/wav', 'Accept':'application/json' },
+          body:wavBlob
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Не удалось оценить произношение.');
+        renderPronunciationResult(data.result, task);
+        const score = data.result.pronunciationScore ?? data.result.accuracyScore;
+        await recordAttempt({
+          skill:'speaking', task_id:task.id, score,
+          word_count:words(task.referenceText)
+        });
+        setStatus('Оценка завершена. Аудиозапись и расшифровка не добавлялись в учебный профиль.', 'success-text');
+        releaseAudio();
+      } catch (error) {
+        setStatus(error.message || 'Оценка временно недоступна.', 'error-text');
+        analyseButton.disabled = false;
+      } finally {
+        startButton.disabled = !configured;
+      }
+    });
+
+    function renderPronunciationResult(result, current) {
+      resultBox.replaceChildren();
+      resultBox.hidden = false;
+      const heading = document.createElement('h3');
+      heading.textContent = 'Результат произношения';
+      resultBox.appendChild(heading);
+      const grid = document.createElement('div');
+      grid.className = 'pronunciation-score-grid';
+      const scoreItems = [
+        ['Общая оценка', result.pronunciationScore],
+        ['Точность звуков', result.accuracyScore],
+        ['Беглость', result.fluencyScore],
+        ['Полнота', result.completenessScore],
+        ['Интонация и ритм', result.prosodyScore]
+      ];
+      scoreItems.forEach(([label, value]) => {
+        if (value == null) return;
+        const card = document.createElement('div');
+        card.className = 'pronunciation-score';
+        const name = document.createElement('span');
+        name.textContent = label;
+        const number = document.createElement('strong');
+        number.textContent = Math.round(value) + '/100';
+        card.append(name, number);
+        grid.appendChild(card);
+      });
+      resultBox.appendChild(grid);
+      if (result.recognizedText) {
+        const transcript = document.createElement('p');
+        transcript.className = 'pronunciation-transcript';
+        transcript.textContent = 'Распознанная речь: “' + result.recognizedText + '”';
+        resultBox.appendChild(transcript);
+      }
+      const weakWords = (result.words || []).filter(word =>
+        word.accuracy != null && word.accuracy < 85 ||
+        word.errorType && word.errorType !== 'None'
+      );
+      const title = document.createElement('h4');
+      title.textContent = weakWords.length ? 'Слова и звуки для повторения' : 'Хорошая работа';
+      resultBox.appendChild(title);
+      if (!weakWords.length) {
+        const note = document.createElement('p');
+        note.textContent = 'В этой попытке система не нашла выраженных проблем на уровне слов. Продолжай практиковать чёткость и естественный ритм.';
+        resultBox.appendChild(note);
+      }
+      weakWords.slice(0, 12).forEach(word => {
+        const row = document.createElement('div');
+        row.className = 'pronunciation-word';
+        const name = document.createElement('strong');
+        name.textContent = word.word + (word.accuracy == null ? '' : ' · ' + Math.round(word.accuracy) + '/100');
+        row.appendChild(name);
+        if (word.errorType && word.errorType !== 'None') {
+          const error = document.createElement('span');
+          const labels = {
+            Mispronunciation:'Возможная неточность звука',
+            Omission:'Пропущено слово',
+            Insertion:'Добавлено лишнее слово',
+            UnexpectedBreak:'Лишняя пауза',
+            MissingBreak:'Нужна пауза',
+            Monotone:'Монотонная интонация'
+          };
+          error.textContent = labels[word.errorType] || 'Проверь произношение';
+          row.appendChild(error);
+        }
+        const weakPhonemes = (word.phonemes || []).filter(item => item.accuracy != null && item.accuracy < 85);
+        weakPhonemes.forEach(item => {
+          const phoneme = document.createElement('span');
+          phoneme.className = 'pronunciation-phoneme';
+          phoneme.textContent = 'Звук ' + item.expected + ' · ' + Math.round(item.accuracy) + '/100' +
+            (item.alternative && item.alternative !== item.expected ? ' · модель также рассмотрела ' + item.alternative : '');
+          row.appendChild(phoneme);
+        });
+        resultBox.appendChild(row);
+      });
+      const foot = document.createElement('p');
+      foot.className = 'fine-print';
+      foot.textContent = 'Это автоматическая оценка чтения конкретного текста, а не окончательный вывод о твоём акценте или уровне английского. Результат может зависеть от микрофона, шума и выбранной языковой модели (en-US).';
+      resultBox.appendChild(foot);
+    }
+    consentInput.addEventListener('change', () => {
+      if (!consentInput.checked) {
+        startButton.disabled = true;
+        analyseButton.disabled = true;
+        if (recorder?.state === 'recording') recorder.stop();
+        releaseAudio();
+      } else {
+        startButton.disabled = !configured || Boolean(recorder);
+      }
+    });
+    controls.append(startButton, stopButton, analyseButton);
+    taskContent.append(intro, reference, consent, controls, audioStatus, engineStatus, preview);
+  }
+
+  async function convertToPcmWav(blob) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) throw new Error('Обработка аудио недоступна в этом браузере.');
+    const context = new AudioContextClass();
+    try {
+      const decoded = await context.decodeAudioData(await blob.arrayBuffer());
+      if (decoded.duration < 1 || decoded.duration > 30) throw new Error('Запись должна длиться от 1 до 30 секунд.');
+      const source = decoded.getChannelData(0);
+      const ratio = decoded.sampleRate / 16000;
+      const length = Math.floor(source.length / ratio);
+      const pcm = new Int16Array(length);
+      for (let i = 0; i < length; i++) {
+        const start = Math.floor(i * ratio);
+        const end = Math.min(source.length, Math.max(start + 1, Math.floor((i + 1) * ratio)));
+        let total = 0;
+        for (let j = start; j < end; j++) total += source[j];
+        const sample = Math.max(-1, Math.min(1, total / (end - start)));
+        pcm[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+      }
+      const wav = new ArrayBuffer(44 + pcm.length * 2);
+      const view = new DataView(wav);
+      const write = (offset, value) => {
+        for (let i=0;i<value.length;i++) view.setUint8(offset+i,value.charCodeAt(i));
+      };
+      write(0,'RIFF'); view.setUint32(4,36+pcm.length*2,true); write(8,'WAVE');
+      write(12,'fmt '); view.setUint32(16,16,true); view.setUint16(20,1,true);
+      view.setUint16(22,1,true); view.setUint32(24,16000,true);
+      view.setUint32(28,32000,true); view.setUint16(32,2,true); view.setUint16(34,16,true);
+      write(36,'data'); view.setUint32(40,pcm.length*2,true);
+      for (let i=0;i<pcm.length;i++) view.setInt16(44+i*2,pcm[i],true);
+      return new Blob([wav], { type:'audio/wav' });
+    } finally {
+      await context.close().catch(() => {});
+    }
   }
 
   function stopRecognition() {
