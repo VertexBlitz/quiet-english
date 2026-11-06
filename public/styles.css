@@ -231,8 +231,9 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
 .pron-prompt-list{display:grid;gap:12px}
 .pron-prompt{display:grid;grid-template-columns:1fr 42px;align-items:center;gap:14px;padding:18px 20px;border:1px solid var(--line);border-radius:16px;cursor:pointer}
 .pron-prompt.selected{border-color:var(--ink);background:var(--soft)}
-.pron-prompt>input{position:absolute;opacity:0;pointer-events:none}
-.pron-prompt>span{display:grid;gap:8px;min-width:0}
+.pron-prompt-choice{display:grid;grid-template-columns:0 1fr;align-items:center;gap:0;cursor:pointer;min-width:0}
+.pron-prompt-choice>input{position:absolute;opacity:0;pointer-events:none}
+.pron-prompt-choice>span{display:grid;gap:8px;min-width:0}
 .pron-prompt strong{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mid);font-weight:500}
 .pron-prompt>span>span{font-size:15px;line-height:1.65;color:var(--ink)}
 .pron-listen{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink);cursor:pointer}
