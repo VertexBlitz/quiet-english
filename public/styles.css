@@ -208,3 +208,15 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
   .topbar nav a{text-align:center;font-size:10px;padding:5px 1px;white-space:nowrap}
   .topbar .language-switch{gap:8px}
 }
+
+
+/* Account and editorial CMS */
+.button.danger{border-color:#9b3434;color:#9b3434;background:#fff}
+.button.danger:hover{background:#9b3434;color:#fff}
+.account-card{max-width:760px}
+.account-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+[data-admin-page] textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--ink);resize:vertical}
+[data-admin-page] .field-block label{display:block;font-size:12px;color:var(--muted);font-weight:400}
+[data-admin-page] .field-block textarea{margin-top:9px}
+[data-admin-page] .rating-row{margin-top:18px}
+[data-admin-page] .exercise-card{min-width:0}
