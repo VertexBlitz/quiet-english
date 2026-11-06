@@ -250,9 +250,10 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
     const exercise = rows[0];
     if (!exercise) return res.status(404).json({ error: 'Задание не найдено.' });
     const selected = typeof answer === 'string' ? answer : answer.option_id;
+    const selectedOption = exercise.content.options?.find(option => option.id === selected);
+    if (!selectedOption) return res.status(400).json({ error: 'Выбери один из предложенных вариантов.' });
     const isCorrect = selected === exercise.answer_key.correct_option_id;
     const correctOption = exercise.content.options?.find(option => option.id === exercise.answer_key.correct_option_id);
-    const selectedOption = exercise.content.options?.find(option => option.id === selected);
     const feedback = {
       correct: isCorrect,
       correct_answer: correctOption?.text || null,
@@ -316,12 +317,23 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
 router.get('/review/queue', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, item_type, item_ref, prompt, answer, explanation, interval_days, repetitions, due_at
+      `SELECT id, item_type, item_ref, prompt, explanation, interval_days, repetitions, due_at
        FROM srs_items WHERE user_id=$1 AND due_at <= NOW()
        ORDER BY due_at ASC LIMIT 20`,
       [req.user.id]
     );
     res.json({ items: rows });
+  } catch (error) { next(error); }
+});
+
+router.post('/review/:id/reveal', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT answer, explanation FROM srs_items WHERE id=$1 AND user_id=$2 AND due_at <= NOW()',
+      [req.params.id, req.user.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Карточка не найдена или ещё не готова к повторению.' });
+    res.json({ answer: rows[0].answer, explanation: rows[0].explanation });
   } catch (error) { next(error); }
 });
 
