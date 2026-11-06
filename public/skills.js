@@ -13,6 +13,7 @@
   let recognition = null;
   let finalTranscript = '';
   let demoMode = false;
+  let cancelCurrentRecording = null;
 
   const tasks = {
     listening: [
@@ -582,7 +583,7 @@
       .then(response => response.ok ? response.json() : { configured:false })
       .then(data => {
         configured = data.configured === true;
-        startButton.disabled = !configured;
+        startButton.disabled = !(configured && consentInput.checked);
         engineStatus.textContent = configured
           ? 'Модуль оценки готов. Модель английского — en-US. Для полной проверки нужны 3–25 секунд чёткой речи.'
           : 'Облачный модуль оценки ещё не подключён. Список заданий можно просматривать, но запись не отправляется, пока администратор не настроит речевой сервис.';
@@ -614,6 +615,13 @@
             ? 'audio/ogg;codecs=opus'
             : '';
         recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        let discardAfterStop = false;
+        cancelCurrentRecording = () => {
+          discardAfterStop = true;
+          clearTimeout(stopTimer);
+          if (recorder?.state === 'recording') recorder.stop();
+          stream?.getTracks().forEach(track => track.stop());
+        };
         recorder.ondataavailable = event => { if (event.data?.size) chunks.push(event.data); };
         recorder.onerror = () => {
           audioStatus.textContent = 'Ошибка записи. Проверь разрешение на микрофон и попробуй ещё раз.';
@@ -625,6 +633,14 @@
           stopButton.disabled = true;
           stream?.getTracks().forEach(track => track.stop());
           stream = null;
+          if (discardAfterStop || !consentInput.checked) {
+            chunks = [];
+            recorder = null;
+            cancelCurrentRecording = null;
+            audioStatus.textContent = 'Запись остановлена и удалена без отправки.';
+            startButton.disabled = !(configured && consentInput.checked);
+            return;
+          }
           try {
             const sourceBlob = new Blob(chunks, { type:recorder.mimeType || 'audio/webm' });
             wavBlob = await convertToPcmWav(sourceBlob);
@@ -638,7 +654,8 @@
           } finally {
             recorder = null;
             chunks = [];
-            startButton.disabled = !configured;
+            cancelCurrentRecording = null;
+            startButton.disabled = !(configured && consentInput.checked);
           }
         };
         recorder.start(250);
@@ -825,6 +842,10 @@
     if (recognition) {
       try { recognition.stop(); } catch {}
       recognition = null;
+    }
+    if (cancelCurrentRecording) {
+      try { cancelCurrentRecording(); } catch {}
+      cancelCurrentRecording = null;
     }
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }
