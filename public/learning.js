@@ -262,7 +262,7 @@ if (exercisePage) {
           ? 'Верно! ' + (result.feedback.explanation?.ru || result.feedback.explanation?.en || '')
           : 'Правильный ответ: ' + (result.feedback.correct_answer || '') + '. ' + (result.feedback.explanation?.ru || result.feedback.explanation?.en || '');
         const chat = $('[data-explain-chat]', exercisePage);
-        chat.href = '/tutor.html?topic=' + encodeURIComponent(exercise.skill);
+        chat.href = '/tutor.html?exercise=' + encodeURIComponent(exercise.id);
       } catch (error) {
         learningMessage(status, error.message, true);
       } finally {
