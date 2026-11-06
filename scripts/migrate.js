@@ -13,7 +13,7 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const sql = await fs.readFile(path.join(root, '../db/migrations/001_initial.sql'), 'utf8');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.PGSSLMODE === 'disable' ? false : { rejectUnauthorized: false }
+  ssl: process.env.PGSSLMODE === 'disable' ? false : process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: true } : undefined
 });
 
 try {
