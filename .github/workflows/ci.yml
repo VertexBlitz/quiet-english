@@ -3,7 +3,7 @@ on:
   push:
     branches: [quiet-english-2-mvp, main]
   pull_request:
-    branches: [main]
+    branches: [quiet-english-2-mvp, main]
 jobs:
   test:
     runs-on: ubuntu-latest
