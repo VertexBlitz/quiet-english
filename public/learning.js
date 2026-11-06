@@ -328,7 +328,22 @@ if (reviewPage) {
       button.className = 'button';
       button.type = 'button';
       button.textContent = 'Показать ответ';
-      button.addEventListener('click', () => { showingAnswer = true; renderCard(); });
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        try {
+          const revealed = await learningApi('/review/' + item.id + '/reveal', {
+            method: 'POST',
+            body: JSON.stringify({})
+          });
+          item.answer = revealed.answer;
+          item.explanation = revealed.explanation;
+          showingAnswer = true;
+          renderCard();
+        } catch (error) {
+          learningMessage(status, error.message, true);
+          button.disabled = false;
+        }
+      });
       deck.appendChild(button);
     }
   };
