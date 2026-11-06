@@ -5,7 +5,7 @@ if (accountLink) {
     .then(data => {
       if (!data?.user) return;
       const lang = document.documentElement.lang;
-      accountLink.href = '/plan.html';
+      accountLink.href = '/account.html';
       accountLink.textContent = lang === 'en' ? 'My plan' : 'Мой план';
       const logout = document.createElement('button');
       logout.type = 'button';
