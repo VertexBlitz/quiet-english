@@ -403,7 +403,7 @@ router.post('/review/:id', async (req, res, next) => {
 
 router.get('/progress', async (req, res, next) => {
   try {
-    const [summary, skills, activity, errors] = await Promise.all([
+    const [summary, skills, activity, errors, skillPractice] = await Promise.all([
       pool.query(
         `SELECT COALESCE(SUM(minutes),0)::int AS minutes,
                 COALESCE(SUM(completed_tasks),0)::int AS completed_tasks,
