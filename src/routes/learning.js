@@ -46,15 +46,31 @@ async function generatePlan(userId) {
     const profile = rows[0];
     if (!profile) throw new Error('Learner profile is missing.');
     if (!profile.onboarding_completed_at) throw new Error('Сначала заверши настройку учебного профиля.');
-    await client.query('UPDATE learning_plans SET status=\'archived\' WHERE user_id=$1 AND status=\'active\'', [userId]);
+    const templates = await client.query(
+      `SELECT * FROM plan_templates
+       WHERE status='published' AND duration_weeks=4 AND goal IN ($1,'general')
+       ORDER BY (goal=$1) DESC, updated_at DESC`,
+      [profile.goal || 'general']
+    );
+    const selectedTemplate = templates.rows.find(template =>
+      (levelRank[profile.level] ?? 2) >= (levelRank[template.level_min] ?? 0) &&
+      (levelRank[profile.level] ?? 2) <= (levelRank[template.level_max] ?? 6)
+    );
+    const weeklyPlan = selectedTemplate?.weekly_themes || weekThemes.map(([theme, objective], index) => ({
+      theme, objective,
+      tasks: Array.from({ length: 7 }, (_, day) => chooseExercise(profile.level, index * 7 + day + 1))
+    }));
+    await client.query('UPDATE learning_plans SET status=\\'archived\\' WHERE user_id=$1 AND status=\\'active\\'', [userId]);
     const planResult = await client.query(
-      `INSERT INTO learning_plans (user_id, goal, level, duration_weeks, minutes_per_day, starts_on)
-       VALUES ($1,$2,$3,4,$4,(NOW() AT TIME ZONE $5)::date) RETURNING *`,
-      [userId, profile.goal || 'general', profile.level, profile.minutes_per_day || 10, profile.timezone || 'UTC']
+      `INSERT INTO learning_plans (user_id, goal, level, duration_weeks, minutes_per_day, starts_on, template_id)
+       VALUES ($1,$2,$3,4,$4,(NOW() AT TIME ZONE $5)::date,$6) RETURNING *`,
+      [userId, profile.goal || 'general', profile.level, profile.minutes_per_day || 10, profile.timezone || 'UTC', selectedTemplate?.id || null]
     );
     const plan = planResult.rows[0];
     for (let week = 1; week <= 4; week++) {
-      const [theme, objective] = weekThemes[week - 1];
+      const weekContent = weeklyPlan[week - 1];
+      const theme = weekContent.theme;
+      const objective = weekContent.objective;
       const weekResult = await client.query(
         'INSERT INTO plan_weeks (plan_id, week_number, theme, objective) VALUES ($1,$2,$3,$4) RETURNING id',
         [plan.id, week, theme, objective]
@@ -64,7 +80,7 @@ async function generatePlan(userId) {
         await client.query(
           `INSERT INTO plan_days (plan_id, week_id, day_index, main_task_id, review_item_limit, mini_prompt)
            VALUES ($1,$2,$3,$4,5,$5)`,
-          [plan.id, weekResult.rows[0].id, day, chooseExercise(profile.level, day), miniPrompts[(day - 1) % miniPrompts.length]]
+          [plan.id, weekResult.rows[0].id, day, weekContent.tasks?.[dayInWeek - 1] || chooseExercise(profile.level, day), miniPrompts[(day - 1) % miniPrompts.length]]
         );
       }
     }
