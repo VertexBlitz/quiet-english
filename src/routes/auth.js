@@ -50,7 +50,7 @@ router.post('/register', async (req, res, next) => {
   } = req.body || {};
 
   if (process.env.REGISTRATION_ENABLED !== 'true') {
-    return res.status(503).json({ error: 'Регистрация пока закрыта на время настройки базы данных и проверки документов конфиденциальности.' });
+    return res.status(503).json({ error: 'Регистрация пока закрыта: администратору нужно завершить настройку подтверждения email и проверить документы конфиденциальности.' });
   }
   if (age_band !== '18_plus' && process.env.MINOR_SIGNUP_ENABLED !== 'true') {
     return res.status(403).json({ error: 'Регистрация пользователей младше 18 лет временно закрыта до завершения проверки возрастных и родительских согласий.' });
