@@ -1,13 +1,21 @@
 import express from 'express';
-import { rateLimit } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
+import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { pool } from './src/db.js';
+import authRoutes from './src/routes/auth.js';
+import learningRoutes from './src/routes/learning.js';
 
 const app = express();
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT) || 3000;
+const PgSession = connectPgSimple(session);
 
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
 app.use(express.json({ limit: '24kb' }));
 app.use('/api/', rateLimit({
   windowMs: 60_000,
@@ -15,7 +23,56 @@ app.use('/api/', rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false
 }));
-app.use(express.static(path.join(root, 'public')));
+
+const sessionsConfigured = Boolean(pool && process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32);
+if (sessionsConfigured) {
+  app.use(session({
+    store: new PgSession({
+      pool,
+      tableName: 'user_sessions',
+      createTableIfMissing: true,
+      pruneSessionInterval: 60 * 15
+    }),
+    name: 'qe.sid',
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 14
+    }
+  }));
+}
+
+function sameOrigin(req, res, next) {
+  const origin = req.get('origin');
+  const base = process.env.APP_BASE_URL;
+  if (!origin || !base) {
+    return res.status(403).json({ error: 'Запрос должен быть отправлен с официального адреса сайта.' });
+  }
+  try {
+    if (new URL(origin).origin !== new URL(base).origin) {
+      return res.status(403).json({ error: 'Источник запроса не разрешён.' });
+    }
+  } catch {
+    return res.status(403).json({ error: 'Проверь APP_BASE_URL в настройках сервера.' });
+  }
+  next();
+}
+
+if (sessionsConfigured) {
+  app.use('/api/auth', sameOrigin, authRoutes);
+  app.use('/api/learning', sameOrigin, learningRoutes);
+} else {
+  const notReady = (_req, res) => res.status(503).json({
+    error: 'Личный кабинет ещё не настроен. Нужны DATABASE_URL и SESSION_SECRET.'
+  });
+  app.use('/api/auth', notReady);
+  app.use('/api/learning', notReady);
+}
 
 const MODEL = process.env.CLOUDFLARE_MODEL || '@cf/google/gemma-4-26b-a4b-it';
 const SYSTEM_PROMPT = [
@@ -28,18 +85,20 @@ const SYSTEM_PROMPT = [
   'Do not claim to hear audio or see files unless they were actually supplied.'
 ].join(' ');
 
-function isConfigured() {
+function isAiConfigured() {
   return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
 }
 
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
-    configured: isConfigured(),
-    provider: 'cloudflare-workers-ai'
+    configured: isAiConfigured(),
+    provider: 'cloudflare-workers-ai',
+    learningConfigured: Boolean(pool && sessionsConfigured)
   });
 });
 
+// Keep the original chat contract compatible with the first version of Quiet English.
 app.post('/api/chat', async (req, res) => {
   const incoming = req.body?.messages;
   if (!Array.isArray(incoming) || incoming.length < 1 || incoming.length > 12) {
@@ -58,10 +117,8 @@ app.post('/api/chat', async (req, res) => {
     messages.push({ role: item.role, content });
   }
 
-  if (!isConfigured()) {
-    return res.status(503).json({
-      error: 'ИИ пока не подключён. Добавьте CLOUDFLARE_ACCOUNT_ID и CLOUDFLARE_API_TOKEN в Render → Environment.'
-    });
+  if (!isAiConfigured()) {
+    return res.status(503).json({ error: 'ИИ временно не настроен.' });
   }
 
   const endpoint = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}/ai/v1/chat/completions`;
@@ -73,7 +130,7 @@ app.post('/api/chat', async (req, res) => {
       headers: {
         'Authorization': `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
         'Content-Type': 'application/json',
-        'Accept': 'text/event-stream'
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
         model: MODEL,
@@ -87,48 +144,43 @@ app.post('/api/chat', async (req, res) => {
     });
   } catch (error) {
     console.error('Workers AI connection error:', error?.message || 'unknown error');
-    return res.status(503).json({ error: 'Сервис ИИ временно недоступен. Попробуйте ещё раз позже.' });
+    return res.status(503).json({ error: 'Сервис ИИ временно недоступен. Попробуйте позже.' });
   }
 
   if (!upstream.ok) {
     const detail = await upstream.text().catch(() => '');
-    // Do not log or return secrets. The provider response is truncated for diagnostics.
-    console.error('Workers AI response:', upstream.status, detail.slice(0, 500));
-
+    console.error('Workers AI response:', upstream.status, detail.slice(0, 400));
     if (upstream.status === 429) {
-      return res.status(429).json({
-        error: 'Бесплатный лимит запросов или дневная квота исчерпаны. Попробуйте позже.'
-      });
+      return res.status(429).json({ error: 'Бесплатная квота ИИ временно исчерпана. Попробуйте позже.' });
     }
     if (upstream.status === 401 || upstream.status === 403) {
-      return res.status(502).json({
-        error: 'Cloudflare отклонил запрос. Проверьте API-токен, его разрешения и доступность выбранной модели на Free-плане.'
-      });
+      return res.status(502).json({ error: 'Cloudflare отклонил запрос. Проверь токен и его разрешения.' });
     }
-    return res.status(502).json({
-      error: 'Модель временно не ответила. Попробуйте ещё раз немного позже.'
-    });
+    return res.status(502).json({ error: 'Модель временно не ответила. Попробуйте позже.' });
   }
 
   let result;
   try {
     result = await upstream.json();
   } catch {
-    return res.status(502).json({ error: 'Cloudflare вернул некорректный ответ. Попробуйте ещё раз.' });
+    return res.status(502).json({ error: 'Cloudflare вернул некорректный ответ.' });
   }
-
-  const message = result?.choices?.[0]?.message?.content
-    ?? result?.result?.response
-    ?? result?.response;
-
+  const message = result?.choices?.[0]?.message?.content ?? result?.result?.response ?? result?.response;
   if (typeof message !== 'string' || !message.trim()) {
     console.error('Workers AI returned no text. Response keys:', Object.keys(result || {}).join(', '));
-    return res.status(502).json({ error: 'Модель не вернула текстовый ответ. Попробуйте ещё раз.' });
+    return res.status(502).json({ error: 'Модель не вернула текстовый ответ.' });
   }
-
   return res.json({ message: message.trim(), demo: false });
 });
 
+app.use(express.static(path.join(root, 'public')));
+
+app.use((error, _req, res, _next) => {
+  console.error('Request failed:', error?.message || 'unknown error');
+  if (res.headersSent) return;
+  res.status(500).json({ error: 'Внутренняя ошибка сервера. Попробуй ещё раз.' });
+});
+
 app.listen(port, '0.0.0.0', () => {
-  console.log('Quiet English listening on ' + port);
+  console.log('Quiet English 2.0 listening on ' + port);
 });
