@@ -49,6 +49,12 @@ router.post('/register', async (req, res, next) => {
     preferred_language = 'ru', terms_accepted, privacy_accepted
   } = req.body || {};
 
+  if (process.env.REGISTRATION_ENABLED !== 'true') {
+    return res.status(503).json({ error: 'Регистрация пока закрыта на время настройки базы данных и проверки документов конфиденциальности.' });
+  }
+  if (age_band !== '18_plus' && process.env.MINOR_SIGNUP_ENABLED !== 'true') {
+    return res.status(403).json({ error: 'Регистрация пользователей младше 18 лет временно закрыта до завершения проверки возрастных и родительских согласий.' });
+  }
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
   const normalizedGuardian = typeof guardian_email === 'string' ? guardian_email.trim().toLowerCase() : '';
   if (!validEmail(normalizedEmail)) return res.status(400).json({ error: 'Укажи корректный email.' });
