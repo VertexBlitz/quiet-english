@@ -1,56 +1,83 @@
-# Quiet English
+# Quiet English 2.0
 
-A five-page English-learning website with a Node.js / Express chat API and a streaming AI tutor.
+A bilingual (RU/EN) personal English-learning platform built on the existing static frontend and Express API. The original AI chat endpoint remains compatible.
 
-## Stack
+## Current stack
 
-- Static frontend: HTML, CSS, vanilla JavaScript
-- Backend: Node.js + Express
+- Frontend: HTML, CSS, Vanilla JavaScript
+- Backend: Node.js 24, Express 5
+- Data: PostgreSQL
+- Sessions: express-session + connect-pg-simple
+- Password hashing: Argon2id
+- AI: Cloudflare Workers AI (Gemma 4)
+- Email verification: Resend HTTPS API
 - Hosting: Render
-- AI: Cloudflare Workers AI (OpenAI-compatible Chat Completions API)
-- Default model: `@cf/google/gemma-4-26b-a4b-it`
 
-## Configure the AI service
+## Important rollout guard
 
-Create the Cloudflare account and Workers AI API token with the adult account owner. Keep the API token private.
+Account registration is disabled by default. Do not set `REGISTRATION_ENABLED=true` until a persistent database, email sender, final privacy notice, Terms and age/guardian consent workflow have been reviewed and configured.
 
-In the Cloudflare dashboard:
-1. Open **Workers AI**.
-2. Select **Use REST API**.
-3. Create a **Workers AI API Token** using the dashboard's suggested permissions.
-4. Copy the **Account ID**.
+Registration for users under 18 has an additional guard: `MINOR_SIGNUP_ENABLED=false` by default. The current email attestation flow is a technical starting point, not a substitute for jurisdiction-specific legal review or a verified parental-consent process.
 
-In Render → **Environment**, set:
+## Required environment variables
 
-- `CLOUDFLARE_ACCOUNT_ID` — Cloudflare Account ID
-- `CLOUDFLARE_API_TOKEN` — secret Workers AI API token
-- `CLOUDFLARE_MODEL` — optional; defaults to `@cf/google/gemma-4-26b-a4b-it`
+Set these in Render → Environment (never commit real values):
 
-Save and deploy. Never commit a real API token to GitHub or put it in frontend JavaScript.
+- `DATABASE_URL` — persistent PostgreSQL connection string
+- `SESSION_SECRET` — random secret of at least 32 characters
+- `APP_BASE_URL` — canonical public site origin, e.g. `https://quiet-english-tutor.onrender.com`
+- `RESEND_API_KEY` — email API key
+- `EMAIL_FROM` — sender address verified with the email provider
+- `REGISTRATION_ENABLED` — keep `false` until launch checks are complete
+- `MINOR_SIGNUP_ENABLED` — keep `false` until the minors/guardian process has been reviewed
+- `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` — existing AI integration
 
-Workers AI Free includes a daily 10,000 Neuron allocation. When it is exhausted, requests fail until the quota resets; this project does not automatically upgrade to a paid plan.
+A free temporary database should not be used for real learner progress. Choose persistent PostgreSQL with backups before inviting users.
 
-## Local development
+## Database setup
 
-1. Copy `.env.example` to `.env`.
-2. Fill the Cloudflare variables.
-3. Run `npm install`.
-4. Run `npm start`.
-5. Open `http://localhost:3000/tutor.html`.
+After supplying `DATABASE_URL`:
 
-## API
+1. Run `npm install`.
+2. Run `npm run migrate` to create the schema.
+3. Run `npm run seed` to load the curated starter exercises.
+4. Verify `GET /api/health` reports `learningConfigured: true`.
 
-- `GET /api/health` — reports whether the required environment variables are present (never returns secrets).
-- `POST /api/chat` — validates message history, adds tutor instructions server-side, and streams OpenAI-compatible SSE chunks to the browser.
+Do not run migrations against a database containing valuable data without first taking a backup.
 
-The chat route has an IP-based rate limit and bounded message length / history. For a public deployment, add stronger abuse protection and a privacy notice appropriate to your audience.
+## Email setup
 
-## Pages
+The registration and password-recovery routes send messages through the provider's HTTPS API. Configure a verified sender domain and test both the learner email-verification and parent/guardian-consent flows before enabling public registration.
 
-- `public/index.html` — landing page
-- `public/method.html` — how it works
-- `public/tutor.html` — chat
-- `public/topics.html` — lesson topics
-- `public/progress.html` — illustrative metrics and CTA
+## Main pages
 
-Metrics on the progress page are illustrative placeholders, not verified product statistics.
+- `/` — landing page
+- `/register.html` — registration
+- `/login.html` — sign-in
+- `/onboarding.html` — learning preferences
+- `/placement.html` — preliminary CEFR placement
+- `/plan.html` — four-week plan and Today
+- `/practice.html` — vocabulary, grammar and reading practice
+- `/exercise.html?id=G01` — exercise player
+- `/review.html` — spaced repetition
+- `/progress.html` — personal progress
+- `/errors.html` — error journal
+- `/tutor.html` — existing AI tutor
+
+## API compatibility
+
+The existing `POST /api/chat` request shape remains `{ messages: [...] }` and the response remains `{ message: string }`. An optional `context_ref` adds server-loaded, user-owned learning context. The original route remains available if PostgreSQL is not configured.
+
+New route groups:
+
+- `/api/auth` — registration, login, email verification, guardian attestation, password reset
+- `/api/learning` — onboarding, placement, plan, exercises, attempts, review, progress and errors
+
+## Tests
+
+- `npm run check` — syntax-checks JavaScript and parses the exercise seed data.
+- `npm test` — runs the placement-level and public-question tests.
+
+## Known MVP scope
+
+The MVP includes Vocabulary, Grammar and Reading. Listening, writing, spoken audio, ASR, pronunciation assessment, advanced CMS workflows, data export and a production-grade age/guardian verification process remain follow-up work. The privacy and terms pages are drafts and require review before public registration is enabled.
