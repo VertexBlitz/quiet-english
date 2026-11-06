@@ -19,6 +19,6 @@ test('placement questions expose options but never expose answer keys', () => {
     assert.ok(question.id);
     assert.ok(question.prompt);
     assert.ok(Array.isArray(question.options));
-    assert.equal('answer', question.answer, undefined);
+    assert.equal(question.answer, undefined);
   }
 });
