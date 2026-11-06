@@ -43,6 +43,7 @@ const pronunciationTasks = Object.freeze({
 
 function pronunciationConfigured(env = process.env) {
   return env.AZURE_SPEECH_ENABLED === 'true' &&
+    env.AZURE_SPEECH_GUARDIAN_APPROVED === 'true' &&
     typeof env.AZURE_SPEECH_KEY === 'string' && env.AZURE_SPEECH_KEY.length >= 16 &&
     typeof env.AZURE_SPEECH_REGION === 'string' && /^[a-z0-9-]{2,30}$/i.test(env.AZURE_SPEECH_REGION);
 }
