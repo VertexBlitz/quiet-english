@@ -8,25 +8,31 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
-  <script defer src="/app.js"></script>
+  <script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/app.js"></script>
 </head>
 <body>
   <header class="topbar wrap">
-    <a class="wordmark" href="/">QUIET ENGLISH<span> / AI TUTOR</span></a>
-    <nav aria-label="Main navigation">
-      <a aria-current="page" href="/method.html">Method</a>
-      <a  href="/tutor.html">Tutor</a>
-      <a  href="/topics.html">Topics</a>
-      <a  href="/progress.html">Progress</a>
-    </nav>
-  </header>
+  <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
+  <nav aria-label="Main navigation">
+    <a href="/plan.html" data-ru="План" data-en="Plan">План</a>
+    <a href="/practice.html" data-ru="Практика" data-en="Practice">Практика</a>
+    <a href="/review.html" data-ru="Повторение" data-en="Review">Повторение</a>
+    <a href="/progress.html" data-ru="Прогресс" data-en="Progress">Прогресс</a>
+    <a href="/tutor.html" data-ru="Чат" data-en="Tutor">Чат</a>
+  </nav>
+  <div class="language-switch" aria-label="Language">
+    <button type="button" data-set-lang="ru">RU</button>
+    <button type="button" data-set-lang="en">EN</button>
+    <a class="account-link" href="/login.html" data-ru="Войти" data-en="Sign in">Войти</a>
+  </div>
+</header>
   <main class="wrap"><section class="panel page-head reveal"><p class="eyebrow">02 — THE METHOD</p><h1>Small steps.<br><em>Real progress.</em></h1><p class="lead">Три простых элемента, которые превращают практику в привычку.</p></section>
 <section class="panel reveal"><div class="three">
   <article><span class="number">01</span><h2>Диалог</h2><p class="copy">Общайся на интересные темы и тренируй английский в живом контексте.</p></article>
   <article><span class="number">02</span><h2>Обратная связь</h2><p class="copy">Получай понятные исправления, примеры и объяснения без перегрузки.</p></article>
   <article><span class="number">03</span><h2>Прогресс</h2><p class="copy">Возвращайся к темам, повторяй лексику и замечай, что уже получается.</p></article>
 </div></section>
-<section class="panel reveal"><p class="eyebrow">A GOOD PLACE TO BEGIN</p><h2>One conversation<br>at a time.</h2><a class="button" href="/tutor.html">Начать занятие <span>↗</span></a></section></main>
+<section class="panel reveal"><p class="eyebrow">A GOOD PLACE TO BEGIN</p><h2>One conversation<br>at a time.</h2><a class="button" href="/register.html">Создать план обучения <span>↗</span></a></section></main>
   <footer class="footer wrap"><span>QUIET ENGLISH</span><span>Learn at your own pace · © 2026</span></footer>
 </body>
 </html>
