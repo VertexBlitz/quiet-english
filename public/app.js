@@ -45,55 +45,6 @@ if (form) {
     return bubble;
   };
 
-  const readSseStream = async (response, bubble) => {
-    if (!response.body) throw new Error('Поток ответа недоступен. Обнови страницу и попробуй снова.');
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let answer = '';
-    let finished = false;
-
-    const processFrame = frame => {
-      const dataLines = frame
-        .split(/\r?\n/)
-        .filter(line => line.startsWith('data:'))
-        .map(line => line.slice(5).trim());
-
-      for (const data of dataLines) {
-        if (!data || data === '[DONE]') {
-          if (data === '[DONE]') finished = true;
-          continue;
-        }
-        try {
-          const payload = JSON.parse(data);
-          const delta = payload.choices?.[0]?.delta?.content;
-          if (typeof delta === 'string' && delta.length) {
-            answer += delta;
-            bubble.lastChild.textContent = answer;
-            messages.scrollTop = messages.scrollHeight;
-          }
-        } catch {
-          // Ignore non-JSON SSE keepalive/event frames.
-        }
-      }
-    };
-
-    while (!finished) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      const frames = buffer.split(/\r?\n\r?\n/);
-      buffer = frames.pop() || '';
-      for (const frame of frames) processFrame(frame);
-    }
-
-    buffer += decoder.decode();
-    if (buffer.trim()) processFrame(buffer);
-    return answer;
-  };
-
   form.addEventListener('submit', async event => {
     event.preventDefault();
     const text = input.value.trim();
@@ -118,15 +69,13 @@ if (form) {
         throw new Error(data.error || 'Сервис ИИ временно недоступен.');
       }
 
-      assistantBubble = addMessage('assistant', '');
-      const answer = await readSseStream(response, assistantBubble);
-      if (!answer) {
-        assistantBubble.lastChild.textContent = 'Не удалось получить текстовый ответ. Попробуй ещё раз.';
-        status.textContent = 'NO RESPONSE';
-      } else {
-        history.push({ role: 'assistant', content: answer });
-        status.textContent = 'CLOUDFLARE AI · READY';
+      const data = await response.json();
+      if (typeof data.message !== 'string' || !data.message.trim()) {
+        throw new Error('Модель не вернула текстовый ответ. Попробуй ещё раз.');
       }
+      assistantBubble = addMessage('assistant', data.message.trim());
+      history.push({ role: 'assistant', content: data.message.trim() });
+      status.textContent = 'CLOUDFLARE AI · READY';
     } catch (error) {
       const message = error.message || 'Попробуй отправить сообщение ещё раз.';
       if (assistantBubble) {
