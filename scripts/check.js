@@ -3,7 +3,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const root = process.cwd();
-const roots = ['server.js', 'src', 'public', 'scripts'];
+const roots = ['server.js', 'src', 'public', 'scripts', 'tests'];
 const files = [];
 
 function walk(target) {
