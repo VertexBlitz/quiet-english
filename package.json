@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "migrate": "node scripts/migrate.js",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "check": "node scripts/check.js",
+    "test": "node --test"
   },
   "dependencies": {
     "argon2": "^0.44.0",
