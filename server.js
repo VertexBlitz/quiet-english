@@ -11,6 +11,7 @@ import authRoutes from './src/routes/auth.js';
 import learningRoutes from './src/routes/learning.js';
 import adminRoutes from './src/routes/admin.js';
 import { estimateLevel, placementQuestions, publicQuestions } from './src/content/placement.js';
+import { pronunciationConfigured, assessPronunciationAudio } from './src/speech/pronunciation.js';
 
 const app = express();
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -27,6 +28,14 @@ app.use('/api/', rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false
 }));
+
+const speechAssessmentLimit = rateLimit({
+  windowMs: 15 * 60_000,
+  limit: 4,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Достигнут лимит проверок произношения. Попробуй позже.' }
+});
 
 const sessionsConfigured = Boolean(pool && process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32);
 if (sessionsConfigured) {
@@ -140,6 +149,33 @@ function sameOrigin(req, res, next) {
   }
   next();
 }
+
+app.get('/api/speech/pronunciation/status', (_req, res) => {
+  res.json({
+    configured: pronunciationConfigured(),
+    engine: 'azure-speech-pronunciation-assessment',
+    locale: 'en-US'
+  });
+});
+
+// Audio is processed in memory and forwarded to Azure only when the operator enables the service.
+// The raw WAV body is never written to disk or stored in the learner profile.
+app.post('/api/speech/pronunciation/:taskId', speechAssessmentLimit, sameOrigin, express.raw({ type: 'audio/wav', limit: '1mb' }), async (req, res) => {
+  if (!pronunciationConfigured()) {
+    return res.status(503).json({ error: 'Оценка произношения пока не подключена. Нужна настройка речевого сервиса администратором.' });
+  }
+  if (!Buffer.isBuffer(req.body)) {
+    return res.status(415).json({ error: 'Отправь запись в формате WAV.' });
+  }
+  try {
+    const assessment = await assessPronunciationAudio(req.params.taskId, req.body);
+    return res.json(assessment);
+  } catch (error) {
+    const status = Number.isInteger(error.status) ? error.status : 502;
+    if (status >= 500) console.error('Pronunciation assessment failed:', error.code || 'SPEECH_ERROR');
+    return res.status(status).json({ error: error.message || 'Не удалось оценить произношение.' });
+  }
+});
 
 if (sessionsConfigured) {
   app.use('/api/auth', sameOrigin, authRoutes);

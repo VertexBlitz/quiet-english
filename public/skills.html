@@ -41,6 +41,19 @@
     .skill-status.success-text{color:#36734f}
     .skill-word-count{color:var(--muted);font-size:12px}
     .skill-consent{margin:0;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--paper);color:var(--muted);font-size:12px;line-height:1.6}
+    .pronunciation-consent{padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--paper);font-size:12px;line-height:1.6}
+    .pronunciation-reference{font-size:18px;font-weight:400;letter-spacing:-.01em}
+    .pronunciation-audio{width:100%;max-width:520px}
+    .pronunciation-score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;margin:14px 0 20px}
+    .pronunciation-score{display:grid;gap:7px;padding:14px;border:1px solid var(--line);border-radius:13px;background:#fff}
+    .pronunciation-score span{font-size:11px;color:var(--muted)}
+    .pronunciation-score strong{font-size:25px;font-weight:400;letter-spacing:-.04em}
+    .pronunciation-transcript{padding:12px 14px;border-left:2px solid var(--line);line-height:1.7}
+    .pronunciation-word{display:grid;gap:6px;padding:12px 0;border-bottom:1px solid var(--line)}
+    .pronunciation-word strong{font-size:14px;font-weight:500}
+    .pronunciation-word>span{font-size:12px;color:var(--muted)}
+    .pronunciation-phoneme{display:inline-flex!important;width:max-content;padding:5px 8px;border:1px solid var(--line);border-radius:999px;background:#fff}
+    @media(max-width:760px){.pronunciation-score-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .skill-metrics{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:11px}
     .skill-metrics span{border:1px solid var(--line);border-radius:999px;padding:7px 10px}
     .skill-task h3,.skill-task p{overflow-wrap:anywhere}
@@ -78,6 +91,7 @@
         <button class="skill-tab" type="button" data-skill="listening" aria-pressed="true">Аудирование</button>
         <button class="skill-tab" type="button" data-skill="writing" aria-pressed="false">Письмо</button>
         <button class="skill-tab" type="button" data-skill="speaking" aria-pressed="false">Говорение</button>
+        <button class="skill-tab" type="button" data-skill="pronunciation" aria-pressed="false">Произношение</button>
       </div>
       <p class="skill-status" data-skill-summary aria-live="polite"></p>
       <div class="skill-list" data-skill-list></div>
@@ -92,7 +106,7 @@
       <p class="skill-status" data-task-status aria-live="polite"></p>
       <div class="skill-result" data-task-result hidden></div>
     </section>
-    <p class="skill-consent">Конфиденциальность: ответы и расшифровки не сохраняются в аккаунте. Для обратной связи текст отправляется AI-сервису. При голосовом вводе браузер или его поставщик может обрабатывать аудио для распознавания речи; Quiet English сохраняет только статистику занятия, а не аудиозапись или текст ответа. Не используй в заданиях пароли, адреса, телефоны и другие личные данные. Можно отвечать текстом без микрофона.</p>
+    <p class="skill-consent">Конфиденциальность: тексты письменных и устных ответов не сохраняются в учебной статистике. Для AI-обратной связи текст отправляется AI-сервису. При оценке произношения аудиозапись отправляется в Microsoft Azure Speech только после отдельного согласия, обрабатывается для проверки и не сохраняется Quiet English. В статистике остаются только тип задания, баллы и длительность. Если тебе нет 18 лет, перед облачной проверкой получи разрешение родителя или опекуна. Не записывай других людей и не произноси личные данные.</p>
   </main>
   <footer class="footer wrap"><span>QUIET ENGLISH</span><span>Learn at your own pace · © 2026</span></footer>
 </body>
