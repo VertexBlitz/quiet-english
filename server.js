@@ -273,7 +273,9 @@ app.get('/api/health', (_req, res) => {
     ok: true,
     configured: isAiConfigured(),
     provider: 'cloudflare-workers-ai',
-    learningConfigured: Boolean(pool && sessionsConfigured)
+    learningConfigured: Boolean(pool && sessionsConfigured),
+    emailConfigured: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
+    registrationEnabled: process.env.REGISTRATION_ENABLED === 'true'
   });
 });
 
