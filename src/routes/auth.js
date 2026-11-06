@@ -1,7 +1,7 @@
 import express from 'express';
 import argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
-import { pool, requireDatabase } from '../db.js';
+import { pool, requireDatabase, requireUser } from '../db.js';
 
 const router = express.Router();
 router.use(requireDatabase);
@@ -276,6 +276,57 @@ router.get('/me', async (req, res, next) => {
   }
 });
 
+
+router.get('/export', requireUser, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const [profile, placements, plans, attempts, reviews, errors, activity, consents] = await Promise.all([
+      pool.query('SELECT preferred_language, goal, self_assessed_level, assessed_level, minutes_per_day, duration_weeks, interests, timezone, created_at FROM learner_profiles WHERE user_id=$1',[userId]),
+      pool.query('SELECT answers, correct_count, total_questions, estimated_level, completed_at FROM placement_attempts WHERE user_id=$1 ORDER BY completed_at',[userId]),
+      pool.query('SELECT id, goal, level, duration_weeks, minutes_per_day, status, starts_on, created_at, completed_at FROM learning_plans WHERE user_id=$1 ORDER BY created_at',[userId]),
+      pool.query('SELECT exercise_id, exercise_version, answer, is_correct, score, feedback, created_at FROM exercise_attempts WHERE user_id=$1 ORDER BY created_at',[userId]),
+      pool.query('SELECT item_type, item_ref, prompt, answer, interval_days, repetitions, due_at, last_rating FROM srs_items WHERE user_id=$1',[userId]),
+      pool.query('SELECT error_type, incorrect_form, correction, explanation, occurrences, resolved_at, created_at FROM error_journal WHERE user_id=$1 ORDER BY created_at',[userId]),
+      pool.query('SELECT activity_date, minutes, completed_tasks FROM daily_activity WHERE user_id=$1 ORDER BY activity_date',[userId]),
+      pool.query('SELECT consent_type, policy_version, accepted_at FROM consent_records WHERE user_id=$1 ORDER BY accepted_at',[userId])
+    ]);
+    res.json({
+      exported_at: new Date().toISOString(),
+      account: { email: req.user.email, age_band: req.user.age_band, created_at: req.user.created_at },
+      profile: profile.rows[0] || null,
+      placements: placements.rows,
+      plans: plans.rows,
+      exercise_attempts: attempts.rows,
+      review_items: reviews.rows,
+      errors: errors.rows,
+      activity: activity.rows,
+      consents: consents.rows
+    });
+  } catch (error) { next(error); }
+});
+
+router.delete('/account', requireUser, async (req, res, next) => {
+  if (req.body?.confirm !== 'DELETE') {
+    return res.status(400).json({ error: 'Для удаления аккаунта введи DELETE в поле подтверждения.' });
+  }
+  const userId = req.user.id;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query("DELETE FROM user_sessions WHERE sess->>'userId'=$1", [userId]);
+    await client.query('DELETE FROM users WHERE id=$1', [userId]);
+    await client.query('COMMIT');
+    req.session.destroy(() => {});
+    res.clearCookie('qe.sid');
+    res.json({ ok: true, message: 'Аккаунт и связанные учебные данные удалены.' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    next(error);
+  } finally {
+    client.release();
+  }
+});
+
 router.post('/password/forgot', async (req, res, next) => {
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   if (!validEmail(email)) return res.status(400).json({ error: 'Укажи корректный email.' });
@@ -314,6 +365,7 @@ router.post('/password/reset', async (req, res, next) => {
     }
     const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
     await client.query('UPDATE users SET password_hash=$2, updated_at=NOW() WHERE id=$1', [found.rows[0].user_id, passwordHash]);
+    await client.query("DELETE FROM user_sessions WHERE sess->>'userId'=$1", [found.rows[0].user_id]);
     await client.query('UPDATE email_tokens SET consumed_at=NOW() WHERE user_id=$1 AND token_type IN (\'password_reset\',\'email_verify\',\'guardian_consent\') AND consumed_at IS NULL', [found.rows[0].user_id]);
     await client.query('COMMIT');
     res.json({ ok: true, message: 'Пароль обновлён. Теперь можно войти.' });
