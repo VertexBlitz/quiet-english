@@ -220,3 +220,73 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
 [data-admin-page] .field-block textarea{margin-top:9px}
 [data-admin-page] .rating-row{margin-top:18px}
 [data-admin-page] .exercise-card{min-width:0}
+
+
+/* Speaking assessment and listening library */
+[hidden]{display:none!important}
+.practice-tools{display:grid;grid-template-columns:1fr 1fr;gap:34px}
+.practice-tools article{min-width:0}
+.practice-tools h2{font-size:clamp(28px,3.4vw,40px)}
+.pronunciation-workspace{display:grid;gap:26px}
+.pron-prompt-list{display:grid;gap:12px}
+.pron-prompt{display:grid;grid-template-columns:1fr 42px;align-items:center;gap:14px;padding:18px 20px;border:1px solid var(--line);border-radius:16px;cursor:pointer}
+.pron-prompt.selected{border-color:var(--ink);background:var(--soft)}
+.pron-prompt>input{position:absolute;opacity:0;pointer-events:none}
+.pron-prompt>span{display:grid;gap:8px;min-width:0}
+.pron-prompt strong{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mid);font-weight:500}
+.pron-prompt>span>span{font-size:15px;line-height:1.65;color:var(--ink)}
+.pron-listen{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink);cursor:pointer}
+.pron-record-box{border-top:1px solid var(--line);padding-top:24px}
+.consent-line{display:flex;align-items:flex-start;gap:12px;color:var(--muted);font-size:12px;line-height:1.65}
+.consent-line input{flex:0 0 17px;width:17px;height:17px;margin-top:2px;accent-color:var(--ink)}
+.record-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:22px}
+.record-timer{font-variant-numeric:tabular-nums;font-size:12px;color:var(--mid)}
+.button.recording{background:#8b3333;color:#fff;border-color:#8b3333}
+.pron-result-head{align-items:flex-end}
+.pron-overall{display:grid;justify-items:end;gap:4px;white-space:nowrap}
+.pron-overall strong{font-size:clamp(52px,7vw,80px);font-weight:300;letter-spacing:-.08em;line-height:1}
+.pron-overall span{font-size:10px;color:var(--mid)}
+.pron-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:28px 0}
+.pron-metric{display:grid;gap:12px;padding:17px;border:1px solid var(--line);border-radius:15px}
+.pron-metric>span{font-size:11px;line-height:1.4;color:var(--muted)}
+.pron-metric strong{font-size:23px;font-weight:400;letter-spacing:-.04em}
+.pron-subheading{font-size:20px;font-weight:400;margin:32px 0 14px}
+.pron-word-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pron-word{min-width:0;padding:16px;border:1px solid var(--line);border-radius:14px}
+.pron-word-head{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.pron-word-head strong{font-size:15px;font-weight:500;overflow-wrap:anywhere}
+.pron-word-head span{font-size:12px;color:var(--muted);white-space:nowrap}
+.pron-word-error{margin:10px 0 0!important;color:#8b3333!important;font-size:12px}
+.phoneme-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.phoneme-chip{padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--soft);font:11px ui-monospace,SFMono-Regular,Consolas,monospace}
+.pron-history{display:grid;gap:8px}
+.pron-history-row{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:14px 0;border-bottom:1px solid var(--line);font-size:13px}
+.pron-history-row:last-child{border-bottom:0}
+.pron-history-row span{min-width:0;color:var(--muted);overflow-wrap:anywhere}
+.pron-history-row strong{white-space:nowrap;font-weight:500}
+.library-filters{display:flex;gap:14px;flex-wrap:wrap;margin:24px 0}
+.library-filters label{display:grid;gap:7px;color:var(--muted);font-size:11px}
+.library-filters select{min-width:190px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--ink);font:400 13px Inter,Arial,sans-serif}
+.listening-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.listening-card{display:flex;flex-direction:column;align-items:flex-start;min-width:0;padding:20px;border:1px solid var(--line);border-radius:17px}
+.listening-card .eyebrow{margin:0 0 16px}
+.listening-card h3{font-size:18px;line-height:1.25;letter-spacing:-.03em;font-weight:400;margin:0 0 10px;overflow-wrap:anywhere}
+.listening-card>p:not(.eyebrow){font-size:12px;line-height:1.6;color:var(--muted);margin:0 0 14px}
+.listening-kind{margin-top:auto;margin-bottom:18px;padding:6px 9px;border-radius:999px;background:var(--soft);font-size:10px;color:var(--muted)}
+.listening-card .text-link{font-size:12px}
+@media(max-width:900px){
+  .listening-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pron-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .practice-tools{grid-template-columns:1fr}
+  .pron-word-list{grid-template-columns:1fr}
+  .pron-result-head{align-items:flex-start}
+  .pron-overall{justify-items:start}
+  .listening-grid{grid-template-columns:1fr}
+  .library-filters{display:grid;grid-template-columns:1fr 1fr}
+  .library-filters select{min-width:0;width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .pronunciation-workspace,.pron-result-head{scroll-behavior:auto}
+}

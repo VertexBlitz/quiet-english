@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Listening library — Quiet English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/listening.js"></script>
+</head>
+<body>
+<header class="topbar wrap">
+  <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
+  <nav aria-label="Main navigation">
+    <a href="/plan.html" data-ru="План" data-en="Plan">План</a>
+    <a href="/practice.html" data-ru="Практика" data-en="Practice">Практика</a>
+    <a href="/listening.html" data-ru="Аудирование" data-en="Listening">Аудирование</a>
+    <a href="/pronunciation.html" data-ru="Произношение" data-en="Speaking">Произношение</a>
+    <a href="/progress.html" data-ru="Прогресс" data-en="Progress">Прогресс</a>
+  </nav>
+  <div class="language-switch" aria-label="Language">
+    <button type="button" data-set-lang="ru">RU</button><button type="button" data-set-lang="en">EN</button>
+    <a class="account-link" href="/login.html" data-ru="Аккаунт" data-en="Account">Аккаунт</a>
+  </div>
+</header>
+<main class="wrap" data-listening-page>
+  <section class="panel page-head">
+    <p class="eyebrow">LISTENING LIBRARY</p>
+    <h1 data-ru="Больше английского на слух." data-en="More English to listen to.">Больше английского на слух.</h1>
+    <p class="lead" data-ru="Подборка аудио-уроков и разговоров по уровням CEFR — от A1 до C1. Внешние материалы открываются на сайтах их авторов." data-en="A curated collection of audio lessons and conversations by CEFR level — from A1 to C1. External resources open on their publishers’ websites.">Подборка аудио-уроков и разговоров по уровням CEFR — от A1 до C1. Внешние материалы открываются на сайтах их авторов.</p>
+  </section>
+  <section class="panel">
+    <div class="section-heading"><div><p class="eyebrow">FIND YOUR NEXT LISTEN</p><h2 data-ru="Подбери материал." data-en="Find a resource.">Подбери материал.</h2></div><span class="pill" data-library-count>14 материалов</span></div>
+    <div class="library-filters">
+      <label><span data-ru="Уровень" data-en="Level">Уровень</span><select data-level-filter><option value="all">Все уровни / All levels</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option></select></label>
+      <label><span data-ru="Тема" data-en="Topic">Тема</span><select data-topic-filter><option value="all">Все темы / All topics</option><option value="daily">Повседневное / Daily life</option><option value="travel">Путешествия / Travel</option><option value="study">Учёба / Study</option><option value="culture">Культура / Culture</option><option value="podcast">Подкасты / Podcasts</option></select></label>
+    </div>
+    <div class="listening-grid" data-listening-grid></div>
+    <p class="fine-print" data-ru="Материалы принадлежат British Council и ELLLO. Quiet English не копирует и не хранит их записи; воспроизведение, транскрипты и задания доступны на исходных сайтах и регулируются их условиями." data-en="Resources belong to British Council and ELLLO. Quiet English does not copy or host their audio; playback, transcripts and exercises are available on the original sites under their terms.">Материалы принадлежат British Council и ELLLO. Quiet English не копирует и не хранит их записи; воспроизведение, транскрипты и задания доступны на исходных сайтах и регулируются их условиями.</p>
+  </section>
+  <section class="panel split">
+    <div><p class="eyebrow">NEXT · SPEAKING</p><h2 data-ru="Теперь попробуй сказать сам." data-en="Now try saying it yourself.">Теперь попробуй сказать сам.</h2></div>
+    <div><p class="copy" data-ru="После прослушивания потренируй произношение на коротком тексте и посмотри разбор звуков и интонации." data-en="After listening, practise speaking with a short passage and review your sound and prosody feedback.">После прослушивания потренируй произношение на коротком тексте и посмотри разбор звуков и интонации.</p><a class="button" href="/pronunciation.html" data-ru="Открыть Speaking Lab ↗" data-en="Open Speaking Lab ↗">Открыть Speaking Lab ↗</a></div>
+  </section>
+</main>
+</body></html>

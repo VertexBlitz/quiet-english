@@ -9,6 +9,7 @@ import { pool } from './src/db.js';
 import authRoutes from './src/routes/auth.js';
 import learningRoutes from './src/routes/learning.js';
 import adminRoutes from './src/routes/admin.js';
+import pronunciationRoutes from './src/routes/pronunciation.js';
 
 const app = express();
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -69,6 +70,7 @@ if (sessionsConfigured) {
   app.use('/api/auth', sameOrigin, authRoutes);
   app.use('/api/learning', sameOrigin, learningRoutes);
   app.use('/api/admin', sameOrigin, adminRoutes);
+  app.use('/api/pronunciation', sameOrigin, pronunciationRoutes);
 } else {
   const notReady = (_req, res) => res.status(503).json({
     error: 'Личный кабинет ещё не настроен. Нужны DATABASE_URL и SESSION_SECRET.'
@@ -76,6 +78,7 @@ if (sessionsConfigured) {
   app.use('/api/auth', notReady);
   app.use('/api/learning', notReady);
   app.use('/api/admin', notReady);
+  app.use('/api/pronunciation', notReady);
 }
 
 const MODEL = process.env.CLOUDFLARE_MODEL || '@cf/google/gemma-4-26b-a4b-it';

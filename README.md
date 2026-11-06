@@ -21,6 +21,8 @@ A bilingual (Russian/English) personal English-learning platform built on the ex
 - Preliminary CEFR placement test (not an official certificate)
 - Four-week personal plan with local-time daily tasks
 - 20 curated vocabulary, grammar and reading exercises
+- Listening library with 15 curated British Council and ELLLO collections/lessons across CEFR A1–C1
+- Optional scripted pronunciation assessment with word- and phoneme-level feedback, plus accuracy, fluency, completeness and prosody scores (requires Azure Speech configuration)
 - Server-side answer checking
 - Spaced repetition queue
 - Personal progress and error journal
@@ -29,7 +31,7 @@ A bilingual (Russian/English) personal English-learning platform built on the ex
 - RU/EN language switch
 - Existing AI tutor with optional account-derived context and slash commands
 
-Listening media, structured writing assessment, voice recording, ASR, pronunciation scoring, advanced CMS workflows and formal exam preparation are out of this MVP.
+Structured writing assessment, advanced CMS workflows and formal exam preparation remain outside this MVP. Listening resources are linked from their original publishers; Quiet English does not copy or host third-party audio.
 
 ## Important rollout and safety gates
 
@@ -53,6 +55,7 @@ Set these in Render → Environment. Never commit real values:
 - `REGISTRATION_ENABLED` — keep `false` until launch checks are complete
 - `MINOR_SIGNUP_ENABLED` — keep `false` until the minors/guardian process has been reviewed
 - `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` — existing AI integration
+- `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` — optional pronunciation assessment; keep unset until the operator has completed provider, privacy, regional-processing and minor-consent reviews
 - `NODE_ENV=production` — secure production cookies
 - `PGSSLMODE=require` if your PostgreSQL provider requires verified TLS; use `disable` only for a trusted local development database
 
@@ -103,6 +106,8 @@ Replace the example email with the trusted adult operator's own verified address
 - `/placement.html` — preliminary CEFR placement
 - `/plan.html` — four-week plan and Today
 - `/practice.html` — vocabulary, grammar and reading practice
+- `/listening.html` — curated external listening library by CEFR level and topic
+- `/pronunciation.html` — short scripted pronunciation assessment and personal score history
 - `/exercise.html?id=G01` — exercise player
 - `/review.html` — spaced repetition
 - `/progress.html` — personal progress
@@ -119,6 +124,7 @@ New route groups:
 - `/api/auth` — registration, sign-in, email verification, guardian attestation, password reset, data export and account deletion
 - `/api/learning` — onboarding, placement, plan, exercises, attempts, review, progress and errors
 - `/api/admin` — admin-only exercise and plan-template management
+- `/api/pronunciation` — authenticated speech assessment and personal results history
 
 CMS changes to a published template affect newly generated plans. Existing learner plans keep their copied weekly themes and daily task assignments.
 
@@ -132,4 +138,4 @@ CMS changes to a published template affect newly generated plans. Existing learn
 
 This work is developed in `quiet-english-2-mvp`, not deployed to the existing production Render service. The production site remains unchanged until the pull request is reviewed and merged.
 
-After merging, the site can serve the new pages, but account and learning APIs remain disabled until the required database and session settings exist. Email registration additionally requires the Resend settings. Keep the registration feature flags off until the safety and privacy review is complete.
+The pronunciation and listening improvements are developed in `feat/pronunciation-and-listening-library` as a separate reviewable change. After merging, the site can serve the new pages, but account and learning APIs remain disabled until the required database and session settings exist. Pronunciation scoring additionally requires the `005_pronunciation_attempts.sql` migration and Azure Speech credentials. Email registration additionally requires the Resend settings. Keep the registration feature flags off until the safety and privacy review is complete.

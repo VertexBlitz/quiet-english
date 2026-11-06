@@ -280,7 +280,7 @@ router.get('/me', async (req, res, next) => {
 router.get('/export', requireUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const [profile, placements, plans, attempts, reviews, errors, activity, consents] = await Promise.all([
+    const [profile, placements, plans, attempts, reviews, errors, activity, consents, pronunciation] = await Promise.all([
       pool.query('SELECT preferred_language, goal, self_assessed_level, assessed_level, minutes_per_day, duration_weeks, interests, timezone, created_at FROM learner_profiles WHERE user_id=$1',[userId]),
       pool.query('SELECT answers, correct_count, total_questions, estimated_level, completed_at FROM placement_attempts WHERE user_id=$1 ORDER BY completed_at',[userId]),
       pool.query('SELECT id, goal, level, duration_weeks, minutes_per_day, status, starts_on, created_at, completed_at FROM learning_plans WHERE user_id=$1 ORDER BY created_at',[userId]),
@@ -288,7 +288,8 @@ router.get('/export', requireUser, async (req, res, next) => {
       pool.query('SELECT item_type, item_ref, prompt, answer, interval_days, repetitions, due_at, last_rating FROM srs_items WHERE user_id=$1',[userId]),
       pool.query('SELECT error_type, incorrect_form, correction, explanation, occurrences, resolved_at, created_at FROM error_journal WHERE user_id=$1 ORDER BY created_at',[userId]),
       pool.query('SELECT activity_date, minutes, completed_tasks FROM daily_activity WHERE user_id=$1 ORDER BY activity_date',[userId]),
-      pool.query('SELECT consent_type, policy_version, accepted_at FROM consent_records WHERE user_id=$1 ORDER BY accepted_at',[userId])
+      pool.query('SELECT consent_type, policy_version, accepted_at FROM consent_records WHERE user_id=$1 ORDER BY accepted_at',[userId]),
+      pool.query('SELECT reference_text, recognized_text, pron_score, accuracy_score, fluency_score, completeness_score, prosody_score, word_results, created_at FROM pronunciation_attempts WHERE user_id=$1 ORDER BY created_at',[userId])
     ]);
     res.json({
       exported_at: new Date().toISOString(),
@@ -300,7 +301,8 @@ router.get('/export', requireUser, async (req, res, next) => {
       review_items: reviews.rows,
       errors: errors.rows,
       activity: activity.rows,
-      consents: consents.rows
+      consents: consents.rows,
+      pronunciation_attempts: pronunciation.rows
     });
   } catch (error) { next(error); }
 });
