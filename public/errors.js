@@ -2,9 +2,14 @@ async function loadErrors() {
   const status = document.querySelector('[data-errors-status]');
   const list = document.querySelector('[data-errors-list]');
   try {
-    const response = await fetch('/api/learning/errors', { credentials: 'same-origin' });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || 'Не удалось загрузить ошибки.');
+    let data;
+    if (window.QEDemo && await window.QEDemo.ensure()) {
+      data = await window.QEDemo.request('/errors');
+    } else {
+      const response = await fetch('/api/learning/errors', { credentials: 'same-origin' });
+      data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Не удалось загрузить ошибки.');
+    }
     list.replaceChildren();
     if (!data.errors.length) {
       const empty = document.createElement('p');
@@ -32,12 +37,16 @@ async function loadErrors() {
       button.addEventListener('click', async () => {
         button.disabled = true;
         try {
-          const result = await fetch('/api/learning/errors/' + encodeURIComponent(error.id) + '/resolve', {
-            method: 'POST', credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json' }, body: '{}'
-          });
-          const body = await result.json().catch(() => ({}));
-          if (!result.ok) throw new Error(body.error || 'Не удалось обновить ошибку.');
+          if (window.QEDemo && await window.QEDemo.ensure()) {
+            await window.QEDemo.request('/errors/' + encodeURIComponent(error.id) + '/resolve', { method: 'POST', body: '{}' });
+          } else {
+            const result = await fetch('/api/learning/errors/' + encodeURIComponent(error.id) + '/resolve', {
+              method: 'POST', credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json' }, body: '{}'
+            });
+            const body = await result.json().catch(() => ({}));
+            if (!result.ok) throw new Error(body.error || 'Не удалось обновить ошибку.');
+          }
           card.remove();
           if (!list.children.length) {
             const empty = document.createElement('p');
