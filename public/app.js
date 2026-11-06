@@ -156,6 +156,7 @@ if (form) {
   };
 
   const fetchLearning = async path => {
+    if (window.QEDemo && await window.QEDemo.ensure()) return window.QEDemo.request(path);
     const response = await fetch('/api/learning' + path, { credentials: 'same-origin' });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Сначала войди в аккаунт, чтобы открыть учебные данные.');
@@ -163,6 +164,7 @@ if (form) {
   };
 
   const executeCommand = async command => {
+    if (window.QEDemo && await window.QEDemo.ensure()) return window.QEDemo.command(command);
     if (command === '/today') {
       const { today } = await fetchLearning('/today');
       return `**Today · Week ${today.week_number}, Day ${today.day_index}**\n\n**Theme:** ${today.theme}\n\n**Main task:** ${today.main_task?.objective || 'No task assigned'}\n\n**Review due:** ${today.review_due}\n\n**Mini practice:** ${today.mini_prompt}`;
@@ -230,7 +232,19 @@ if (form) {
 
       const requestBody = { messages: history.slice(-12) };
       if (exerciseContextRef) {
-        requestBody.context_ref = exerciseContextRef;
+        if (window.QEDemo && await window.QEDemo.ensure()) {
+          const { exercise } = await window.QEDemo.request('/exercises/' + encodeURIComponent(exerciseContextRef));
+          requestBody.messages.push({
+            role: 'user',
+            content: 'Please explain this practice item at my level. Objective: ' + exercise.objective +
+              '. Prompt: ' + (exercise.content?.prompt || '') +
+              '. Options: ' + (exercise.content?.options || []).map(option => option.text).join('; ') +
+              '. Instructions: ' + (exercise.instructions?.ru || exercise.instructions?.en || '') +
+              '. Explain the rule and invite me to try, without simply giving away the answer.'
+          });
+        } else {
+          requestBody.context_ref = exerciseContextRef;
+        }
         exerciseContextRef = null;
       }
       const response = await fetch('/api/chat', {
