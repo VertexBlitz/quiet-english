@@ -29,6 +29,14 @@ app.use('/api/', rateLimit({
   legacyHeaders: false
 }));
 
+const speechAssessmentLimit = rateLimit({
+  windowMs: 15 * 60_000,
+  limit: 4,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Достигнут лимит проверок произношения. Попробуй позже.' }
+});
+
 const sessionsConfigured = Boolean(pool && process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32);
 if (sessionsConfigured) {
   app.use(session({
@@ -152,7 +160,7 @@ app.get('/api/speech/pronunciation/status', (_req, res) => {
 
 // Audio is processed in memory and forwarded to Azure only when the operator enables the service.
 // The raw WAV body is never written to disk or stored in the learner profile.
-app.post('/api/speech/pronunciation/:taskId', sameOrigin, express.raw({ type: 'audio/wav', limit: '1mb' }), async (req, res) => {
+app.post('/api/speech/pronunciation/:taskId', speechAssessmentLimit, sameOrigin, express.raw({ type: 'audio/wav', limit: '1mb' }), async (req, res) => {
   if (!pronunciationConfigured()) {
     return res.status(503).json({ error: 'Оценка произношения пока не подключена. Нужна настройка речевого сервиса администратором.' });
   }
