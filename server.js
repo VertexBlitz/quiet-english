@@ -3,15 +3,18 @@ import { rateLimit } from 'express-rate-limit';
 import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { pool } from './src/db.js';
 import authRoutes from './src/routes/auth.js';
 import learningRoutes from './src/routes/learning.js';
 import adminRoutes from './src/routes/admin.js';
+import { estimateLevel, placementQuestions, publicQuestions } from './src/content/placement.js';
 
 const app = express();
 const root = path.dirname(fileURLToPath(import.meta.url));
+const demoExerciseCatalog = JSON.parse(readFileSync(path.join(root, 'content/seed-exercises.json'), 'utf8'));
 const port = Number(process.env.PORT) || 3000;
 const PgSession = connectPgSimple(session);
 
@@ -47,6 +50,79 @@ if (sessionsConfigured) {
     }
   }));
 }
+
+const publicDemoExercise = exercise => {
+  if (!exercise) return null;
+  const { answer_key, ...safe } = exercise;
+  return safe;
+};
+
+// Guest demo endpoints are stateless: no user account, email, session or database writes.
+app.get('/api/demo/placement/questions', (_req, res) => {
+  res.json({
+    questions: publicQuestions(),
+    note: 'Короткая предварительная оценка, не официальный сертификат CEFR.'
+  });
+});
+
+app.post('/api/demo/placement/submit', sameOrigin, (req, res) => {
+  const answers = req.body?.answers;
+  if (!Array.isArray(answers) || answers.length !== placementQuestions.length) {
+    return res.status(400).json({ error: 'Ответь на все вопросы теста.' });
+  }
+  const answerMap = new Map(answers.map(item => [item?.id, item?.option_id]));
+  if (placementQuestions.some(question => !answerMap.has(question.id))) {
+    return res.status(400).json({ error: 'В ответах отсутствуют вопросы.' });
+  }
+  const correct = placementQuestions.filter(question => answerMap.get(question.id) === question.answer).length;
+  const level = estimateLevel(correct);
+  res.json({
+    ok: true,
+    result: { level, correct, total: placementQuestions.length, is_preliminary: true }
+  });
+});
+
+app.get('/api/demo/exercises', (req, res) => {
+  const allowedSkills = ['vocabulary', 'grammar', 'reading'];
+  const requestedSkill = req.query.skill;
+  const exercises = demoExerciseCatalog
+    .filter(exercise => allowedSkills.includes(exercise.skill))
+    .filter(exercise => !requestedSkill || exercise.skill === requestedSkill)
+    .map(publicDemoExercise);
+  res.json({ exercises });
+});
+
+app.get('/api/demo/exercises/:id', (req, res) => {
+  const exercise = demoExerciseCatalog.find(item => item.id === req.params.id);
+  if (!exercise || !['vocabulary', 'grammar', 'reading'].includes(exercise.skill)) {
+    return res.status(404).json({ error: 'Задание не найдено.' });
+  }
+  res.json({ exercise: publicDemoExercise(exercise) });
+});
+
+app.post('/api/demo/exercises/:id/attempts', sameOrigin, (req, res) => {
+  const exercise = demoExerciseCatalog.find(item => item.id === req.params.id);
+  if (!exercise || !['vocabulary', 'grammar', 'reading'].includes(exercise.skill)) {
+    return res.status(404).json({ error: 'Задание не найдено.' });
+  }
+  const answer = req.body?.answer;
+  const selected = typeof answer === 'string' ? answer : answer?.option_id;
+  const selectedOption = exercise.content?.options?.find(option => option.id === selected);
+  if (!selectedOption) return res.status(400).json({ error: 'Выбери один из предложенных вариантов.' });
+  const isCorrect = selected === exercise.answer_key?.correct_option_id;
+  const correctOption = exercise.content.options.find(option => option.id === exercise.answer_key.correct_option_id);
+  res.json({
+    is_correct: isCorrect,
+    score: isCorrect ? 100 : 0,
+    feedback: {
+      correct: isCorrect,
+      correct_answer: correctOption?.text || null,
+      explanation: exercise.explanation,
+      success_criteria: exercise.success_criteria
+    },
+    practice_only: true
+  });
+});
 
 function sameOrigin(req, res, next) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
