@@ -25,7 +25,8 @@
     attempts: [],
     srsItems: [],
     errors: [],
-    activity: []
+    activity: [],
+    skillPractice: []
   });
 
   function readState() {
@@ -380,13 +381,17 @@
       const completedTasks = state.activity.reduce((sum, item) => sum + item.completed_tasks, 0);
       const minutes = state.activity.reduce((sum, item) => sum + item.minutes, 0);
       const activeDays = state.activity.filter(item => item.completed_tasks > 0).length;
-      const skills = [...new Set(state.attempts.map(item => item.skill))].map(skill => {
+      const skillNames = [...new Set([
+        ...state.attempts.map(item => item.skill),
+        ...(state.skillPractice || []).map(item => item.skill)
+      ])];
+      const skills = skillNames.map(skill => {
         const matching = state.attempts.filter(item => item.skill === skill);
-        return {
-          skill,
-          attempts: matching.length,
-          accuracy: matching.length ? Math.round(matching.filter(item => item.is_correct).length / matching.length * 100) : null
-        };
+        const practice = (state.skillPractice || []).filter(item => item.skill === skill);
+        const scoredPractice = practice.filter(item => Number.isInteger(item.score));
+        const scored = matching.length + scoredPractice.length;
+        const weighted = matching.filter(item => item.is_correct).length * 100 + scoredPractice.reduce((sum, item) => sum + item.score, 0);
+        return { skill, attempts: matching.length + practice.length, accuracy: scored ? Math.round(weighted / scored) : null };
       });
       return {
         summary: {
@@ -451,6 +456,42 @@
     return null;
   }
 
+  function recordSkillPractice(record) {
+    if (!active) throw new Error('Сначала активируй демо-профиль.');
+    const allowed = new Set([
+      'listen_cafe_01','listen_station_01','listen_weekend_01',
+      'write_invitation_01','write_opinion_01','write_summary_01',
+      'speak_hobby_01','speak_place_01','speak_technology_01'
+    ]);
+    if (!allowed.has(record?.task_id) || !['listening','writing','speaking'].includes(record?.skill)) {
+      throw new Error('Неизвестный тип задания.');
+    }
+    const state = readState();
+    state.skillPractice = Array.isArray(state.skillPractice) ? state.skillPractice : [];
+    state.skillPractice.push({
+      skill: record.skill, task_id: record.task_id,
+      score: Number.isInteger(record.score) ? Math.max(0, Math.min(100, record.score)) : null,
+      word_count: Math.max(0, Math.min(500, Number(record.word_count) || 0)),
+      duration_seconds: Math.max(1, Math.min(1800, Number(record.duration_seconds) || 1)),
+      created_at: new Date().toISOString()
+    });
+    if (state.skillPractice.length > 500) state.skillPractice.splice(0, state.skillPractice.length - 500);
+    recordActivity(state, Math.max(1, Math.round((Number(record.duration_seconds) || 1) / 60)), 1);
+    writeState(state);
+    return true;
+  }
+
+  function getSkillPracticeStats() {
+    const rows = readState().skillPractice || [];
+    return ['listening','writing','speaking'].map(skill => {
+      const matching = rows.filter(item => item.skill === skill);
+      const scored = matching.filter(item => Number.isInteger(item.score));
+      return {
+        skill, attempts: matching.length,
+        accuracy: scored.length ? Math.round(scored.reduce((sum,item) => sum + item.score,0) / scored.length) : null
+      };
+    }).filter(item => item.attempts > 0);
+  }
   function reset() {
     try {
       localStorage.removeItem(ACTIVE_KEY);
@@ -461,5 +502,5 @@
     location.href = '/';
   }
 
-  window.QEDemo = { ensure, isActive, start, reset, request, command, getState, getProfile };
+  window.QEDemo = { ensure, isActive, start, reset, request, command, getState, getProfile, recordSkillPractice, getSkillPracticeStats };
 })();

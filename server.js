@@ -409,7 +409,7 @@ app.post('/api/chat', async (req, res) => {
           ...messages
         ],
         stream: false,
-        max_tokens: 420,
+        max_tokens: 640,
         temperature: 0.35,
         chat_template_kwargs: { enable_thinking: false }
       }),
