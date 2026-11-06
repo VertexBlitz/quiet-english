@@ -60,7 +60,7 @@ async function generatePlan(userId) {
       theme, objective,
       tasks: Array.from({ length: 7 }, (_, day) => chooseExercise(profile.level, index * 7 + day + 1))
     }));
-    await client.query('UPDATE learning_plans SET status=\\'archived\\' WHERE user_id=$1 AND status=\\'active\\'', [userId]);
+    await client.query('UPDATE learning_plans SET status=\'archived\' WHERE user_id=$1 AND status=\'active\'', [userId]);
     const planResult = await client.query(
       `INSERT INTO learning_plans (user_id, goal, level, duration_weeks, minutes_per_day, starts_on, template_id)
        VALUES ($1,$2,$3,4,$4,(NOW() AT TIME ZONE $5)::date,$6) RETURNING *`,
