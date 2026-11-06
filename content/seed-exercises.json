@@ -565,5 +565,389 @@
       "enabled": false
     },
     "success_criteria": "Identify the action supported by the notice."
+  },
+  {
+    "id": "V05",
+    "skill": "vocabulary",
+    "level": "A2",
+    "objective": "Choose common adjectives for describing places",
+    "instructions": {
+      "ru": "Выбери прилагательное, которое подходит по смыслу.",
+      "en": "Choose the adjective that fits the meaning."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "The small village was quiet and ___.",
+      "options": [
+        {
+          "id": "a",
+          "text": "peaceful"
+        },
+        {
+          "id": "b",
+          "text": "crowded"
+        },
+        {
+          "id": "c",
+          "text": "noisy"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Peaceful означает спокойный, тихий.",
+      "en": "Peaceful means calm and quiet."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "adjectives",
+      "describing-places"
+    ],
+    "prerequisites": [
+      "V04"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Choose the adjective that matches the context."
+  },
+  {
+    "id": "V06",
+    "skill": "vocabulary",
+    "level": "B1",
+    "objective": "Recognise collocations with make and do",
+    "instructions": {
+      "ru": "Выбери естественное сочетание.",
+      "en": "Choose the natural collocation."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "I need to ___ a decision before Friday.",
+      "options": [
+        {
+          "id": "a",
+          "text": "do"
+        },
+        {
+          "id": "b",
+          "text": "make"
+        },
+        {
+          "id": "c",
+          "text": "take"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Устойчивое сочетание — make a decision.",
+      "en": "The natural collocation is “make a decision”."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "collocations",
+      "make-do"
+    ],
+    "prerequisites": [
+      "V02"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Select the natural collocation."
+  },
+  {
+    "id": "V07",
+    "skill": "vocabulary",
+    "level": "B2",
+    "objective": "Choose a precise word for a formal context",
+    "instructions": {
+      "ru": "Выбери наиболее точное слово.",
+      "en": "Choose the most precise word."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "The new policy aims to ___ unnecessary delays.",
+      "options": [
+        {
+          "id": "a",
+          "text": "minimise"
+        },
+        {
+          "id": "b",
+          "text": "decorate"
+        },
+        {
+          "id": "c",
+          "text": "pretend"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Minimise означает свести к минимуму.",
+      "en": "Minimise means to reduce something as much as possible."
+    },
+    "estimated_time": 4,
+    "tags": [
+      "formal-vocabulary",
+      "word-choice"
+    ],
+    "prerequisites": [
+      "V03"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Choose the word that fits the formal context."
+  },
+  {
+    "id": "G06",
+    "skill": "grammar",
+    "level": "A2",
+    "objective": "Use comparative adjectives",
+    "instructions": {
+      "ru": "Выбери правильную сравнительную форму.",
+      "en": "Choose the correct comparative form."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "This exercise is ___ than the last one.",
+      "options": [
+        {
+          "id": "a",
+          "text": "easy"
+        },
+        {
+          "id": "b",
+          "text": "easier"
+        },
+        {
+          "id": "c",
+          "text": "easiest"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Для короткого прилагательного easy используется форма easier.",
+      "en": "The comparative form of “easy” is “easier”."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "comparatives",
+      "adjectives"
+    ],
+    "prerequisites": [
+      "G01"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Choose the correct comparative form."
+  },
+  {
+    "id": "G07",
+    "skill": "grammar",
+    "level": "B1",
+    "objective": "Use reported speech with a past reporting verb",
+    "instructions": {
+      "ru": "Выбери правильную форму косвенной речи.",
+      "en": "Choose the correct reported speech form."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "“I am tired,” she said. → She said that she ___ tired.",
+      "options": [
+        {
+          "id": "a",
+          "text": "is"
+        },
+        {
+          "id": "b",
+          "text": "was"
+        },
+        {
+          "id": "c",
+          "text": "has been"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "При согласовании времён Present Simple обычно сдвигается в Past Simple.",
+      "en": "With a past reporting verb, the Present Simple commonly shifts to the Past Simple."
+    },
+    "estimated_time": 4,
+    "tags": [
+      "reported-speech",
+      "backshift"
+    ],
+    "prerequisites": [
+      "G02"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the correct backshifted tense."
+  },
+  {
+    "id": "G08",
+    "skill": "grammar",
+    "level": "B2",
+    "objective": "Use modal verbs for deduction",
+    "instructions": {
+      "ru": "Выбери модальный глагол для логического вывода.",
+      "en": "Choose the modal verb for a logical deduction."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "The lights are off and the door is locked. They ___ be at home.",
+      "options": [
+        {
+          "id": "a",
+          "text": "can't"
+        },
+        {
+          "id": "b",
+          "text": "must"
+        },
+        {
+          "id": "c",
+          "text": "should"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Can't выражает уверенный отрицательный вывод по имеющимся признакам.",
+      "en": "“Can't” expresses a strong negative deduction based on the evidence."
+    },
+    "estimated_time": 4,
+    "tags": [
+      "modal-verbs",
+      "deduction"
+    ],
+    "prerequisites": [
+      "G04"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Choose the modal verb that matches the evidence."
+  },
+  {
+    "id": "R04",
+    "skill": "reading",
+    "level": "A1",
+    "objective": "Find a date and time in a short notice",
+    "instructions": {
+      "ru": "Прочитай объявление и найди время начала.",
+      "en": "Read the notice and find the starting time."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "The English club meets on Thursday at 4:30 p.m. in Room 12. New members are welcome. Please bring a notebook.",
+      "prompt": "What time does the club meet?",
+      "options": [
+        {
+          "id": "a",
+          "text": "4:00 p.m."
+        },
+        {
+          "id": "b",
+          "text": "4:30 p.m."
+        },
+        {
+          "id": "c",
+          "text": "5:30 p.m."
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "В объявлении указано: Thursday at 4:30 p.m.",
+      "en": "The notice says Thursday at 4:30 p.m."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "reading-for-detail",
+      "notices"
+    ],
+    "prerequisites": [
+      "R01"
+    ],
+    "srs": {
+      "enabled": false
+    },
+    "success_criteria": "Find the exact time stated in the notice."
+  },
+  {
+    "id": "R05",
+    "skill": "reading",
+    "level": "B2",
+    "objective": "Identify contrast and the author's position",
+    "instructions": {
+      "ru": "Прочитай текст и определи позицию автора.",
+      "en": "Read the text and identify the author's position."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "Remote work can reduce commuting time and give employees more control over their schedules. Nevertheless, it may also make informal collaboration harder, especially for new team members. A flexible model that combines focused remote work with planned in-person meetings can preserve many benefits while addressing the main drawbacks.",
+      "prompt": "Which approach does the author support?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Fully remote work in every situation."
+        },
+        {
+          "id": "b",
+          "text": "A flexible model combining remote work and planned meetings."
+        },
+        {
+          "id": "c",
+          "text": "Returning to the office every day."
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Автор признаёт преимущества удалённой работы, но предлагает гибридный подход для решения её недостатков.",
+      "en": "The author recognises remote work's benefits but supports a flexible model to address its drawbacks."
+    },
+    "estimated_time": 5,
+    "tags": [
+      "reading-inference",
+      "argument"
+    ],
+    "prerequisites": [
+      "R02"
+    ],
+    "srs": {
+      "enabled": false
+    },
+    "success_criteria": "Identify the position supported by the whole passage."
   }
 ]
