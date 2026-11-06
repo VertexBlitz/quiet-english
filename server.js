@@ -90,6 +90,69 @@ function isAiConfigured() {
   return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
 }
 
+async function buildLearnerContext(userId, exerciseRef) {
+  if (!pool || !userId) return '';
+  try {
+    const [profileResult, planResult, errorsResult] = await Promise.all([
+      pool.query(
+        'SELECT goal, COALESCE(assessed_level,self_assessed_level) AS level FROM learner_profiles WHERE user_id=$1',
+        [userId]
+      ),
+      pool.query(
+        `SELECT p.level, p.goal, w.week_number, w.theme, w.objective
+         FROM learning_plans p LEFT JOIN plan_weeks w ON w.plan_id=p.id
+         WHERE p.user_id=$1 AND p.status='active'
+         ORDER BY w.week_number LIMIT 1`,
+        [userId]
+      ),
+      pool.query(
+        `SELECT error_type, incorrect_form, correction, explanation
+         FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL
+         ORDER BY updated_at DESC LIMIT 3`,
+        [userId]
+      )
+    ]);
+    const profile = profileResult.rows[0];
+    const plan = planResult.rows[0];
+    const lines = ['Learner context from the Quiet English account. Use it only to personalise teaching; do not repeat private account details.'];
+    if (profile?.level) lines.push('Estimated CEFR level: ' + profile.level + '.');
+    if (profile?.goal) lines.push('Learning goal: ' + profile.goal + '.');
+    if (plan?.theme) lines.push('Current plan topic: week ' + plan.week_number + ', ' + plan.theme + '. Objective: ' + plan.objective);
+    if (errorsResult.rows.length) {
+      lines.push('Recent learning patterns to support:');
+      for (const error of errorsResult.rows) {
+        lines.push('- ' + error.error_type + ': learner wrote "' + error.incorrect_form + '"; suggested correction: "' + error.correction + '".');
+      }
+    }
+    if (typeof exerciseRef === 'string' && /^[A-Z0-9_-]{2,40}$/.test(exerciseRef)) {
+      const exerciseResult = await pool.query(
+        `SELECT e.objective, e.instructions, e.content, e.explanation,
+                a.answer, a.is_correct, a.feedback
+         FROM exercises e
+         LEFT JOIN LATERAL (
+           SELECT answer, is_correct, feedback FROM exercise_attempts
+           WHERE user_id=$1 AND exercise_id=e.id
+           ORDER BY created_at DESC LIMIT 1
+         ) a ON TRUE
+         WHERE e.id=$2 AND e.status='published'`,
+        [userId, exerciseRef]
+      );
+      if (exerciseResult.rows[0]) {
+        const exercise = exerciseResult.rows[0];
+        lines.push('The learner opened exercise ' + exerciseRef + ': ' + exercise.objective + '.');
+        if (exercise.content?.prompt) lines.push('Exercise prompt: ' + exercise.content.prompt);
+        if (exercise.answer) lines.push('Latest attempt: ' + JSON.stringify(exercise.answer) + '; correct: ' + Boolean(exercise.is_correct) + '.');
+        if (exercise.explanation) lines.push('Approved exercise explanation: ' + JSON.stringify(exercise.explanation));
+        lines.push('Explain this specific exercise step by step. Do not invent an answer key if there is no recorded attempt.');
+      }
+    }
+    return lines.join('\n');
+  } catch (error) {
+    console.error('Unable to load learner chat context:', error?.message || 'unknown error');
+    return '';
+  }
+}
+
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
@@ -135,7 +198,12 @@ app.post('/api/chat', async (req, res) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...(await buildLearnerContext(req.session?.userId, req.body?.context_ref)
+            .then(context => context ? [{ role: 'system', content: context }] : [])),
+          ...messages
+        ],
         stream: false,
         max_tokens: 420,
         temperature: 0.35,
