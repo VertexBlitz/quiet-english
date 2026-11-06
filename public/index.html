@@ -8,23 +8,29 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
-  <script defer src="/app.js"></script>
+  <script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/app.js"></script>
 </head>
 <body>
   <header class="topbar wrap">
-    <a class="wordmark" href="/">QUIET ENGLISH<span> / AI TUTOR</span></a>
-    <nav aria-label="Main navigation">
-      <a  href="/method.html">Method</a>
-      <a  href="/tutor.html">Tutor</a>
-      <a  href="/topics.html">Topics</a>
-      <a  href="/progress.html">Progress</a>
-    </nav>
-  </header>
+  <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
+  <nav aria-label="Main navigation">
+    <a href="/plan.html" data-ru="План" data-en="Plan">План</a>
+    <a href="/practice.html" data-ru="Практика" data-en="Practice">Практика</a>
+    <a href="/review.html" data-ru="Повторение" data-en="Review">Повторение</a>
+    <a href="/progress.html" data-ru="Прогресс" data-en="Progress">Прогресс</a>
+    <a href="/tutor.html" data-ru="Чат" data-en="Tutor">Чат</a>
+  </nav>
+  <div class="language-switch" aria-label="Language">
+    <button type="button" data-set-lang="ru">RU</button>
+    <button type="button" data-set-lang="en">EN</button>
+    <a class="account-link" href="/login.html" data-ru="Войти" data-en="Sign in">Войти</a>
+  </div>
+</header>
   <main class="wrap"><section class="panel hero reveal">
   <p class="eyebrow">A QUIETER WAY TO LEARN</p>
   <h1>Learn English<br><em>with AI.</em></h1>
   <p class="lead">Персональный GPT-репетитор — 24/7, без расписания и стресса.</p>
-  <a class="button" href="/tutor.html">Начать занятие <span>↗</span></a>
+  <a class="button" href="/register.html">Создать план обучения <span>↗</span></a>
   <div class="hero-meta"><span>01 — 05</span><span>ENGLISH, ON YOUR TERMS</span></div>
 </section>
 <section class="panel intro reveal">
@@ -34,7 +40,7 @@
 </section>
 <section class="panel reveal split">
   <div><p class="eyebrow">YOUR NEXT STEP</p><h2>Start with<br>one sentence.</h2></div>
-  <div><p class="copy">Не нужно готовиться заранее. Выбери тему или просто начни диалог.</p><a class="button" href="/tutor.html">Открыть чат <span>↗</span></a></div>
+  <div><p class="copy">Не нужно готовиться заранее. Выбери тему или просто начни диалог.</p><a class="button" href="/plan.html">Открыть план <span>↗</span></a></div>
 </section></main>
   <footer class="footer wrap"><span>QUIET ENGLISH</span><span>Learn at your own pace · © 2026</span></footer>
 </body>
