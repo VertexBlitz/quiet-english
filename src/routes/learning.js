@@ -91,7 +91,7 @@ router.put('/onboarding', async (req, res, next) => {
   if (!goals.includes(goal)) return res.status(400).json({ error: 'Выбери цель обучения.' });
   if (self_assessed_level && !levels.includes(self_assessed_level)) return res.status(400).json({ error: 'Уровень указан некорректно.' });
   if (![5,10,15,30].includes(Number(minutes_per_day))) return res.status(400).json({ error: 'Выбери 5, 10, 15 или 30 минут.' });
-  if (![4,8,12].includes(Number(duration_weeks))) return res.status(400).json({ error: 'Выбери длительность плана.' });
+  if (Number(duration_weeks) !== 4) return res.status(400).json({ error: 'В первой версии доступен четырёхнедельный план.' });
   if (!Array.isArray(interests) || interests.length > 8 || interests.some(x => typeof x !== 'string' || x.length > 40)) {
     return res.status(400).json({ error: 'Проверь список интересов.' });
   }
@@ -100,7 +100,7 @@ router.put('/onboarding', async (req, res, next) => {
     await pool.query(
       `UPDATE learner_profiles
        SET goal=$2, self_assessed_level=$3, minutes_per_day=$4, duration_weeks=$5,
-           interests=$6::jsonb, preferred_language=$7, updated_at=NOW()
+           interests=$6::jsonb, preferred_language=$7, onboarding_completed_at=NOW(), updated_at=NOW()
        WHERE user_id=$1`,
       [req.user.id, goal, self_assessed_level || null, Number(minutes_per_day), Number(duration_weeks), JSON.stringify(interests), preferred_language]
     );
@@ -163,7 +163,7 @@ router.get('/today', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT p.id AS plan_id, p.level, p.goal, p.minutes_per_day,
-              d.id AS day_id, d.day_index, d.main_task_id, d.review_item_limit, d.mini_prompt,
+              d.id AS day_id, d.day_index, d.main_task_id, d.review_item_limit, d.mini_prompt, d.completed_at,
               w.week_number, w.theme, w.objective, e.skill, e.objective AS task_objective,
               e.level AS task_level, e.estimated_time, e.instructions, e.content, e.success_criteria
        FROM learning_plans p
@@ -265,6 +265,14 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
       );
     }
 
+    await pool.query(
+      `UPDATE plan_days d SET completed_at=COALESCE(d.completed_at,NOW())
+       FROM learning_plans p
+       WHERE d.plan_id=p.id AND p.user_id=$1 AND p.status='active'
+         AND d.main_task_id=$2
+         AND d.day_index=LEAST(GREATEST((CURRENT_DATE-p.starts_on+1),1),28)`,
+      [req.user.id, exercise.id]
+    );
     await recordActivity(req.user.id, { minutes: exercise.estimated_time, completedTasks: 1 });
     res.json({ attempt_id: result.rows[0].id, is_correct: isCorrect, score: isCorrect ? 100 : 0, feedback });
   } catch (error) { next(error); }
