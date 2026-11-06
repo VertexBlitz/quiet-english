@@ -80,7 +80,8 @@ app.post('/api/chat', async (req, res) => {
         messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
         stream: true,
         max_tokens: 420,
-        temperature: 0.35
+        temperature: 0.35,
+        chat_template_kwargs: { enable_thinking: false }
       }),
       signal: AbortSignal.timeout(90_000)
     });
