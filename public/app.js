@@ -219,7 +219,7 @@ if (form) {
     status.textContent = 'THINKING…';
 
     try {
-      const command = text.trim().split(/\\s+/, 1)[0].toLowerCase();
+      const command = text.trim().split(' ', 1)[0].toLowerCase();
       if (['/plan','/today','/practice','/review','/progress'].includes(command)) {
         const answer = await executeCommand(command);
         addMessage('assistant', answer);
