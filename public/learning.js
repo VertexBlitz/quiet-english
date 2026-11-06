@@ -27,7 +27,9 @@ if (onboarding) {
       for (const [key, value] of Object.entries(profile)) {
         const field = onboarding.elements.namedItem(key);
         if (!field || value == null) continue;
-        if (field instanceof RadioNodeList) {
+        if (field instanceof RadioNodeList && Array.isArray(value)) {
+          [...field].forEach(item => item.checked = value.includes(item.value));
+        } else if (field instanceof RadioNodeList) {
           [...field].forEach(item => item.checked = item.value === String(value));
         } else if (field.type === 'checkbox' && Array.isArray(value)) {
           field.checked = value.includes(field.value);
