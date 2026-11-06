@@ -78,7 +78,7 @@ app.post('/api/chat', async (req, res) => {
       body: JSON.stringify({
         model: MODEL,
         messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
-        stream: true,
+        stream: false,
         max_tokens: 420,
         temperature: 0.35,
         chat_template_kwargs: { enable_thinking: false }
@@ -110,32 +110,23 @@ app.post('/api/chat', async (req, res) => {
     });
   }
 
-  if (!upstream.body) {
-    return res.status(502).json({ error: 'Провайдер вернул пустой поток данных.' });
-  }
-
-  // Forward the provider's OpenAI-compatible SSE stream to the browser.
-  res.status(200);
-  res.set({
-    'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-cache, no-transform',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no'
-  });
-  res.flushHeaders?.();
-
+  let result;
   try {
-    for await (const chunk of upstream.body) {
-      if (res.destroyed) break;
-      if (!res.write(Buffer.from(chunk))) {
-        await new Promise(resolve => res.once('drain', resolve));
-      }
-    }
-  } catch (error) {
-    console.error('Workers AI stream error:', error?.message || 'unknown error');
-  } finally {
-    if (!res.writableEnded) res.end();
+    result = await upstream.json();
+  } catch {
+    return res.status(502).json({ error: 'Cloudflare вернул некорректный ответ. Попробуйте ещё раз.' });
   }
+
+  const message = result?.choices?.[0]?.message?.content
+    ?? result?.result?.response
+    ?? result?.response;
+
+  if (typeof message !== 'string' || !message.trim()) {
+    console.error('Workers AI returned no text. Response keys:', Object.keys(result || {}).join(', '));
+    return res.status(502).json({ error: 'Модель не вернула текстовый ответ. Попробуйте ещё раз.' });
+  }
+
+  return res.json({ message: message.trim(), demo: false });
 });
 
 app.listen(port, '0.0.0.0', () => {
