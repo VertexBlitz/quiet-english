@@ -23,4 +23,20 @@
 <div class="field-block"><label>SRS JSON <textarea name="srs_json" rows="3">{"enabled":true,"item_type":"grammar_rule"}</textarea></label></div>
 <p class="form-status" data-editor-status></p>
 <div class="rating-row"><button type="submit" class="button">Сохранить черновик</button><button type="button" class="button secondary" data-publish disabled>Опубликовать</button></div>
+</form></section><section class="panel"><p class="eyebrow">PLAN TEMPLATE EDITOR</p><h2>Шаблоны учебных планов.</h2><p class="copy">Редактируй недельные темы и последовательность заданий. Изменения применяются только к новым планам.</p><div data-plan-list class="exercise-grid"></div>
+<form data-plan-form><div class="form-grid">
+<label>ID<input name="id" placeholder="travel-4-week" required></label>
+<label>Название<input name="title" required></label>
+<label>Цель<select name="goal"><option>general</option><option>work</option><option>travel</option><option>communication</option><option>relocation</option><option>study</option></select></label>
+<label>Уровень от<select name="level_min"><option>Pre-A1</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
+<label>Уровень до<select name="level_max"><option>Pre-A1</option><option>A1</option><option>A2</option><option>B1</option><option selected>C2</option></select></label>
+<label>Минут в день<select name="minutes_per_day"><option>5</option><option selected>10</option><option>15</option><option>30</option></select></label>
+</div>
+<div class="field-block"><label>Weekly themes JSON <textarea name="weekly_themes" rows="14" required>[
+  {"theme":"Week 1","objective":"Goal for week one","tasks":["V01","G01","R01","V02","G02","R02","V03"]},
+  {"theme":"Week 2","objective":"Goal for week two","tasks":["V01","G03","R01","V02","G02","R02","V03"]},
+  {"theme":"Week 3","objective":"Goal for week three","tasks":["V01","G03","R02","V02","G04","R03","V03"]},
+  {"theme":"Week 4","objective":"Goal for week four","tasks":["V02","G04","R03","V03","G03","R02","V01"]}
+]</textarea></label></div>
+<p class="form-status" data-plan-editor-status></p><div class="rating-row"><button class="button" type="submit">Сохранить черновик плана</button><button class="button secondary" type="button" data-plan-publish disabled>Опубликовать шаблон</button></div>
 </form></section></main></body></html>
