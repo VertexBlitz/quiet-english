@@ -73,8 +73,7 @@ app.post('/api/chat', async (req, res) => {
       headers: {
         'Authorization': `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
         'Content-Type': 'application/json',
-        'Accept': 'text/event-stream',
-        'cf-aig-gateway-id': 'default'
+        'Accept': 'text/event-stream'
       },
       body: JSON.stringify({
         model: MODEL,
