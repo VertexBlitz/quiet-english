@@ -21,13 +21,14 @@ The locale is `en-US` so the full prosody score is available. A score is an auto
 2. In the Azure resource, obtain its key and region. Do not paste the key into chat, a GitHub issue, source code, or this document.
 3. Open the Render service's **Environment** page and add these variables:
    - `AZURE_SPEECH_ENABLED` = `true`
+   - `AZURE_SPEECH_GUARDIAN_APPROVED` = `true` only after the adult operator has reviewed the voice-processing and guardian requirements
    - `AZURE_SPEECH_KEY` = the resource key
    - `AZURE_SPEECH_REGION` = the exact resource region (for example, `westeurope`)
 4. Save the environment variables. Render will redeploy the service.
 5. Open `/api/speech/pronunciation/status`. The response should contain `"configured":true`.
 6. Test with a short read-aloud task and verify that the score, phonemes and word-level notes appear.
 
-If the adult operator has not reviewed the provider, cost and privacy requirements, leave `AZURE_SPEECH_ENABLED` unset or set it to `false`. Without this flag and the two credentials, the server returns a not-configured status and does not accept recordings for assessment.
+If the adult operator has not reviewed the provider, cost and privacy requirements, leave `AZURE_SPEECH_ENABLED` unset or set it to `false`. Without both approval flags and the two credentials, the server returns a not-configured status and does not accept recordings for assessment.
 
 ## Privacy and safeguards
 
