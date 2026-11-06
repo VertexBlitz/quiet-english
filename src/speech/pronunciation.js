@@ -77,7 +77,7 @@ function validateWavPcm16k(buffer) {
   if (format !== 1 || channels !== 1 || sampleRate !== 16_000 || bitsPerSample !== 16) {
     return { ok: false, reason: 'Audio must be mono PCM WAV, 16 kHz, 16-bit.' };
   }
-  if (dataLength < 2_000 || dataLength > 960_000) {
+  if (dataLength < 32_000 || dataLength > 960_000) {
     return { ok: false, reason: 'Record between 1 and 30 seconds of speech.' };
   }
   return { ok: true, durationSeconds: dataLength / 32_000 };
@@ -96,7 +96,7 @@ function safeErrorType(value) {
 function toPublicPronunciationResult(response) {
   const best = response?.NBest?.[0];
   const assessment = best?.PronunciationAssessment;
-  if (response?.RecognitionStatus !== 'Success' || !assessment) {
+  if (!['Success', 0, '0'].includes(response?.RecognitionStatus) || !assessment) {
     throw new Error('Speech assessment did not return a usable result.');
   }
   const words = Array.isArray(best.Words) ? best.Words.slice(0, 100).map(item => ({
@@ -150,8 +150,8 @@ async function assessPronunciationAudio(taskId, audioBuffer, env = process.env) 
     GradingSystem: 'HundredMark',
     Granularity: 'Phoneme',
     Dimension: 'Comprehensive',
-    EnableMiscue: true,
-    EnableProsodyAssessment: true
+    EnableMiscue: 'True',
+    EnableProsodyAssessment: 'True'
   };
   let response;
   try {
