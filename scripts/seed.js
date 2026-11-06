@@ -23,13 +23,7 @@ try {
         (id, skill, level, objective, instructions, content, answer_key, explanation,
          estimated_time, tags, prerequisites, srs, success_criteria, status)
        VALUES ($1,$2,$3,$4,$5::jsonb,$6::jsonb,$7::jsonb,$8::jsonb,$9,$10,$11,$12::jsonb,$13,'published')
-       ON CONFLICT (id) DO UPDATE SET
-         skill=EXCLUDED.skill, level=EXCLUDED.level, objective=EXCLUDED.objective,
-         instructions=EXCLUDED.instructions, content=EXCLUDED.content,
-         answer_key=EXCLUDED.answer_key, explanation=EXCLUDED.explanation,
-         estimated_time=EXCLUDED.estimated_time, tags=EXCLUDED.tags,
-         prerequisites=EXCLUDED.prerequisites, srs=EXCLUDED.srs,
-         success_criteria=EXCLUDED.success_criteria, updated_at=NOW()`,
+       ON CONFLICT (id) DO NOTHING`,
       [
         exercise.id, exercise.skill, exercise.level, exercise.objective,
         JSON.stringify(exercise.instructions), JSON.stringify(exercise.content),
