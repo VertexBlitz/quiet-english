@@ -22,10 +22,10 @@ const miniPrompts = [
 function chooseExercise(level, day) {
   const rank = levelRank[level] ?? 2;
   const cycles = rank <= 1
-    ? ['V04','G01','R01','V01','G05','R02','G01']
+    ? ['V04','G01','R04','V01','G06','R01','V05']
     : rank <= 3
-      ? ['V01','G02','R01','V02','G03','R02','G05']
-      : ['V03','G04','R02','V02','G04','R03','G03'];
+      ? ['V01','G02','R01','V02','G03','R02','G07']
+      : ['V03','G04','R02','V07','G08','R05','G03'];
   return cycles[(day - 1) % cycles.length];
 }
 
@@ -40,7 +40,7 @@ async function generatePlan(userId) {
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
-      'SELECT goal, COALESCE(assessed_level, self_assessed_level, \'A2\') AS level, minutes_per_day FROM learner_profiles WHERE user_id=$1 FOR UPDATE',
+      'SELECT goal, COALESCE(assessed_level, self_assessed_level, \'A2\') AS level, minutes_per_day, timezone, onboarding_completed_at FROM learner_profiles WHERE user_id=$1 FOR UPDATE',
       [userId]
     );
     const profile = rows[0];
