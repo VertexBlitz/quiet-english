@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Quiet English — personal AI English practice, at your pace.">
+  <title>English Tutor — Quiet English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <header class="topbar wrap">
+    <a class="wordmark" href="/">QUIET ENGLISH<span> / AI TUTOR</span></a>
+    <nav aria-label="Main navigation">
+      <a  href="/method.html">Method</a>
+      <a aria-current="page" href="/tutor.html">Tutor</a>
+      <a  href="/topics.html">Topics</a>
+      <a  href="/progress.html">Progress</a>
+    </nav>
+  </header>
+  <main class="wrap"><section class="panel page-head reveal"><p class="eyebrow">03 — YOUR TUTOR</p><h1>A little practice<br><em>goes a long way.</em></h1><p class="lead">Напиши сообщение на английском или русском — начнём с твоего уровня.</p></section>
+<section class="panel chat-panel reveal">
+  <div class="chat-head"><div><span class="eyebrow">ENGLISH TUTOR · GPT</span><p id="chat-status">DEMO MODE · READY WHEN YOU ARE</p></div><span class="online-dot">●</span></div>
+  <div class="messages" id="messages" aria-live="polite">
+    <div class="message assistant"><span class="speaker">TUTOR</span>Hello! I'm your English tutor. What would you like to practise today?</div>
+    <div class="message user"><span class="speaker">YOU</span>I want to speak more confidently.</div>
+    <div class="message assistant"><span class="speaker">TUTOR</span>Lovely goal. Let's start simply: what do you enjoy talking about?</div>
+  </div>
+  <form id="chat-form" class="chat-form">
+    <label class="sr-only" for="chat-input">Your message</label>
+    <input id="chat-input" name="message" placeholder="Write your message in English…" autocomplete="off" maxlength="2500" required>
+    <button aria-label="Send message" type="submit" class="send">↗</button>
+  </form>
+  <p class="chat-note">A calm space to learn. Your messages are sent to the tutor service when you press send.</p>
+</section></main>
+  <footer class="footer wrap"><span>QUIET ENGLISH</span><span>Learn at your own pace · © 2026</span></footer>
+</body>
+</html>
