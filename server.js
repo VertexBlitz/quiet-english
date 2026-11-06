@@ -93,6 +93,118 @@ function isAiConfigured() {
   return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
 }
 
+async function buildCommandReply(userId, command) {
+  if (!userId || !pool) {
+    return 'Войди в личный кабинет и создай учебный план, чтобы использовать эту команду.';
+  }
+
+  if (command === '/plan') {
+    const { rows } = await pool.query(
+      `SELECT p.level, p.goal, p.duration_weeks, p.minutes_per_day,
+              w.week_number, w.theme, w.objective
+       FROM learning_plans p
+       LEFT JOIN plan_weeks w ON w.plan_id=p.id
+       WHERE p.user_id=$1 AND p.status='active'
+       ORDER BY w.week_number`,
+      [userId]
+    );
+    if (!rows.length) return 'У тебя пока нет активного плана. Сначала заверши онбординг и тест уровня.';
+    const first = rows[0];
+    return [
+      'Твой план Quiet English:',
+      'Уровень: ' + first.level + ' · цель: ' + first.goal + '.',
+      'Срок: ' + first.duration_weeks + ' недели · ' + first.minutes_per_day + ' минут в день.',
+      ...rows.map(week => 'Неделя ' + week.week_number + ': ' + week.theme + ' — ' + week.objective)
+    ].join('\n');
+  }
+
+  if (command === '/today') {
+    const { rows } = await pool.query(
+      `SELECT d.day_index, d.main_task_id, d.mini_prompt, w.week_number, w.theme,
+              e.objective AS task_objective, e.skill, e.level, e.estimated_time
+       FROM learning_plans p
+       JOIN plan_days d ON d.plan_id=p.id
+       JOIN plan_weeks w ON w.id=d.week_id
+       LEFT JOIN exercises e ON e.id=d.main_task_id
+       WHERE p.user_id=$1 AND p.status='active'
+         AND d.day_index=LEAST(GREATEST(((NOW() AT TIME ZONE
+           (SELECT timezone FROM learner_profiles WHERE user_id=$1))::date-p.starts_on+1),1),28)
+       LIMIT 1`,
+      [userId]
+    );
+    if (!rows[0]) return 'Не нашёл сегодняшнюю задачу. Проверь, что у тебя есть активный план.';
+    const due = await pool.query(
+      'SELECT COUNT(*)::int AS count FROM srs_items WHERE user_id=$1 AND due_at<=NOW()',
+      [userId]
+    );
+    const today = rows[0];
+    return [
+      'Твоя задача на сегодня · неделя ' + today.week_number + ', день ' + today.day_index + '.',
+      'Тема: ' + today.theme + '.',
+      'Главная задача: ' + (today.task_objective || today.main_task_id || 'практика') + '.',
+      today.skill ? 'Навык: ' + today.skill + ' · уровень: ' + today.level + ' · ' + today.estimated_time + ' минут.' : '',
+      'Повторение: ' + due.rows[0].count + ' карточек.',
+      'Мини-практика: ' + today.mini_prompt
+    ].filter(Boolean).join('\n');
+  }
+
+  if (command === '/practice') {
+    const profile = await pool.query(
+      'SELECT COALESCE(assessed_level,self_assessed_level,\'A2\') AS level FROM learner_profiles WHERE user_id=$1',
+      [userId]
+    );
+    const level = profile.rows[0]?.level || 'A2';
+    const { rows } = await pool.query(
+      `SELECT id, skill, level, objective, estimated_time
+       FROM exercises WHERE status='published' AND skill IN ('vocabulary','grammar','reading')
+       ORDER BY (level=$1) DESC, skill, id LIMIT 5`,
+      [level]
+    );
+    if (!rows.length) return 'В библиотеке пока нет опубликованных заданий.';
+    return ['Подходящая практика для тебя:', ...rows.map(item =>
+      item.id + ' · ' + item.skill + ' · ' + item.level + ' · ' + item.estimated_time + ' мин — ' + item.objective
+    ), 'Открой раздел «Практика», чтобы начать.'].join('\n');
+  }
+
+  if (command === '/review') {
+    const { rows } = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM srs_items
+       WHERE user_id=$1 AND due_at<=NOW()`,
+      [userId]
+    );
+    return rows[0].count
+      ? 'У тебя ' + rows[0].count + ' карточек для повторения. Открой раздел «Повторение» и сначала попробуй вспомнить ответ, прежде чем раскрывать его.'
+      : 'На сегодня нет карточек для повторения. Новые появятся после практики.';
+  }
+
+  if (command === '/progress') {
+    const [summary, errors] = await Promise.all([
+      pool.query(
+        `SELECT COALESCE(SUM(minutes),0)::int AS minutes,
+                COALESCE(SUM(completed_tasks),0)::int AS tasks,
+                COUNT(*) FILTER (WHERE completed_tasks>0)::int AS active_days
+         FROM daily_activity WHERE user_id=$1`,
+        [userId]
+      ),
+      pool.query(
+        'SELECT COUNT(*)::int AS count FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL',
+        [userId]
+      )
+    ]);
+    const item = summary.rows[0];
+    return [
+      'Твой прогресс Quiet English:',
+      'Учебное время: ' + item.minutes + ' минут.',
+      'Выполнено заданий: ' + item.tasks + '.',
+      'Активных дней: ' + item.active_days + '.',
+      'Открытых ошибок для разбора: ' + errors.rows[0].count + '.',
+      'Подробная статистика доступна в разделе «Прогресс».'
+    ].join('\n');
+  }
+
+  return null;
+}
+
 async function buildLearnerContext(userId, exerciseRef) {
   if (!pool || !userId) return '';
   try {
@@ -182,6 +294,17 @@ app.post('/api/chat', async (req, res) => {
       return res.status(400).json({ error: 'Сообщение должно содержать от 1 до 1 800 символов.' });
     }
     messages.push({ role: item.role, content });
+  }
+
+  const command = messages.at(-1)?.content.trim().toLowerCase();
+  if (['/plan','/today','/practice','/review','/progress'].includes(command)) {
+    try {
+      const message = await buildCommandReply(req.session?.userId, command);
+      return res.json({ message, demo: false, command });
+    } catch (error) {
+      console.error('Tutor command failed:', error?.message || 'unknown error');
+      return res.status(500).json({ error: 'Не удалось загрузить учебные данные. Попробуй ещё раз.' });
+    }
   }
 
   if (!isAiConfigured()) {
