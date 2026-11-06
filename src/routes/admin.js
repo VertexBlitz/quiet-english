@@ -103,6 +103,17 @@ router.post('/exercises/:id/status', async (req, res, next) => {
 
 
 const goals = ['general','work','travel','exam','communication','relocation','study'];
+async function validateTemplateExerciseIds(weeklyThemes) {
+  const ids = [...new Set(weeklyThemes.flatMap(week => week.tasks || []))];
+  const { rows } = await pool.query(
+    "SELECT id FROM exercises WHERE status='published' AND id = ANY($1::text[])",
+    [ids]
+  );
+  const available = new Set(rows.map(row => row.id));
+  const missing = ids.filter(id => !available.has(id));
+  return missing.length ? 'Опубликованные задания не найдены: ' + missing.join(', ') : null;
+}
+
 function validatePlanTemplate(body, creating = false) {
   if (creating && (typeof body.id !== 'string' || !/^[a-z0-9-]{3,60}$/.test(body.id))) return 'ID плана должен содержать 3–60 строчных латинских букв, цифр и дефисов.';
   if (typeof body.title !== 'string' || !body.title.trim() || body.title.length > 120) return 'Укажи название плана.';
@@ -141,6 +152,8 @@ router.post('/plans', async (req, res, next) => {
   if (error) return res.status(400).json({ error });
   const item = req.body;
   try {
+    const taskError = await validateTemplateExerciseIds(item.weekly_themes);
+    if (taskError) return res.status(400).json({ error: taskError });
     const { rows } = await pool.query(
       `INSERT INTO plan_templates (id,title,goal,level_min,level_max,duration_weeks,minutes_per_day,weekly_themes,status)
        VALUES ($1,$2,$3,$4,$5,4,$6,$7::jsonb,'draft')
@@ -159,6 +172,8 @@ router.patch('/plans/:id', async (req, res, next) => {
   if (error) return res.status(400).json({ error });
   const item = req.body;
   try {
+    const taskError = await validateTemplateExerciseIds(item.weekly_themes);
+    if (taskError) return res.status(400).json({ error: taskError });
     const { rows } = await pool.query(
       `UPDATE plan_templates SET title=$2,goal=$3,level_min=$4,level_max=$5,
        duration_weeks=4,minutes_per_day=$6,weekly_themes=$7::jsonb,version=version+1,updated_at=NOW()
