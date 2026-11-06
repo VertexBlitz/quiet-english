@@ -4,8 +4,27 @@ if (accountLink) {
     .then(async response => response.ok ? response.json() : null)
     .then(data => {
       if (!data?.user) return;
+      const lang = document.documentElement.lang;
       accountLink.href = '/plan.html';
-      accountLink.textContent = document.documentElement.lang === 'en' ? 'My plan' : 'Мой план';
+      accountLink.textContent = lang === 'en' ? 'My plan' : 'Мой план';
+      const logout = document.createElement('button');
+      logout.type = 'button';
+      logout.className = 'nav-logout';
+      logout.textContent = lang === 'en' ? 'Sign out' : 'Выйти';
+      logout.addEventListener('click', async () => {
+        logout.disabled = true;
+        try {
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}'
+          });
+        } finally {
+          location.href = '/login.html';
+        }
+      });
+      accountLink.parentElement?.appendChild(logout);
     })
     .catch(() => {});
 }
