@@ -28,8 +28,12 @@ A bilingual (Russian/English) personal English-learning platform built on the ex
 - Simple admin CMS for exercise and four-week plan templates
 - RU/EN language switch
 - Existing AI tutor with optional account-derived context and slash commands
+- Skills Lab with 12 original listening dialogues and comprehension questions
+- Browser speech synthesis with selectable English voice, accent and playback speed
+- Writing prompts with AI feedback and speaking prompts with a typed or browser-transcribed response
+- Eight scripted pronunciation exercises with Azure Speech phoneme, word, fluency, completeness and prosody scoring when the operator enables the integration
 
-Listening media, structured writing assessment, voice recording, ASR, pronunciation scoring, advanced CMS workflows and formal exam preparation are out of this MVP.
+The listening library uses the learner's device/browser speech synthesis rather than prerecorded studio audio. Pronunciation scoring is disabled until an adult service operator configures an Azure Speech resource and reviews the privacy and billing implications.
 
 ## Important rollout and safety gates
 
@@ -47,12 +51,15 @@ Set these in Render → Environment. Never commit real values:
 
 - `DATABASE_URL` — persistent PostgreSQL connection string
 - `SESSION_SECRET` — random secret with at least 32 characters
-- `APP_BASE_URL` — canonical public site origin, e.g. `https://quiet-english-tutor.onrender.com`
+- `APP_BASE_URL` — canonical public site origin, e.g. `https://app.quietenglishcom.aclclouds.online`
 - `RESEND_API_KEY` — email API key
 - `EMAIL_FROM` — sender address verified with the email provider
 - `REGISTRATION_ENABLED` — keep `false` until launch checks are complete
 - `MINOR_SIGNUP_ENABLED` — keep `false` until the minors/guardian process has been reviewed
 - `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` — existing AI integration
+- `AZURE_SPEECH_ENABLED=true` — explicit switch to enable external pronunciation assessment after adult operator approval
+- `AZURE_SPEECH_KEY` — Azure Speech resource key; store only in Render Environment, never in GitHub or chat
+- `AZURE_SPEECH_REGION` — Azure Speech resource region, such as the region assigned to that resource
 - `NODE_ENV=production` — secure production cookies
 - `PGSSLMODE=require` if your PostgreSQL provider requires verified TLS; use `disable` only for a trusted local development database
 
@@ -107,6 +114,7 @@ Replace the example email with the trusted adult operator's own verified address
 - `/review.html` — spaced repetition
 - `/progress.html` — personal progress
 - `/errors.html` — personal error journal
+- `/skills.html` — listening, writing, speaking and pronunciation practice
 - `/tutor.html` — existing AI tutor
 - `/admin.html` — admin-only CMS
 
@@ -119,17 +127,22 @@ New route groups:
 - `/api/auth` — registration, sign-in, email verification, guardian attestation, password reset, data export and account deletion
 - `/api/learning` — onboarding, placement, plan, exercises, attempts, review, progress and errors
 - `/api/admin` — admin-only exercise and plan-template management
+- `/api/speech/pronunciation` — consent-based, fixed-text pronunciation assessment; WAV audio is processed in memory and forwarded to Azure only when enabled
 
 CMS changes to a published template affect newly generated plans. Existing learner plans keep their copied weekly themes and daily task assignments.
 
 ## Tests
 
 - `npm run check` — syntax-checks server, client, scripts and test JavaScript; parses exercise seed JSON.
-- `npm test` — runs unit tests for preliminary CEFR placement and hiding answer keys from public questions.
+- `npm test` — runs unit tests for preliminary CEFR placement, safe public exercises, and pronunciation audio/result validation.
 - GitHub Actions runs these checks for the feature branch and pull requests to main.
+
+## Pronunciation service setup
+
+See [docs/azure-speech-pronunciation.md](docs/azure-speech-pronunciation.md) before enabling the feature. The server accepts only fixed practice-task IDs and mono PCM WAV at 16 kHz, enforces a short recording limit and a per-IP rate limit, and does not write audio to disk. The client asks for separate consent before sending a recording. The audio is processed by the configured Azure Speech resource, so an adult operator must review the applicable privacy notice and pricing before enabling it.
+
+Keep `AZURE_SPEECH_ENABLED` unset or `false` until the resource, permissions and budget controls have been reviewed. Never send Azure keys through chat or commit them to the repository.
 
 ## Deployment notes
 
-This work is developed in `quiet-english-2-mvp`, not deployed to the existing production Render service. The production site remains unchanged until the pull request is reviewed and merged.
-
-After merging, the site can serve the new pages, but account and learning APIs remain disabled until the required database and session settings exist. Email registration additionally requires the Resend settings. Keep the registration feature flags off until the safety and privacy review is complete.
+The `main` branch is connected to the Render web service and deploys automatically. Merge the feature pull request to publish these changes. Render runs `npm run check`, database migrations and seed updates during startup. Account registration remains disabled until a permanent database, email delivery and the age/guardian process have been reviewed.
