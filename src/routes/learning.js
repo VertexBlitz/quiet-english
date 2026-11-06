@@ -260,11 +260,27 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
     }
 
     if (!isCorrect && selectedOption) {
-      await pool.query(
-        `INSERT INTO error_journal (user_id, attempt_id, error_type, incorrect_form, correction, explanation)
-         VALUES ($1,$2,$3,$4,$5,$6)`,
-        [req.user.id, result.rows[0].id, exercise.skill, selectedOption.text, correctOption?.text || 'Review the correct answer', exercise.explanation?.en || exercise.explanation?.ru || null]
+      const correction = correctOption?.text || 'Review the correct answer';
+      const explanation = exercise.explanation?.en || exercise.explanation?.ru || null;
+      const prior = await pool.query(
+        `SELECT id FROM error_journal
+         WHERE user_id=$1 AND error_type=$2 AND incorrect_form=$3 AND resolved_at IS NULL
+         ORDER BY updated_at DESC LIMIT 1`,
+        [req.user.id, exercise.skill, selectedOption.text]
       );
+      if (prior.rows[0]) {
+        await pool.query(
+          `UPDATE error_journal SET occurrences=occurrences+1, correction=$2, explanation=$3,
+           attempt_id=$4, updated_at=NOW() WHERE id=$1`,
+          [prior.rows[0].id, correction, explanation, result.rows[0].id]
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO error_journal (user_id, attempt_id, error_type, incorrect_form, correction, explanation)
+           VALUES ($1,$2,$3,$4,$5,$6)`,
+          [req.user.id, result.rows[0].id, exercise.skill, selectedOption.text, correction, explanation]
+        );
+      }
     }
 
     await pool.query(
