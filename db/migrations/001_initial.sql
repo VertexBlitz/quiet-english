@@ -33,6 +33,7 @@ CREATE INDEX IF NOT EXISTS email_tokens_user_type_idx ON email_tokens(user_id, t
 CREATE TABLE IF NOT EXISTS learner_profiles (
   user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   preferred_language TEXT NOT NULL DEFAULT 'ru' CHECK (preferred_language IN ('ru', 'en')),
+  timezone TEXT NOT NULL DEFAULT 'UTC',
   goal TEXT NOT NULL DEFAULT 'general',
   self_assessed_level TEXT,
   assessed_level TEXT,
