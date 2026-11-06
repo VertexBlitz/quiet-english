@@ -204,7 +204,7 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
 .nav-logout:disabled{opacity:.5}
 @media(max-width:760px){
   body{padding-bottom:104px}
-  .topbar nav{position:fixed;left:12px;right:12px;bottom:12px;z-index:100;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:10px 6px;background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,.12);backdrop-filter:blur(12px)}
+  .topbar nav{position:fixed;left:12px;right:12px;bottom:12px;z-index:100;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;padding:10px 6px;background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,.12);backdrop-filter:blur(12px)}
   .topbar nav a{text-align:center;font-size:10px;padding:5px 1px;white-space:nowrap}
   .topbar .language-switch{gap:8px}
 }
