@@ -442,7 +442,7 @@
       if (demoMode && window.QEDemo) {
         skills = window.QEDemo.getSkillPracticeStats();
       } else {
-        const response = await fetch('/api/learning/progress', { credentials:'same-origin' });
+        const response = await fetch('/api/learning/skill-practice', { credentials:'same-origin' });
         if (response.ok) skills = (await response.json()).skills || [];
       }
       const summary = skills.filter(item => ['listening','writing','speaking'].includes(item.skill))
@@ -462,7 +462,14 @@
   });
 
   (async () => {
-    if (window.QEDemo) demoMode = await window.QEDemo.ensure();
+    try {
+      const response = await fetch('/api/auth/me', { credentials:'same-origin' });
+      const data = response.ok ? await response.json() : null;
+      if (data?.user) demoMode = false;
+      else if (window.QEDemo) demoMode = await window.QEDemo.ensure();
+    } catch {
+      if (window.QEDemo) demoMode = await window.QEDemo.ensure();
+    }
     chooseSkill('listening');
   })();
 
