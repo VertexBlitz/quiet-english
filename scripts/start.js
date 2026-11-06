@@ -15,6 +15,9 @@ function run(script) {
   }
 }
 
+console.log('Quiet English: checking JavaScript syntax and content…');
+run('check.js');
+
 if (process.env.DATABASE_URL) {
   console.log('Quiet English: checking database migrations…');
   run('migrate.js');
