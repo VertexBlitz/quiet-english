@@ -231,6 +231,7 @@
   }
 
   function chooseSkill(skill) {
+    stopRecognition();
     currentSkill = skill;
     tabs.forEach(tab => tab.setAttribute('aria-pressed', String(tab.dataset.skill === skill)));
     renderList();
@@ -263,7 +264,7 @@
   function renderListening(task) {
     const intro = document.createElement('p');
     intro.className = 'copy';
-    intro.textContent = 'Сначала прослушай запись, не открывая расшифровку. Можно повторять её и менять скорость или голос.';
+    intro.textContent = 'Сначала прослушай запись, не открывая расшифровку. Можно повторять её, менять скорость, акцент и доступный на устройстве английский голос. Озвучивание создаётся синтезатором речи браузера.';
     const toolbar = document.createElement('div');
     toolbar.className = 'skill-toolbar';
     const play = document.createElement('button');
