@@ -201,7 +201,7 @@
     transcriptButton.type = 'button';
     transcriptButton.className = 'text-link';
     transcriptButton.textContent = 'Показать расшифровку';
-    transcriptButton.hidden = !(!('speechSynthesis' in window));
+    transcriptButton.hidden = 'speechSynthesis' in window;
     const passage = document.createElement('div');
     passage.className = 'skill-passage';
     passage.textContent = task.transcript;
@@ -265,7 +265,7 @@
     label.style.display = 'block';
     label.style.marginBottom = '8px';
     const textarea = document.createElement('textarea');
-    textarea.maxLength = 1300;
+    textarea.maxLength = 1000;
     textarea.placeholder = 'Write your answer here…';
     const count = document.createElement('p');
     count.className = 'skill-word-count';
@@ -308,7 +308,7 @@
     const stop = document.createElement('button');
     stop.className = 'button secondary'; stop.type = 'button'; stop.textContent = 'Остановить'; stop.disabled = true;
     const text = document.createElement('textarea');
-    text.maxLength = 1300;
+    text.maxLength = 1000;
     text.placeholder = 'Здесь появится распознанная речь. Можно также напечатать ответ вручную…';
     text.setAttribute('aria-label', 'Твой ответ');
     const hasSpeechApi = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
@@ -398,7 +398,7 @@
       'Start with exactly: Estimated score: NN/100. The score is approximate and should reflect task completion, grammar, vocabulary and clarity.',
       'Do not ask for or repeat personal contact details. Keep the review constructive.'
     ].join(' ');
-    const content = directions + '\n' + taskText + '\nLearner response:\n' + answer.slice(0,1300);
+    const content = directions + '\n' + taskText + '\nLearner response:\n' + answer.slice(0,1000);
     if (content.length > 1800) throw new Error('Ответ слишком длинный. Сократи текст и отправь ещё раз.');
     const response = await fetch('/api/chat', {
       method: 'POST',
