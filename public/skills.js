@@ -536,7 +536,7 @@
     const consentInput = document.createElement('input');
     consentInput.type = 'checkbox';
     const consentText = document.createElement('span');
-    consentText.textContent = 'Я согласен(на) отправить эту запись в Microsoft Azure Speech для проверки произношения. Запись не сохраняется Quiet English. Если мне нет 18 лет, у меня есть разрешение родителя или опекуна на использование внешней проверки голоса.';
+    consentText.textContent = 'Я согласен(на) отправить эту запись в Microsoft Azure Speech для проверки произношения. Запись не сохраняется Quiet English. Если мне нет 18 лет, я использую эту функцию только после того, как родитель или опекун ознакомился с обработкой голоса и одобрил её.';
     consent.append(consentInput, consentText);
 
     const controls = document.createElement('div');
