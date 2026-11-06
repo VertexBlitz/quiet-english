@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Listening, writing and speaking practice in Quiet English.">
+  <title>Skills Lab — Quiet English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/i18n.js"></script>
+  <script defer src="/demo.js"></script>
+  <script defer src="/session.js"></script>
+  <script defer src="/skills.js"></script>
+  <style>
+    .skill-tabs{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 26px}
+    .skill-tab{border:1px solid var(--line);border-radius:999px;padding:12px 18px;background:#fff;color:var(--ink);font:400 13px Inter,Arial,sans-serif;cursor:pointer}
+    .skill-tab[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+    .skill-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .skill-task{display:flex;flex-direction:column;gap:12px;padding:22px;border:1px solid var(--line);border-radius:18px;background:#fff}
+    .skill-task h3{margin:0;font-size:20px;font-weight:400;letter-spacing:-.035em}
+    .skill-task p{margin:0;color:var(--muted);font-size:13px;line-height:1.65}
+    .skill-task .button{margin-top:auto;justify-content:space-between}
+    .skill-workspace{display:grid;gap:18px}
+    .skill-workspace[hidden]{display:none}
+    .skill-workspace textarea{width:100%;min-height:180px;resize:vertical;border:1px solid var(--line);border-radius:14px;padding:16px;background:#fff;color:var(--ink);font:400 15px/1.7 Inter,Arial,sans-serif}
+    .skill-workspace textarea:focus{outline:2px solid #bbb;outline-offset:2px}
+    .skill-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .skill-toolbar select{border:1px solid var(--line);border-radius:999px;padding:11px 14px;background:#fff;font:400 13px Inter,Arial,sans-serif}
+    .skill-passage{padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--paper);font-size:16px;line-height:1.8}
+    .skill-question{border:1px solid var(--line);border-radius:14px;padding:17px;margin:0 0 12px}
+    .skill-question legend{padding:0 6px;font-weight:400;line-height:1.5}
+    .skill-choice{display:flex;gap:10px;align-items:flex-start;margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;line-height:1.5;cursor:pointer}
+    .skill-choice:has(input:checked){background:var(--soft);border-color:#888}
+    .skill-choice input{margin-top:3px}
+    .skill-result{padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--paper);white-space:pre-wrap;line-height:1.7}
+    .skill-result[hidden]{display:none}
+    .skill-status{min-height:20px;color:var(--muted);font-size:13px;line-height:1.5}
+    .skill-status.error-text{color:#9b3434}
+    .skill-status.success-text{color:#36734f}
+    .skill-word-count{color:var(--muted);font-size:12px}
+    .skill-consent{margin:0;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--paper);color:var(--muted);font-size:12px;line-height:1.6}
+    .skill-metrics{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:11px}
+    .skill-metrics span{border:1px solid var(--line);border-radius:999px;padding:7px 10px}
+    .skill-task h3,.skill-task p{overflow-wrap:anywhere}
+    @media(max-width:760px){.skill-list{grid-template-columns:1fr}.skill-workspace{gap:14px}}
+  </style>
+</head>
+<body>
+  <header class="topbar wrap">
+    <a class="wordmark" href="/">QUIET ENGLISH<span> / SKILLS LAB</span></a>
+    <nav aria-label="Main navigation">
+      <a href="/plan.html">План</a>
+      <a href="/practice.html">Практика</a>
+      <a href="/skills.html" aria-current="page">Навыки</a>
+      <a href="/progress.html">Прогресс</a>
+      <a href="/tutor.html">Чат</a>
+    </nav>
+    <div class="language-switch" aria-label="Language">
+      <button type="button" data-set-lang="ru" class="active">RU</button>
+      <button type="button" data-set-lang="en">EN</button>
+      <a class="account-link" href="/login.html">Аккаунт</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="panel page-head">
+      <p class="eyebrow">04 — LISTENING · WRITING · SPEAKING</p>
+      <h1>Практика <em>навыков.</em></h1>
+      <p class="lead">Слушай короткие диалоги, пиши тексты и тренируй устные ответы. После письменных и устных заданий AI-репетитор даст рекомендации.</p>
+      <div class="skill-metrics"><span>Короткие занятия</span><span>Уровни A2–B1</span><span>Можно без аккаунта</span></div>
+    </section>
+    <section class="panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">CHOOSE A SKILL</p><h2>Что будем тренировать?</h2></div>
+      </div>
+      <div class="skill-tabs" role="group" aria-label="Навыки">
+        <button class="skill-tab" type="button" data-skill="listening" aria-pressed="true">Аудирование</button>
+        <button class="skill-tab" type="button" data-skill="writing" aria-pressed="false">Письмо</button>
+        <button class="skill-tab" type="button" data-skill="speaking" aria-pressed="false">Говорение</button>
+      </div>
+      <p class="skill-status" data-skill-summary aria-live="polite"></p>
+      <div class="skill-list" data-skill-list></div>
+    </section>
+    <section class="panel skill-workspace" data-skill-workspace hidden>
+      <div class="section-heading">
+        <div><p class="eyebrow" data-task-meta></p><h2 data-task-title></h2></div>
+        <button class="button secondary" type="button" data-back-to-skills>← Все задания</button>
+      </div>
+      <p class="copy" data-task-instructions></p>
+      <div data-task-content></div>
+      <p class="skill-status" data-task-status aria-live="polite"></p>
+      <div class="skill-result" data-task-result hidden></div>
+    </section>
+    <p class="skill-consent">Конфиденциальность: ответы и расшифровки не сохраняются в аккаунте. Для обратной связи текст отправляется AI-сервису. При голосовом вводе браузер или его поставщик может обрабатывать аудио для распознавания речи; Quiet English сохраняет только статистику занятия, а не аудиозапись или текст ответа. Не используй в заданиях пароли, адреса, телефоны и другие личные данные. Можно отвечать текстом без микрофона.</p>
+  </main>
+  <footer class="footer wrap"><span>QUIET ENGLISH</span><span>Learn at your own pace · © 2026</span></footer>
+</body>
+</html>
