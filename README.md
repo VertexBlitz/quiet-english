@@ -57,9 +57,11 @@ Set these in Render → Environment. Never commit real values:
 - `REGISTRATION_ENABLED` — keep `false` until launch checks are complete
 - `MINOR_SIGNUP_ENABLED` — keep `false` until the minors/guardian process has been reviewed
 - `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` — existing AI integration
-- `AZURE_SPEECH_ENABLED=true` — explicit switch to enable external pronunciation assessment after adult operator approval
-- `AZURE_SPEECH_KEY` — Azure Speech resource key; store only in Render Environment, never in GitHub or chat
-- `AZURE_SPEECH_REGION` — Azure Speech resource region, such as the region assigned to that resource
+- Optional, pronunciation scoring only (keep disabled until an adult operator has reviewed privacy and pricing):
+  - `AZURE_SPEECH_ENABLED=true` — explicit feature switch
+  - `AZURE_SPEECH_GUARDIAN_APPROVED=true` — adult operator's approval for external voice processing, including minors after guardian review
+  - `AZURE_SPEECH_KEY` — Azure Speech resource key; store only in Render Environment, never in GitHub or chat
+  - `AZURE_SPEECH_REGION` — Azure Speech resource region, such as the region assigned to that resource
 - `NODE_ENV=production` — secure production cookies
 - `PGSSLMODE=require` if your PostgreSQL provider requires verified TLS; use `disable` only for a trusted local development database
 
