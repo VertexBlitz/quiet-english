@@ -120,3 +120,82 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
   .footer{gap:14px;flex-wrap:wrap}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}.reveal{opacity:1;transform:none}}
+
+
+/* Quiet English 2.0 learning and account UI */
+.language-switch{display:flex;align-items:center;gap:7px}
+.language-switch button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 10px;font:500 10px Inter,Arial,sans-serif;color:var(--muted);cursor:pointer}
+.language-switch button.active{background:var(--ink);border-color:var(--ink);color:var(--white)}
+.account-link{font-size:11px;border-bottom:1px solid var(--line);padding:6px 2px}
+.auth-layout{display:flex;justify-content:center;padding:42px 0}
+.auth-card{width:min(660px,100%);padding:56px}
+.auth-card h1{font-size:clamp(40px,6vw,60px)}
+.auth-card form,.auth-card label{display:flex;flex-direction:column;gap:9px}
+.auth-card form{gap:18px;margin-top:28px}
+.auth-card label,.form-grid label{font-size:12px;color:var(--muted);font-weight:400}
+.auth-card input,.auth-card select,.form-grid input,.form-grid select,.field-block select{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:#fff;color:var(--ink);font:400 14px Inter,Arial,sans-serif}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-grid label{display:flex;flex-direction:column;gap:9px}
+.form-status{min-height:20px;font-size:13px;line-height:1.5;color:var(--muted)}
+.error-text{color:#9b3434!important}
+.success-text{color:#36734f!important}
+.success-text::before{content:"✓ "}
+.notice-card{padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--paper)}
+.notice-card[hidden]{display:none}
+.check-row{display:flex!important;flex-direction:row!important;align-items:flex-start;gap:10px!important;line-height:1.55}
+.check-row input{width:16px;height:16px;flex:0 0 16px;margin-top:2px}
+.auth-foot{margin:24px 0 0;font-size:13px;color:var(--muted)}
+.auth-foot a{text-decoration:underline;text-underline-offset:3px}
+.field-block{margin:28px 0}
+.field-block h3{font-size:18px;font-weight:400}
+.check-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.question-card{border:1px solid var(--line);border-radius:18px;padding:20px;margin:0 0 15px;min-width:0}
+.question-card legend{font-size:16px;line-height:1.5;font-weight:400;padding:0 8px}
+.option-row{display:flex;align-items:flex-start;gap:12px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;margin:8px 0;cursor:pointer;line-height:1.5}
+.option-row:has(input:checked){border-color:var(--ink);background:var(--soft)}
+.option-row input{margin-top:3px;accent-color:var(--ink)}
+.section-heading{display:flex;justify-content:space-between;align-items:center;gap:18px}
+.section-heading h2{margin-bottom:0}
+.pill{border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--muted);font-size:11px;white-space:nowrap}
+.task-card,.exercise-card,.week-row,.error-card{border:1px solid var(--line);border-radius:18px;padding:22px;margin:12px 0}
+.task-card h3,.exercise-card h3,.week-row h3{font-size:20px;font-weight:400;letter-spacing:-.03em;margin:0 0 12px}
+.task-card .eyebrow,.exercise-card .eyebrow{margin-bottom:12px}
+.today-secondary{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}
+.today-secondary article{padding:20px;border:1px solid var(--line);border-radius:16px}
+.today-secondary h3{font-size:24px;font-weight:300;margin:0 0 12px}
+.week-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.week-row{margin:0}
+.week-row h3{font-size:16px}
+.week-row p{font-size:13px;color:var(--muted);line-height:1.6;margin:0}
+.exercise-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.exercise-card{margin:0}
+.exercise-card p:not(.eyebrow){font-size:13px;line-height:1.6;color:var(--muted)}
+.text-link{cursor:pointer}
+.exercise-prompt{font-size:24px;font-weight:400;letter-spacing:-.03em;margin:22px 0}
+.reading-passage{border-left:2px solid var(--line);padding:10px 20px;margin:16px 0 24px;color:var(--muted);font-size:15px;line-height:1.8}
+.option-list{margin:20px 0}
+.result-box{margin:22px 0;padding:18px;border:1px solid var(--line);border-radius:16px;line-height:1.65}
+.result-box.success{border-color:#8bb79a;background:#f4faf5}
+.review-card{max-width:760px;margin-inline:auto}
+.review-answer{font-size:22px;font-weight:500;margin:24px 0}
+.rating-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.button.secondary{background:var(--soft);border-color:var(--line);color:var(--ink)}
+.button.secondary:hover{background:var(--ink);color:#fff}
+.stats-personal strong{font-size:52px}
+.skill-progress-list{display:grid;gap:14px}
+.skill-progress-row{display:grid;grid-template-columns:130px 48px 1fr;align-items:center;gap:12px;font-size:13px}
+.skill-progress-row strong{text-align:right}
+.progress-track{height:8px;background:var(--soft);border-radius:999px;overflow:hidden}
+.progress-fill{height:100%;background:#777;border-radius:999px}
+.corrected-form{font-weight:500}
+.error-card{padding:20px}
+.error-card p{line-height:1.6}
+@media(max-width:760px){
+  .language-switch{width:100%;justify-content:flex-start}
+  .auth-layout{padding:18px 0}
+  .auth-card{padding:28px}
+  .form-grid,.today-secondary,.week-list,.exercise-grid{grid-template-columns:1fr}
+  .check-grid{grid-template-columns:1fr 1fr}
+  .section-heading{align-items:flex-start;flex-direction:column}
+  .skill-progress-row{grid-template-columns:90px 42px 1fr}
+}
