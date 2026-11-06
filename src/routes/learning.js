@@ -45,6 +45,7 @@ async function generatePlan(userId) {
     );
     const profile = rows[0];
     if (!profile) throw new Error('Learner profile is missing.');
+    if (!profile.onboarding_completed_at) throw new Error('Сначала заверши настройку учебного профиля.');
     await client.query('UPDATE learning_plans SET status=\'archived\' WHERE user_id=$1 AND status=\'active\'', [userId]);
     const planResult = await client.query(
       `INSERT INTO learning_plans (user_id, goal, level, duration_weeks, minutes_per_day, starts_on)
