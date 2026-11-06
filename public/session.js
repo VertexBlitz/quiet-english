@@ -3,6 +3,8 @@
   if (nav && !nav.querySelector('a[href="/skills.html"]')) {
     const skillsLink = document.createElement('a');
     skillsLink.href = '/skills.html';
+    skillsLink.setAttribute('data-ru', 'Навыки');
+    skillsLink.setAttribute('data-en', 'Skills Lab');
     skillsLink.textContent = document.documentElement.lang === 'en' ? 'Skills Lab' : 'Навыки';
     const practiceLink = nav.querySelector('a[href="/practice.html"]');
     if (practiceLink) practiceLink.insertAdjacentElement('afterend', skillsLink);
