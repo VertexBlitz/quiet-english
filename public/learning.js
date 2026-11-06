@@ -2,6 +2,9 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
 async function learningApi(path, options = {}) {
+  if (window.QEDemo && await window.QEDemo.ensure()) {
+    return window.QEDemo.request(path, options);
+  }
   const response = await fetch('/api/learning' + path, {
     credentials: 'same-origin',
     ...options,
