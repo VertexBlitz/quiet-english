@@ -314,6 +314,45 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+const skillTaskIds = new Set([
+  'listen_cafe_01','listen_station_01','listen_weekend_01',
+  'write_invitation_01','write_opinion_01','write_summary_01',
+  'speak_hobby_01','speak_place_01','speak_technology_01'
+]);
+
+router.post('/skill-practice', async (req, res, next) => {
+  const { skill, task_id, score = null, word_count = 0, duration_seconds = 0 } = req.body || {};
+  if (!['listening','writing','speaking'].includes(skill) || !skillTaskIds.has(task_id)) {
+    return res.status(400).json({ error: 'Неизвестный тип или идентификатор задания.' });
+  }
+  if (score !== null && (!Number.isInteger(score) || score < 0 || score > 100)) {
+    return res.status(400).json({ error: 'Оценка должна быть числом от 0 до 100.' });
+  }
+  if (!Number.isInteger(word_count) || word_count < 0 || word_count > 500) {
+    return res.status(400).json({ error: 'Проверь количество слов.' });
+  }
+  if (!Number.isInteger(duration_seconds) || duration_seconds < 0 || duration_seconds > 1800) {
+    return res.status(400).json({ error: 'Проверь длительность занятия.' });
+  }
+  try {
+    const result = await pool.query(
+      'INSERT INTO skill_practice_attempts (user_id, skill, task_id, score, word_count, duration_seconds) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
+      [req.user.id, skill, task_id, score, word_count, duration_seconds]
+    );
+    await recordActivity(req.user.id, { minutes: Math.max(1, Math.round(duration_seconds / 60)), completedTasks: 1 });
+    res.status(201).json({ ok: true, attempt_id: result.rows[0].id });
+  } catch (error) { next(error); }
+});
+
+router.get('/skill-practice', async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      'SELECT skill, COUNT(*)::int AS attempts, COUNT(score)::int AS scored_attempts, COALESCE(AVG(score),0)::numeric AS average_score FROM skill_practice_attempts WHERE user_id=$1 GROUP BY skill ORDER BY skill',
+      [req.user.id]
+    );
+    res.json({ skills: result.rows.map(row => ({ skill: row.skill, attempts: row.attempts, accuracy: row.scored_attempts ? Math.round(Number(row.average_score)) : null })) });
+  } catch (error) { next(error); }
+});
 router.get('/review/queue', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
@@ -385,11 +424,27 @@ router.get('/progress', async (req, res, next) => {
          ORDER BY activity_date`,
         [req.user.id]
       ),
-      pool.query('SELECT COUNT(*)::int AS open_errors FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL', [req.user.id])
+      pool.query('SELECT COUNT(*)::int AS open_errors FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL', [req.user.id]),
+      pool.query('SELECT skill, COUNT(*)::int AS attempts, COUNT(score)::int AS scored_attempts, COALESCE(AVG(score),0)::numeric AS average_score FROM skill_practice_attempts WHERE user_id=$1 GROUP BY skill', [req.user.id])
     ]);
     res.json({
       summary: { ...summary.rows[0], open_errors: errors.rows[0].open_errors },
-      skills: skills.rows.map(row => ({ skill: row.skill, attempts: row.attempts, accuracy: row.attempts ? Math.round(row.correct / row.attempts * 100) : null })),
+      skills: (() => {
+        const combined = new Map(skills.rows.map(row => [row.skill, {
+          skill: row.skill, attempts: Number(row.attempts), scored: Number(row.attempts), weighted: Number(row.correct) * 100
+        }]));
+        for (const row of skillPractice.rows) {
+          const current = combined.get(row.skill) || { skill: row.skill, attempts: 0, scored: 0, weighted: 0 };
+          const scored = Number(row.scored_attempts);
+          current.attempts += Number(row.attempts);
+          current.scored += scored;
+          current.weighted += Number(row.average_score) * scored;
+          combined.set(row.skill, current);
+        }
+        return [...combined.values()].map(row => ({
+          skill: row.skill, attempts: row.attempts, accuracy: row.scored ? Math.round(row.weighted / row.scored) : null
+        }));
+      })(),
       last_7_days: activity.rows
     });
   } catch (error) { next(error); }
