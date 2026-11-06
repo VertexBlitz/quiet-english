@@ -101,4 +101,86 @@ router.post('/exercises/:id/status', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+
+const goals = ['general','work','travel','exam','communication','relocation','study'];
+function validatePlanTemplate(body, creating = false) {
+  if (creating && (typeof body.id !== 'string' || !/^[a-z0-9-]{3,60}$/.test(body.id))) return 'ID плана должен содержать 3–60 строчных латинских букв, цифр и дефисов.';
+  if (typeof body.title !== 'string' || !body.title.trim() || body.title.length > 120) return 'Укажи название плана.';
+  if (!goals.includes(body.goal)) return 'Выбери цель плана.';
+  if (!levels.includes(body.level_min) || !levels.includes(body.level_max)) return 'Проверь уровни CEFR.';
+  if (levels.indexOf(body.level_min) > levels.indexOf(body.level_max)) return 'Минимальный уровень не может быть выше максимального.';
+  if (Number(body.duration_weeks) !== 4) return 'Для MVP доступны планы на 4 недели.';
+  if (![5,10,15,30].includes(Number(body.minutes_per_day))) return 'Выбери 5, 10, 15 или 30 минут в день.';
+  if (!Array.isArray(body.weekly_themes) || body.weekly_themes.length !== 4) return 'Нужно ровно 4 недельные темы.';
+  for (const week of body.weekly_themes) {
+    if (typeof week.theme !== 'string' || !week.theme.trim() || typeof week.objective !== 'string' || !week.objective.trim()) return 'У каждой недели должны быть тема и цель.';
+    if (!Array.isArray(week.tasks) || week.tasks.length !== 7 || week.tasks.some(id => typeof id !== 'string' || !/^[A-Z0-9_-]{2,40}$/.test(id))) return 'У каждой недели должно быть 7 ID заданий.';
+  }
+  return null;
+}
+
+router.get('/plans', async (_req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id,title,goal,level_min,level_max,duration_weeks,minutes_per_day,status,version,updated_at FROM plan_templates ORDER BY updated_at DESC'
+    );
+    res.json({ plans: rows });
+  } catch (error) { next(error); }
+});
+
+router.get('/plans/:id', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM plan_templates WHERE id=$1', [req.params.id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Шаблон плана не найден.' });
+    res.json({ plan: rows[0] });
+  } catch (error) { next(error); }
+});
+
+router.post('/plans', async (req, res, next) => {
+  const error = validatePlanTemplate(req.body || {}, true);
+  if (error) return res.status(400).json({ error });
+  const item = req.body;
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO plan_templates (id,title,goal,level_min,level_max,duration_weeks,minutes_per_day,weekly_themes,status)
+       VALUES ($1,$2,$3,$4,$5,4,$6,$7::jsonb,'draft')
+       RETURNING id,title,goal,level_min,level_max,duration_weeks,minutes_per_day,status,version`,
+      [item.id,item.title,item.goal,item.level_min,item.level_max,Number(item.minutes_per_day),JSON.stringify(item.weekly_themes)]
+    );
+    res.status(201).json({ plan: rows[0] });
+  } catch (error) {
+    if (error.code === '23505') return res.status(409).json({ error: 'Шаблон с таким ID уже существует.' });
+    next(error);
+  }
+});
+
+router.patch('/plans/:id', async (req, res, next) => {
+  const error = validatePlanTemplate({ ...req.body, id: req.params.id });
+  if (error) return res.status(400).json({ error });
+  const item = req.body;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE plan_templates SET title=$2,goal=$3,level_min=$4,level_max=$5,
+       duration_weeks=4,minutes_per_day=$6,weekly_themes=$7::jsonb,version=version+1,updated_at=NOW()
+       WHERE id=$1 RETURNING id,title,goal,level_min,level_max,duration_weeks,minutes_per_day,status,version`,
+      [req.params.id,item.title,item.goal,item.level_min,item.level_max,Number(item.minutes_per_day),JSON.stringify(item.weekly_themes)]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Шаблон плана не найден.' });
+    res.json({ plan: rows[0] });
+  } catch (error) { next(error); }
+});
+
+router.post('/plans/:id/status', async (req, res, next) => {
+  const status = req.body?.status;
+  if (!['draft','review','published','archived'].includes(status)) return res.status(400).json({ error: 'Некорректный статус.' });
+  try {
+    const { rows } = await pool.query(
+      'UPDATE plan_templates SET status=$2,updated_at=NOW() WHERE id=$1 RETURNING id,status,version',
+      [req.params.id,status]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Шаблон плана не найден.' });
+    res.json({ plan: rows[0] });
+  } catch (error) { next(error); }
+});
+
 export default router;
