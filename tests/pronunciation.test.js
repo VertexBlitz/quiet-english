@@ -31,7 +31,8 @@ test('pronunciation scoring stays disabled until explicitly enabled with server 
   assert.equal(pronunciationConfigured({
     AZURE_SPEECH_ENABLED: 'true',
     AZURE_SPEECH_KEY: 'not-a-real-key-value',
-    AZURE_SPEECH_REGION: 'westeurope'
+    AZURE_SPEECH_REGION: 'westeurope',
+    AZURE_SPEECH_GUARDIAN_APPROVED: 'true'
   }), true);
   assert.equal(pronunciationConfigured({
     AZURE_SPEECH_ENABLED: 'true',
