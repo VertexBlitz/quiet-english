@@ -45,7 +45,9 @@ export async function recordActivity(userId, { minutes = 0, completedTasks = 0 }
   if (!pool) return;
   await pool.query(
     `INSERT INTO daily_activity (user_id, activity_date, minutes, completed_tasks)
-     VALUES ($1, CURRENT_DATE, $2, $3)
+     SELECT $1,
+       (NOW() AT TIME ZONE COALESCE((SELECT timezone FROM learner_profiles WHERE user_id=$1), 'UTC'))::date,
+       $2, $3
      ON CONFLICT (user_id, activity_date)
      DO UPDATE SET
        minutes = daily_activity.minutes + EXCLUDED.minutes,
