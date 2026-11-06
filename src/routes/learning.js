@@ -317,7 +317,9 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
 const skillTaskIds = new Set([
   'listen_cafe_01','listen_station_01','listen_weekend_01',
   'write_invitation_01','write_opinion_01','write_summary_01',
-  'speak_hobby_01','speak_place_01','speak_technology_01'
+  'speak_hobby_01','speak_place_01','speak_technology_01',
+  'speak_read_aloud_01','speak_read_aloud_02','speak_read_aloud_03','speak_read_aloud_04',
+  'speak_read_aloud_05','speak_read_aloud_06','speak_read_aloud_07','speak_read_aloud_08'
 ]);
 
 router.post('/skill-practice', async (req, res, next) => {
