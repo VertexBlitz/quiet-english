@@ -47,9 +47,9 @@ async function generatePlan(userId) {
     if (!profile) throw new Error('Learner profile is missing.');
     await client.query('UPDATE learning_plans SET status=\'archived\' WHERE user_id=$1 AND status=\'active\'', [userId]);
     const planResult = await client.query(
-      `INSERT INTO learning_plans (user_id, goal, level, duration_weeks, minutes_per_day)
-       VALUES ($1,$2,$3,4,$4) RETURNING *`,
-      [userId, profile.goal || 'general', profile.level, profile.minutes_per_day || 10]
+      `INSERT INTO learning_plans (user_id, goal, level, duration_weeks, minutes_per_day, starts_on)
+       VALUES ($1,$2,$3,4,$4,(NOW() AT TIME ZONE $5)::date) RETURNING *`,
+      [userId, profile.goal || 'general', profile.level, profile.minutes_per_day || 10, profile.timezone || 'UTC']
     );
     const plan = planResult.rows[0];
     for (let week = 1; week <= 4; week++) {
@@ -85,7 +85,7 @@ router.get('/profile', async (req, res, next) => {
 });
 
 router.put('/onboarding', async (req, res, next) => {
-  const { goal, self_assessed_level, minutes_per_day, duration_weeks, interests, preferred_language } = req.body || {};
+  const { goal, self_assessed_level, minutes_per_day, duration_weeks, interests, preferred_language, timezone = 'UTC' } = req.body || {};
   const goals = ['general','work','travel','exam','communication','relocation','study'];
   const levels = ['Pre-A1','A1','A2','B1','B2','C1','C2'];
   if (!goals.includes(goal)) return res.status(400).json({ error: 'Выбери цель обучения.' });
@@ -96,13 +96,15 @@ router.put('/onboarding', async (req, res, next) => {
     return res.status(400).json({ error: 'Проверь список интересов.' });
   }
   if (!['ru','en'].includes(preferred_language)) return res.status(400).json({ error: 'Выбери язык интерфейса.' });
+  if (typeof timezone !== 'string' || timezone.length > 80) return res.status(400).json({ error: 'Часовой пояс указан некорректно.' });
+  try { new Intl.DateTimeFormat('en', { timeZone: timezone }).format(new Date()); } catch { return res.status(400).json({ error: 'Часовой пояс указан некорректно.' }); }
   try {
     await pool.query(
       `UPDATE learner_profiles
        SET goal=$2, self_assessed_level=$3, minutes_per_day=$4, duration_weeks=$5,
-           interests=$6::jsonb, preferred_language=$7, onboarding_completed_at=NOW(), updated_at=NOW()
+           interests=$6::jsonb, preferred_language=$7, timezone=$8, onboarding_completed_at=NOW(), updated_at=NOW()
        WHERE user_id=$1`,
-      [req.user.id, goal, self_assessed_level || null, Number(minutes_per_day), Number(duration_weeks), JSON.stringify(interests), preferred_language]
+      [req.user.id, goal, self_assessed_level || null, Number(minutes_per_day), Number(duration_weeks), JSON.stringify(interests), preferred_language, timezone]
     );
     res.json({ ok: true, message: 'Настройки обучения сохранены.' });
   } catch (error) { next(error); }
@@ -171,7 +173,7 @@ router.get('/today', async (req, res, next) => {
        JOIN plan_weeks w ON w.id=d.week_id
        LEFT JOIN exercises e ON e.id=d.main_task_id
        WHERE p.user_id=$1 AND p.status='active'
-         AND d.day_index = LEAST(GREATEST((CURRENT_DATE - p.starts_on + 1), 1), 28)
+         AND d.day_index = LEAST(GREATEST(((NOW() AT TIME ZONE (SELECT timezone FROM learner_profiles WHERE user_id=$1))::date - p.starts_on + 1), 1), 28)
        LIMIT 1`,
       [req.user.id]
     );
@@ -270,7 +272,7 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
        FROM learning_plans p
        WHERE d.plan_id=p.id AND p.user_id=$1 AND p.status='active'
          AND d.main_task_id=$2
-         AND d.day_index=LEAST(GREATEST((CURRENT_DATE-p.starts_on+1),1),28)`,
+         AND d.day_index=LEAST(GREATEST(((NOW() AT TIME ZONE (SELECT timezone FROM learner_profiles WHERE user_id=$1))::date-p.starts_on+1),1),28)`,
       [req.user.id, exercise.id]
     );
     await recordActivity(req.user.id, { minutes: exercise.estimated_time, completedTasks: 1 });
