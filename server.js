@@ -1,5 +1,5 @@
 import express from 'express';
-import rateLimit from 'express-rate-limit';
+import { rateLimit } from 'express-rate-limit';
 import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import path from 'node:path';
@@ -48,6 +48,7 @@ if (sessionsConfigured) {
 }
 
 function sameOrigin(req, res, next) {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
   const origin = req.get('origin');
   const base = process.env.APP_BASE_URL;
   if (!origin || !base) {
