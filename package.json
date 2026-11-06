@@ -1,11 +1,21 @@
 {
   "name": "quiet-english",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node server.js" },
+  "scripts": {
+    "start": "node server.js",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "check": "node scripts/check.js",
+    "test": "node --test"
+  },
   "dependencies": {
+    "argon2": "^0.44.0",
+    "connect-pg-simple": "^10.0.0",
     "express": "^5.1.0",
-    "express-rate-limit": "^8.0.1"
+    "express-rate-limit": "^8.0.1",
+    "express-session": "^1.18.2",
+    "pg": "^8.16.3"
   }
 }

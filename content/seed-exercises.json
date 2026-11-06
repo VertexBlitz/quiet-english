@@ -1,0 +1,953 @@
+[
+  {
+    "id": "V01",
+    "skill": "vocabulary",
+    "level": "A2",
+    "objective": "Use common daily routine collocations",
+    "instructions": {
+      "ru": "Выбери слово, которое естественно завершает предложение.",
+      "en": "Choose the word that naturally completes the sentence."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "I usually ___ breakfast at 7 a.m.",
+      "options": [
+        {
+          "id": "a",
+          "text": "make"
+        },
+        {
+          "id": "b",
+          "text": "do"
+        },
+        {
+          "id": "c",
+          "text": "take"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "По-английски говорят “make breakfast”.",
+      "en": "The natural collocation is “make breakfast”."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "collocations",
+      "daily-life"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Choose the natural collocation."
+  },
+  {
+    "id": "V02",
+    "skill": "vocabulary",
+    "level": "B1",
+    "objective": "Use travel collocations",
+    "instructions": {
+      "ru": "Выбери подходящий глагол для устойчивого сочетания.",
+      "en": "Choose the correct verb for the travel collocation."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "You should ___ a table in advance.",
+      "options": [
+        {
+          "id": "a",
+          "text": "book"
+        },
+        {
+          "id": "b",
+          "text": "reserve on"
+        },
+        {
+          "id": "c",
+          "text": "take"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Используем “book a table” или “reserve a table”.",
+      "en": "Use “book a table” or “reserve a table”."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "travel",
+      "collocations"
+    ],
+    "prerequisites": [
+      "V01"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Select a natural travel-related collocation."
+  },
+  {
+    "id": "V03",
+    "skill": "vocabulary",
+    "level": "B1",
+    "objective": "Recognise useful everyday phrasal verbs",
+    "instructions": {
+      "ru": "Выбери фразовый глагол с подходящим значением.",
+      "en": "Choose the phrasal verb with the correct meaning."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "The train was delayed, so we had to ___ our plans.",
+      "options": [
+        {
+          "id": "a",
+          "text": "look after"
+        },
+        {
+          "id": "b",
+          "text": "change"
+        },
+        {
+          "id": "c",
+          "text": "run into"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "“Change our plans” означает изменить планы.",
+      "en": "“Change our plans” means to make different arrangements."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "phrasal-verbs",
+      "travel"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Identify the phrase that fits the context."
+  },
+  {
+    "id": "G01",
+    "skill": "grammar",
+    "level": "A1",
+    "objective": "Use the third-person singular in Present Simple",
+    "instructions": {
+      "ru": "Выбери правильную форму глагола.",
+      "en": "Choose the correct verb form."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "She ___ to school every day.",
+      "options": [
+        {
+          "id": "a",
+          "text": "go"
+        },
+        {
+          "id": "b",
+          "text": "goes"
+        },
+        {
+          "id": "c",
+          "text": "going"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "С he, she, it в Present Simple к глаголу обычно добавляется -s или -es.",
+      "en": "In the Present Simple, he, she and it usually take a verb ending in -s or -es."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "present-simple",
+      "verb-forms"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Choose the correct third-person singular form."
+  },
+  {
+    "id": "G02",
+    "skill": "grammar",
+    "level": "B1",
+    "objective": "Distinguish Present Perfect from Past Simple",
+    "instructions": {
+      "ru": "Выбери время, которое подходит к указанному моменту в прошлом.",
+      "en": "Choose the tense that fits the finished past time expression."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "I ___ this film yesterday.",
+      "options": [
+        {
+          "id": "a",
+          "text": "have seen"
+        },
+        {
+          "id": "b",
+          "text": "saw"
+        },
+        {
+          "id": "c",
+          "text": "see"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "“Yesterday” указывает на завершённое время в прошлом, поэтому нужен Past Simple.",
+      "en": "“Yesterday” is a finished past time, so use the Past Simple."
+    },
+    "estimated_time": 4,
+    "tags": [
+      "past-simple",
+      "present-perfect"
+    ],
+    "prerequisites": [
+      "G01"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the correct past tense."
+  },
+  {
+    "id": "G03",
+    "skill": "grammar",
+    "level": "B1",
+    "objective": "Use the First Conditional",
+    "instructions": {
+      "ru": "Выбери правильную форму условного предложения.",
+      "en": "Choose the correct First Conditional form."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "If I ___ time tomorrow, I will call you.",
+      "options": [
+        {
+          "id": "a",
+          "text": "will have"
+        },
+        {
+          "id": "b",
+          "text": "have"
+        },
+        {
+          "id": "c",
+          "text": "had"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "В First Conditional после if используется Present Simple, а в главной части — will + infinitive.",
+      "en": "In the First Conditional, use the Present Simple after if and will + infinitive in the main clause."
+    },
+    "estimated_time": 4,
+    "tags": [
+      "conditionals",
+      "first-conditional"
+    ],
+    "prerequisites": [
+      "G02"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Use Present Simple after if in a First Conditional."
+  },
+  {
+    "id": "G04",
+    "skill": "grammar",
+    "level": "B2",
+    "objective": "Use inversion after negative adverbials",
+    "instructions": {
+      "ru": "Выбери грамматически правильную конструкцию.",
+      "en": "Choose the grammatically correct inversion."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Rarely ___ such a convincing argument.",
+      "options": [
+        {
+          "id": "a",
+          "text": "I have heard"
+        },
+        {
+          "id": "b",
+          "text": "have I heard"
+        },
+        {
+          "id": "c",
+          "text": "I heard"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "После Rarely в начале предложения используется инверсия: вспомогательный глагол + подлежащее.",
+      "en": "When “Rarely” begins a sentence, use inversion: auxiliary verb + subject."
+    },
+    "estimated_time": 5,
+    "tags": [
+      "inversion",
+      "word-order"
+    ],
+    "prerequisites": [
+      "G03"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Recognise inversion after a negative adverbial."
+  },
+  {
+    "id": "R01",
+    "skill": "reading",
+    "level": "A2",
+    "objective": "Find key details in a short practical message",
+    "instructions": {
+      "ru": "Прочитай сообщение и ответь на вопрос.",
+      "en": "Read the message and answer the question."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "Hi Sam, the library closes at 6 p.m. today. I’ll meet you outside at 5:15, and we can study for about half an hour. Don’t forget to bring your notebook. See you, Alex.",
+      "prompt": "What should Sam bring?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A laptop"
+        },
+        {
+          "id": "b",
+          "text": "A notebook"
+        },
+        {
+          "id": "c",
+          "text": "A library card"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "В сообщении прямо сказано: “bring your notebook”.",
+      "en": "The message explicitly says: “bring your notebook”."
+    },
+    "estimated_time": 4,
+    "tags": [
+      "reading-for-detail",
+      "messages"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": false
+    },
+    "success_criteria": "Identify the explicitly stated detail."
+  },
+  {
+    "id": "R02",
+    "skill": "reading",
+    "level": "B1",
+    "objective": "Understand the main idea and supporting details",
+    "instructions": {
+      "ru": "Прочитай короткий текст и выбери его основную мысль.",
+      "en": "Read the short text and choose its main idea."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "Many people think that learning a language requires long study sessions. However, short and regular practice can be more manageable. A learner who reviews vocabulary, reads a short text and writes a few sentences each day can build a sustainable routine. The key is consistency rather than intensity.",
+      "prompt": "What is the main idea?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Long lessons are always more effective."
+        },
+        {
+          "id": "b",
+          "text": "Regular short practice can create a sustainable learning habit."
+        },
+        {
+          "id": "c",
+          "text": "Vocabulary is the only important language skill."
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Текст подчёркивает регулярность и посильную нагрузку, а не длительность отдельного занятия.",
+      "en": "The text emphasises consistency and manageable practice rather than long individual sessions."
+    },
+    "estimated_time": 5,
+    "tags": [
+      "main-idea",
+      "study-skills"
+    ],
+    "prerequisites": [
+      "R01"
+    ],
+    "srs": {
+      "enabled": false
+    },
+    "success_criteria": "Choose the option that captures the whole text."
+  },
+  {
+    "id": "G05",
+    "skill": "grammar",
+    "level": "A2",
+    "objective": "Use countable and uncountable nouns",
+    "instructions": {
+      "ru": "Выбери подходящее слово.",
+      "en": "Choose the suitable quantifier."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "How ___ water do we need?",
+      "options": [
+        {
+          "id": "a",
+          "text": "many"
+        },
+        {
+          "id": "b",
+          "text": "much"
+        },
+        {
+          "id": "c",
+          "text": "few"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Water — неисчисляемое существительное, поэтому используем much.",
+      "en": "Water is uncountable, so use “much”."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "quantifiers",
+      "countable-uncountable"
+    ],
+    "prerequisites": [
+      "G01"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Choose the correct quantifier."
+  },
+  {
+    "id": "V04",
+    "skill": "vocabulary",
+    "level": "A1",
+    "objective": "Recognise common places in a town",
+    "instructions": {
+      "ru": "Выбери место, где можно купить лекарства.",
+      "en": "Choose the place where you can buy medicine."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Where can you buy medicine?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A pharmacy"
+        },
+        {
+          "id": "b",
+          "text": "A bakery"
+        },
+        {
+          "id": "c",
+          "text": "A station"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Pharmacy — аптека.",
+      "en": "A pharmacy is a place where you can buy medicine."
+    },
+    "estimated_time": 2,
+    "tags": [
+      "places",
+      "town"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Identify the correct place."
+  },
+  {
+    "id": "R03",
+    "skill": "reading",
+    "level": "B1",
+    "objective": "Infer a practical next step from a short notice",
+    "instructions": {
+      "ru": "Прочитай объявление и выбери, что нужно сделать.",
+      "en": "Read the notice and choose the best next step."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "Your train to Manchester will depart from platform 6 instead of platform 3. The departure time remains 14:20. Please check the station screens for further updates.",
+      "prompt": "What should passengers do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Go to platform 3 at 14:20."
+        },
+        {
+          "id": "b",
+          "text": "Go to platform 6 and keep checking updates."
+        },
+        {
+          "id": "c",
+          "text": "Wait until the departure time changes."
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Платформа изменилась на 6, время осталось прежним; объявление советует следить за экранами.",
+      "en": "The platform changed to 6, the time stayed the same, and passengers should check the screens."
+    },
+    "estimated_time": 4,
+    "tags": [
+      "notices",
+      "travel",
+      "inference"
+    ],
+    "prerequisites": [
+      "R01"
+    ],
+    "srs": {
+      "enabled": false
+    },
+    "success_criteria": "Identify the action supported by the notice."
+  },
+  {
+    "id": "V05",
+    "skill": "vocabulary",
+    "level": "A2",
+    "objective": "Choose common adjectives for describing places",
+    "instructions": {
+      "ru": "Выбери прилагательное, которое подходит по смыслу.",
+      "en": "Choose the adjective that fits the meaning."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "The small village was quiet and ___.",
+      "options": [
+        {
+          "id": "a",
+          "text": "peaceful"
+        },
+        {
+          "id": "b",
+          "text": "crowded"
+        },
+        {
+          "id": "c",
+          "text": "noisy"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Peaceful означает спокойный, тихий.",
+      "en": "Peaceful means calm and quiet."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "adjectives",
+      "describing-places"
+    ],
+    "prerequisites": [
+      "V04"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Choose the adjective that matches the context."
+  },
+  {
+    "id": "V06",
+    "skill": "vocabulary",
+    "level": "B1",
+    "objective": "Recognise collocations with make and do",
+    "instructions": {
+      "ru": "Выбери естественное сочетание.",
+      "en": "Choose the natural collocation."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "I need to ___ a decision before Friday.",
+      "options": [
+        {
+          "id": "a",
+          "text": "do"
+        },
+        {
+          "id": "b",
+          "text": "make"
+        },
+        {
+          "id": "c",
+          "text": "take"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Устойчивое сочетание — make a decision.",
+      "en": "The natural collocation is “make a decision”."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "collocations",
+      "make-do"
+    ],
+    "prerequisites": [
+      "V02"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Select the natural collocation."
+  },
+  {
+    "id": "V07",
+    "skill": "vocabulary",
+    "level": "B2",
+    "objective": "Choose a precise word for a formal context",
+    "instructions": {
+      "ru": "Выбери наиболее точное слово.",
+      "en": "Choose the most precise word."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "The new policy aims to ___ unnecessary delays.",
+      "options": [
+        {
+          "id": "a",
+          "text": "minimise"
+        },
+        {
+          "id": "b",
+          "text": "decorate"
+        },
+        {
+          "id": "c",
+          "text": "pretend"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Minimise означает свести к минимуму.",
+      "en": "Minimise means to reduce something as much as possible."
+    },
+    "estimated_time": 4,
+    "tags": [
+      "formal-vocabulary",
+      "word-choice"
+    ],
+    "prerequisites": [
+      "V03"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Choose the word that fits the formal context."
+  },
+  {
+    "id": "G06",
+    "skill": "grammar",
+    "level": "A2",
+    "objective": "Use comparative adjectives",
+    "instructions": {
+      "ru": "Выбери правильную сравнительную форму.",
+      "en": "Choose the correct comparative form."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "This exercise is ___ than the last one.",
+      "options": [
+        {
+          "id": "a",
+          "text": "easy"
+        },
+        {
+          "id": "b",
+          "text": "easier"
+        },
+        {
+          "id": "c",
+          "text": "easiest"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Для короткого прилагательного easy используется форма easier.",
+      "en": "The comparative form of “easy” is “easier”."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "comparatives",
+      "adjectives"
+    ],
+    "prerequisites": [
+      "G01"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Choose the correct comparative form."
+  },
+  {
+    "id": "G07",
+    "skill": "grammar",
+    "level": "B1",
+    "objective": "Use reported speech with a past reporting verb",
+    "instructions": {
+      "ru": "Выбери правильную форму косвенной речи.",
+      "en": "Choose the correct reported speech form."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "“I am tired,” she said. → She said that she ___ tired.",
+      "options": [
+        {
+          "id": "a",
+          "text": "is"
+        },
+        {
+          "id": "b",
+          "text": "was"
+        },
+        {
+          "id": "c",
+          "text": "has been"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "При согласовании времён Present Simple обычно сдвигается в Past Simple.",
+      "en": "With a past reporting verb, the Present Simple commonly shifts to the Past Simple."
+    },
+    "estimated_time": 4,
+    "tags": [
+      "reported-speech",
+      "backshift"
+    ],
+    "prerequisites": [
+      "G02"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the correct backshifted tense."
+  },
+  {
+    "id": "G08",
+    "skill": "grammar",
+    "level": "B2",
+    "objective": "Use modal verbs for deduction",
+    "instructions": {
+      "ru": "Выбери модальный глагол для логического вывода.",
+      "en": "Choose the modal verb for a logical deduction."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "The lights are off and the door is locked. They ___ be at home.",
+      "options": [
+        {
+          "id": "a",
+          "text": "can't"
+        },
+        {
+          "id": "b",
+          "text": "must"
+        },
+        {
+          "id": "c",
+          "text": "should"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Can't выражает уверенный отрицательный вывод по имеющимся признакам.",
+      "en": "“Can't” expresses a strong negative deduction based on the evidence."
+    },
+    "estimated_time": 4,
+    "tags": [
+      "modal-verbs",
+      "deduction"
+    ],
+    "prerequisites": [
+      "G04"
+    ],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Choose the modal verb that matches the evidence."
+  },
+  {
+    "id": "R04",
+    "skill": "reading",
+    "level": "A1",
+    "objective": "Find a date and time in a short notice",
+    "instructions": {
+      "ru": "Прочитай объявление и найди время начала.",
+      "en": "Read the notice and find the starting time."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "The English club meets on Thursday at 4:30 p.m. in Room 12. New members are welcome. Please bring a notebook.",
+      "prompt": "What time does the club meet?",
+      "options": [
+        {
+          "id": "a",
+          "text": "4:00 p.m."
+        },
+        {
+          "id": "b",
+          "text": "4:30 p.m."
+        },
+        {
+          "id": "c",
+          "text": "5:30 p.m."
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "В объявлении указано: Thursday at 4:30 p.m.",
+      "en": "The notice says Thursday at 4:30 p.m."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "reading-for-detail",
+      "notices"
+    ],
+    "prerequisites": [
+      "R01"
+    ],
+    "srs": {
+      "enabled": false
+    },
+    "success_criteria": "Find the exact time stated in the notice."
+  },
+  {
+    "id": "R05",
+    "skill": "reading",
+    "level": "B2",
+    "objective": "Identify contrast and the author's position",
+    "instructions": {
+      "ru": "Прочитай текст и определи позицию автора.",
+      "en": "Read the text and identify the author's position."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "Remote work can reduce commuting time and give employees more control over their schedules. Nevertheless, it may also make informal collaboration harder, especially for new team members. A flexible model that combines focused remote work with planned in-person meetings can preserve many benefits while addressing the main drawbacks.",
+      "prompt": "Which approach does the author support?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Fully remote work in every situation."
+        },
+        {
+          "id": "b",
+          "text": "A flexible model combining remote work and planned meetings."
+        },
+        {
+          "id": "c",
+          "text": "Returning to the office every day."
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Автор признаёт преимущества удалённой работы, но предлагает гибридный подход для решения её недостатков.",
+      "en": "The author recognises remote work's benefits but supports a flexible model to address its drawbacks."
+    },
+    "estimated_time": 5,
+    "tags": [
+      "reading-inference",
+      "argument"
+    ],
+    "prerequisites": [
+      "R02"
+    ],
+    "srs": {
+      "enabled": false
+    },
+    "success_criteria": "Identify the position supported by the whole passage."
+  }
+]

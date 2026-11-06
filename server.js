@@ -1,13 +1,22 @@
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
+import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { pool } from './src/db.js';
+import authRoutes from './src/routes/auth.js';
+import learningRoutes from './src/routes/learning.js';
+import adminRoutes from './src/routes/admin.js';
 
 const app = express();
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT) || 3000;
+const PgSession = connectPgSimple(session);
 
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
 app.use(express.json({ limit: '24kb' }));
 app.use('/api/', rateLimit({
   windowMs: 60_000,
@@ -15,7 +24,59 @@ app.use('/api/', rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false
 }));
-app.use(express.static(path.join(root, 'public')));
+
+const sessionsConfigured = Boolean(pool && process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32);
+if (sessionsConfigured) {
+  app.use(session({
+    store: new PgSession({
+      pool,
+      tableName: 'user_sessions',
+      createTableIfMissing: true,
+      pruneSessionInterval: 60 * 15
+    }),
+    name: 'qe.sid',
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 14
+    }
+  }));
+}
+
+function sameOrigin(req, res, next) {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  const origin = req.get('origin');
+  const base = process.env.APP_BASE_URL;
+  if (!origin || !base) {
+    return res.status(403).json({ error: 'Запрос должен быть отправлен с официального адреса сайта.' });
+  }
+  try {
+    if (new URL(origin).origin !== new URL(base).origin) {
+      return res.status(403).json({ error: 'Источник запроса не разрешён.' });
+    }
+  } catch {
+    return res.status(403).json({ error: 'Проверь APP_BASE_URL в настройках сервера.' });
+  }
+  next();
+}
+
+if (sessionsConfigured) {
+  app.use('/api/auth', sameOrigin, authRoutes);
+  app.use('/api/learning', sameOrigin, learningRoutes);
+  app.use('/api/admin', sameOrigin, adminRoutes);
+} else {
+  const notReady = (_req, res) => res.status(503).json({
+    error: 'Личный кабинет ещё не настроен. Нужны DATABASE_URL и SESSION_SECRET.'
+  });
+  app.use('/api/auth', notReady);
+  app.use('/api/learning', notReady);
+  app.use('/api/admin', notReady);
+}
 
 const MODEL = process.env.CLOUDFLARE_MODEL || '@cf/google/gemma-4-26b-a4b-it';
 const SYSTEM_PROMPT = [
@@ -28,18 +89,195 @@ const SYSTEM_PROMPT = [
   'Do not claim to hear audio or see files unless they were actually supplied.'
 ].join(' ');
 
-function isConfigured() {
+function isAiConfigured() {
   return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
+}
+
+async function buildCommandReply(userId, command) {
+  if (!userId || !pool) {
+    return 'Войди в личный кабинет и создай учебный план, чтобы использовать эту команду.';
+  }
+
+  if (command === '/plan') {
+    const { rows } = await pool.query(
+      `SELECT p.level, p.goal, p.duration_weeks, p.minutes_per_day,
+              w.week_number, w.theme, w.objective
+       FROM learning_plans p
+       LEFT JOIN plan_weeks w ON w.plan_id=p.id
+       WHERE p.user_id=$1 AND p.status='active'
+       ORDER BY w.week_number`,
+      [userId]
+    );
+    if (!rows.length) return 'У тебя пока нет активного плана. Сначала заверши онбординг и тест уровня.';
+    const first = rows[0];
+    return [
+      'Твой план Quiet English:',
+      'Уровень: ' + first.level + ' · цель: ' + first.goal + '.',
+      'Срок: ' + first.duration_weeks + ' недели · ' + first.minutes_per_day + ' минут в день.',
+      ...rows.map(week => 'Неделя ' + week.week_number + ': ' + week.theme + ' — ' + week.objective)
+    ].join('\n');
+  }
+
+  if (command === '/today') {
+    const { rows } = await pool.query(
+      `SELECT d.day_index, d.main_task_id, d.mini_prompt, w.week_number, w.theme,
+              e.objective AS task_objective, e.skill, e.level, e.estimated_time
+       FROM learning_plans p
+       JOIN plan_days d ON d.plan_id=p.id
+       JOIN plan_weeks w ON w.id=d.week_id
+       LEFT JOIN exercises e ON e.id=d.main_task_id
+       WHERE p.user_id=$1 AND p.status='active'
+         AND d.day_index=LEAST(GREATEST(((NOW() AT TIME ZONE
+           (SELECT timezone FROM learner_profiles WHERE user_id=$1))::date-p.starts_on+1),1),28)
+       LIMIT 1`,
+      [userId]
+    );
+    if (!rows[0]) return 'Не нашёл сегодняшнюю задачу. Проверь, что у тебя есть активный план.';
+    const due = await pool.query(
+      'SELECT COUNT(*)::int AS count FROM srs_items WHERE user_id=$1 AND due_at<=NOW()',
+      [userId]
+    );
+    const today = rows[0];
+    return [
+      'Твоя задача на сегодня · неделя ' + today.week_number + ', день ' + today.day_index + '.',
+      'Тема: ' + today.theme + '.',
+      'Главная задача: ' + (today.task_objective || today.main_task_id || 'практика') + '.',
+      today.skill ? 'Навык: ' + today.skill + ' · уровень: ' + today.level + ' · ' + today.estimated_time + ' минут.' : '',
+      'Повторение: ' + due.rows[0].count + ' карточек.',
+      'Мини-практика: ' + today.mini_prompt
+    ].filter(Boolean).join('\n');
+  }
+
+  if (command === '/practice') {
+    const profile = await pool.query(
+      'SELECT COALESCE(assessed_level,self_assessed_level,\'A2\') AS level FROM learner_profiles WHERE user_id=$1',
+      [userId]
+    );
+    const level = profile.rows[0]?.level || 'A2';
+    const { rows } = await pool.query(
+      `SELECT id, skill, level, objective, estimated_time
+       FROM exercises WHERE status='published' AND skill IN ('vocabulary','grammar','reading')
+       ORDER BY (level=$1) DESC, skill, id LIMIT 5`,
+      [level]
+    );
+    if (!rows.length) return 'В библиотеке пока нет опубликованных заданий.';
+    return ['Подходящая практика для тебя:', ...rows.map(item =>
+      item.id + ' · ' + item.skill + ' · ' + item.level + ' · ' + item.estimated_time + ' мин — ' + item.objective
+    ), 'Открой раздел «Практика», чтобы начать.'].join('\n');
+  }
+
+  if (command === '/review') {
+    const { rows } = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM srs_items
+       WHERE user_id=$1 AND due_at<=NOW()`,
+      [userId]
+    );
+    return rows[0].count
+      ? 'У тебя ' + rows[0].count + ' карточек для повторения. Открой раздел «Повторение» и сначала попробуй вспомнить ответ, прежде чем раскрывать его.'
+      : 'На сегодня нет карточек для повторения. Новые появятся после практики.';
+  }
+
+  if (command === '/progress') {
+    const [summary, errors] = await Promise.all([
+      pool.query(
+        `SELECT COALESCE(SUM(minutes),0)::int AS minutes,
+                COALESCE(SUM(completed_tasks),0)::int AS tasks,
+                COUNT(*) FILTER (WHERE completed_tasks>0)::int AS active_days
+         FROM daily_activity WHERE user_id=$1`,
+        [userId]
+      ),
+      pool.query(
+        'SELECT COUNT(*)::int AS count FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL',
+        [userId]
+      )
+    ]);
+    const item = summary.rows[0];
+    return [
+      'Твой прогресс Quiet English:',
+      'Учебное время: ' + item.minutes + ' минут.',
+      'Выполнено заданий: ' + item.tasks + '.',
+      'Активных дней: ' + item.active_days + '.',
+      'Открытых ошибок для разбора: ' + errors.rows[0].count + '.',
+      'Подробная статистика доступна в разделе «Прогресс».'
+    ].join('\n');
+  }
+
+  return null;
+}
+
+async function buildLearnerContext(userId, exerciseRef) {
+  if (!pool || !userId) return '';
+  try {
+    const [profileResult, planResult, errorsResult] = await Promise.all([
+      pool.query(
+        'SELECT goal, COALESCE(assessed_level,self_assessed_level) AS level FROM learner_profiles WHERE user_id=$1',
+        [userId]
+      ),
+      pool.query(
+        `SELECT p.level, p.goal, w.week_number, w.theme, w.objective
+         FROM learning_plans p LEFT JOIN plan_weeks w ON w.plan_id=p.id
+         WHERE p.user_id=$1 AND p.status='active'
+         ORDER BY w.week_number LIMIT 1`,
+        [userId]
+      ),
+      pool.query(
+        `SELECT error_type, incorrect_form, correction, explanation
+         FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL
+         ORDER BY updated_at DESC LIMIT 3`,
+        [userId]
+      )
+    ]);
+    const profile = profileResult.rows[0];
+    const plan = planResult.rows[0];
+    const lines = ['Learner context from the Quiet English account. Use it only to personalise teaching; do not repeat private account details.'];
+    if (profile?.level) lines.push('Estimated CEFR level: ' + profile.level + '.');
+    if (profile?.goal) lines.push('Learning goal: ' + profile.goal + '.');
+    if (plan?.theme) lines.push('Current plan topic: week ' + plan.week_number + ', ' + plan.theme + '. Objective: ' + plan.objective);
+    if (errorsResult.rows.length) {
+      lines.push('Recent learning patterns to support:');
+      for (const error of errorsResult.rows) {
+        lines.push('- ' + error.error_type + ': learner wrote "' + error.incorrect_form + '"; suggested correction: "' + error.correction + '".');
+      }
+    }
+    if (typeof exerciseRef === 'string' && /^[A-Z0-9_-]{2,40}$/.test(exerciseRef)) {
+      const exerciseResult = await pool.query(
+        `SELECT e.objective, e.instructions, e.content, e.explanation,
+                a.answer, a.is_correct, a.feedback
+         FROM exercises e
+         LEFT JOIN LATERAL (
+           SELECT answer, is_correct, feedback FROM exercise_attempts
+           WHERE user_id=$1 AND exercise_id=e.id
+           ORDER BY created_at DESC LIMIT 1
+         ) a ON TRUE
+         WHERE e.id=$2 AND e.status='published'`,
+        [userId, exerciseRef]
+      );
+      if (exerciseResult.rows[0]) {
+        const exercise = exerciseResult.rows[0];
+        lines.push('The learner opened exercise ' + exerciseRef + ': ' + exercise.objective + '.');
+        if (exercise.content?.prompt) lines.push('Exercise prompt: ' + exercise.content.prompt);
+        if (exercise.answer) lines.push('Latest attempt: ' + JSON.stringify(exercise.answer) + '; correct: ' + Boolean(exercise.is_correct) + '.');
+        if (exercise.explanation) lines.push('Approved exercise explanation: ' + JSON.stringify(exercise.explanation));
+        lines.push('Explain this specific exercise step by step. Do not invent an answer key if there is no recorded attempt.');
+      }
+    }
+    return lines.join('\n');
+  } catch (error) {
+    console.error('Unable to load learner chat context:', error?.message || 'unknown error');
+    return '';
+  }
 }
 
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
-    configured: isConfigured(),
-    provider: 'cloudflare-workers-ai'
+    configured: isAiConfigured(),
+    provider: 'cloudflare-workers-ai',
+    learningConfigured: Boolean(pool && sessionsConfigured)
   });
 });
 
+// Keep the original chat contract compatible with the first version of Quiet English.
 app.post('/api/chat', async (req, res) => {
   const incoming = req.body?.messages;
   if (!Array.isArray(incoming) || incoming.length < 1 || incoming.length > 12) {
@@ -58,10 +296,19 @@ app.post('/api/chat', async (req, res) => {
     messages.push({ role: item.role, content });
   }
 
-  if (!isConfigured()) {
-    return res.status(503).json({
-      error: 'ИИ пока не подключён. Добавьте CLOUDFLARE_ACCOUNT_ID и CLOUDFLARE_API_TOKEN в Render → Environment.'
-    });
+  const command = messages.at(-1)?.content.trim().toLowerCase();
+  if (['/plan','/today','/practice','/review','/progress'].includes(command)) {
+    try {
+      const message = await buildCommandReply(req.session?.userId, command);
+      return res.json({ message, demo: false, command });
+    } catch (error) {
+      console.error('Tutor command failed:', error?.message || 'unknown error');
+      return res.status(500).json({ error: 'Не удалось загрузить учебные данные. Попробуй ещё раз.' });
+    }
+  }
+
+  if (!isAiConfigured()) {
+    return res.status(503).json({ error: 'ИИ временно не настроен.' });
   }
 
   const endpoint = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}/ai/v1/chat/completions`;
@@ -73,11 +320,16 @@ app.post('/api/chat', async (req, res) => {
       headers: {
         'Authorization': `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
         'Content-Type': 'application/json',
-        'Accept': 'text/event-stream'
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
         model: MODEL,
-        messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...(await buildLearnerContext(req.session?.userId, req.body?.context_ref)
+            .then(context => context ? [{ role: 'system', content: context }] : [])),
+          ...messages
+        ],
         stream: false,
         max_tokens: 420,
         temperature: 0.35,
@@ -87,48 +339,43 @@ app.post('/api/chat', async (req, res) => {
     });
   } catch (error) {
     console.error('Workers AI connection error:', error?.message || 'unknown error');
-    return res.status(503).json({ error: 'Сервис ИИ временно недоступен. Попробуйте ещё раз позже.' });
+    return res.status(503).json({ error: 'Сервис ИИ временно недоступен. Попробуйте позже.' });
   }
 
   if (!upstream.ok) {
     const detail = await upstream.text().catch(() => '');
-    // Do not log or return secrets. The provider response is truncated for diagnostics.
-    console.error('Workers AI response:', upstream.status, detail.slice(0, 500));
-
+    console.error('Workers AI response:', upstream.status, detail.slice(0, 400));
     if (upstream.status === 429) {
-      return res.status(429).json({
-        error: 'Бесплатный лимит запросов или дневная квота исчерпаны. Попробуйте позже.'
-      });
+      return res.status(429).json({ error: 'Бесплатная квота ИИ временно исчерпана. Попробуйте позже.' });
     }
     if (upstream.status === 401 || upstream.status === 403) {
-      return res.status(502).json({
-        error: 'Cloudflare отклонил запрос. Проверьте API-токен, его разрешения и доступность выбранной модели на Free-плане.'
-      });
+      return res.status(502).json({ error: 'Cloudflare отклонил запрос. Проверь токен и его разрешения.' });
     }
-    return res.status(502).json({
-      error: 'Модель временно не ответила. Попробуйте ещё раз немного позже.'
-    });
+    return res.status(502).json({ error: 'Модель временно не ответила. Попробуйте позже.' });
   }
 
   let result;
   try {
     result = await upstream.json();
   } catch {
-    return res.status(502).json({ error: 'Cloudflare вернул некорректный ответ. Попробуйте ещё раз.' });
+    return res.status(502).json({ error: 'Cloudflare вернул некорректный ответ.' });
   }
-
-  const message = result?.choices?.[0]?.message?.content
-    ?? result?.result?.response
-    ?? result?.response;
-
+  const message = result?.choices?.[0]?.message?.content ?? result?.result?.response ?? result?.response;
   if (typeof message !== 'string' || !message.trim()) {
     console.error('Workers AI returned no text. Response keys:', Object.keys(result || {}).join(', '));
-    return res.status(502).json({ error: 'Модель не вернула текстовый ответ. Попробуйте ещё раз.' });
+    return res.status(502).json({ error: 'Модель не вернула текстовый ответ.' });
   }
-
   return res.json({ message: message.trim(), demo: false });
 });
 
+app.use(express.static(path.join(root, 'public')));
+
+app.use((error, _req, res, _next) => {
+  console.error('Request failed:', error?.message || 'unknown error');
+  if (res.headersSent) return;
+  res.status(500).json({ error: 'Внутренняя ошибка сервера. Попробуй ещё раз.' });
+});
+
 app.listen(port, '0.0.0.0', () => {
-  console.log('Quiet English listening on ' + port);
+  console.log('Quiet English 2.0 listening on ' + port);
 });

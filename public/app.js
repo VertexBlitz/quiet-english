@@ -18,8 +18,11 @@ if (form) {
   const send = form.querySelector('button');
   const status = document.querySelector('#chat-status');
   const history = [];
-  const topic = new URLSearchParams(location.search).get('topic');
-  if (topic) input.value = 'I would like to practise ' + topic + '.';
+  const query = new URLSearchParams(location.search);
+  const topic = query.get('topic');
+  let exerciseContextRef = query.get('exercise');
+  if (exerciseContextRef) input.value = 'Please explain my latest attempt and common mistakes in exercise ' + exerciseContextRef + '.';
+  else if (topic) input.value = 'I would like to practise ' + topic + '.';
 
   fetch('/api/health')
     .then(response => response.json())
@@ -152,6 +155,39 @@ if (form) {
     return content;
   };
 
+  const fetchLearning = async path => {
+    const response = await fetch('/api/learning' + path, { credentials: 'same-origin' });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Сначала войди в аккаунт, чтобы открыть учебные данные.');
+    return data;
+  };
+
+  const executeCommand = async command => {
+    if (command === '/today') {
+      const { today } = await fetchLearning('/today');
+      return `**Today · Week ${today.week_number}, Day ${today.day_index}**\n\n**Theme:** ${today.theme}\n\n**Main task:** ${today.main_task?.objective || 'No task assigned'}\n\n**Review due:** ${today.review_due}\n\n**Mini practice:** ${today.mini_prompt}`;
+    }
+    if (command === '/plan') {
+      const { plan } = await fetchLearning('/plan');
+      return `**Your ${plan.duration_weeks}-week plan · ${plan.level}**\n\n${(plan.weeks || []).map(week => `**Week ${week.week_number}: ${week.theme}**\n${week.objective}`).join('\n\n')}`;
+    }
+    if (command === '/practice') {
+      const { exercises } = await fetchLearning('/exercises');
+      return `**Practice library**\n\n${exercises.slice(0, 8).map(item => `- **${item.id} · ${item.skill} · ${item.level}** — ${item.objective} (${item.estimated_time} min)`).join('\n')}\n\nOpen Practice to choose an exercise.`;
+    }
+    if (command === '/review') {
+      const { items } = await fetchLearning('/review/queue');
+      return items.length
+        ? `**Review queue · ${items.length} items due**\n\n${items.slice(0, 5).map(item => `- ${item.prompt}`).join('\n')}\n\nOpen Review to practise them.`
+        : 'There are no cards due right now. New review cards appear after exercises.';
+    }
+    if (command === '/progress') {
+      const { summary, skills } = await fetchLearning('/progress');
+      return `**Your progress**\n\n- Learning time: ${summary.minutes} minutes\n- Completed tasks: ${summary.completed_tasks}\n- Active days: ${summary.active_days}\n- Open errors: ${summary.open_errors}\n\n**Skill accuracy**\n${skills.map(item => `- ${item.skill}: ${item.accuracy == null ? 'not enough data' : item.accuracy + '%'}`).join('\n') || 'Complete a few exercises to build your skill profile.'}`;
+    }
+    return null;
+  };
+
   const addMessage = (role, text) => {
     const bubble = document.createElement('div');
     bubble.className = 'message ' + role;
@@ -183,10 +219,24 @@ if (form) {
     status.textContent = 'THINKING…';
 
     try {
+      const command = text.trim().split(' ', 1)[0].toLowerCase();
+      if (['/plan','/today','/practice','/review','/progress'].includes(command)) {
+        const answer = await executeCommand(command);
+        addMessage('assistant', answer);
+        history.push({ role: 'assistant', content: answer });
+        status.textContent = 'CLOUDFLARE AI · READY';
+        return;
+      }
+
+      const requestBody = { messages: history.slice(-12) };
+      if (exerciseContextRef) {
+        requestBody.context_ref = exerciseContextRef;
+        exerciseContextRef = null;
+      }
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history.slice(-12) })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {

@@ -1,0 +1,42 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Content CMS — Quiet English</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet"><link rel="stylesheet" href="/styles.css"><script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/admin.js"></script></head><body>
+<header class="topbar wrap"><a class="wordmark" href="/">QUIET ENGLISH<span> / CONTENT CMS</span></a><nav aria-label="Main navigation"><a href="/plan.html">План</a><a href="/practice.html">Практика</a><a href="/review.html">Повторение</a><a href="/progress.html">Прогресс</a><a href="/tutor.html">Чат</a></nav><div class="language-switch"><button type="button" data-set-lang="ru">RU</button><button type="button" data-set-lang="en">EN</button></div></header>
+<main class="wrap" data-admin-page><section class="panel page-head"><p class="eyebrow">CONTENT MANAGEMENT</p><h1>Редактор заданий.</h1><p class="lead">Создавай задания, проверяй предпросмотр и публикуй проверенный контент.</p></section><p class="form-status" data-admin-status aria-live="polite"></p>
+<section class="panel"><div class="section-heading"><h2>Библиотека</h2><button type="button" class="button secondary" data-new>Новое задание</button></div><div data-admin-list class="exercise-grid"></div></section>
+<section class="panel"><p class="eyebrow">EXERCISE EDITOR</p><h2 data-editor-title>Новое задание</h2>
+<form data-admin-form>
+<div class="form-grid">
+<label>ID<input name="id" required maxlength="40" placeholder="G10"></label>
+<label>Навык<select name="skill"><option>vocabulary</option><option>grammar</option><option>reading</option><option>listening</option><option>writing</option><option>speaking</option><option>pronunciation</option><option>review</option></select></label>
+<label>Уровень<select name="level"><option>Pre-A1</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
+<label>Время (минуты)<input name="estimated_time" type="number" min="1" max="30" value="5"></label>
+<label>Цель<input name="objective" maxlength="180" required></label>
+<label>Критерий успеха<input name="success_criteria" value="Choose the correct answer."></label>
+<label>Инструкция RU<input name="instruction_ru" required></label>
+<label>Instruction EN<input name="instruction_en" required></label>
+<label>Объяснение RU<input name="explanation_ru" required></label>
+<label>Explanation EN<input name="explanation_en" required></label>
+<label>Tags (через запятую)<input name="tags"></label>
+<label>Prerequisites (ID через запятую)<input name="prerequisites"></label>
+</div>
+<div class="field-block"><label>Content JSON <textarea name="content_json" rows="8" required>{"type":"multiple_choice","prompt":"Choose the correct answer.","options":[{"id":"a","text":"Option A"},{"id":"b","text":"Option B"}]}</textarea></label></div>
+<div class="field-block"><label>Answer key JSON <textarea name="answer_json" rows="3" required>{"correct_option_id":"a"}</textarea></label></div>
+<div class="field-block"><label>SRS JSON <textarea name="srs_json" rows="3">{"enabled":true,"item_type":"grammar_rule"}</textarea></label></div>
+<p class="form-status" data-editor-status></p>
+<div class="rating-row"><button type="submit" class="button">Сохранить черновик</button><button type="button" class="button secondary" data-publish disabled>Опубликовать</button></div>
+</form></section><section class="panel"><p class="eyebrow">PLAN TEMPLATE EDITOR</p><h2>Шаблоны учебных планов.</h2><p class="copy">Редактируй недельные темы и последовательность заданий. Изменения применяются только к новым планам.</p><div data-plan-list class="exercise-grid"></div>
+<form data-plan-form><div class="form-grid">
+<label>ID<input name="id" placeholder="travel-4-week" required></label>
+<label>Название<input name="title" required></label>
+<label>Цель<select name="goal"><option>general</option><option>work</option><option>travel</option><option>communication</option><option>relocation</option><option>study</option></select></label>
+<label>Уровень от<select name="level_min"><option>Pre-A1</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
+<label>Уровень до<select name="level_max"><option>Pre-A1</option><option>A1</option><option>A2</option><option>B1</option><option selected>C2</option></select></label>
+<label>Минут в день<select name="minutes_per_day"><option>5</option><option selected>10</option><option>15</option><option>30</option></select></label>
+</div>
+<div class="field-block"><label>Weekly themes JSON <textarea name="weekly_themes" rows="14" required>[
+  {"theme":"Week 1","objective":"Goal for week one","tasks":["V01","G01","R01","V02","G02","R02","V03"]},
+  {"theme":"Week 2","objective":"Goal for week two","tasks":["V01","G03","R01","V02","G02","R02","V03"]},
+  {"theme":"Week 3","objective":"Goal for week three","tasks":["V01","G03","R02","V02","G04","R03","V03"]},
+  {"theme":"Week 4","objective":"Goal for week four","tasks":["V02","G04","R03","V03","G03","R02","V01"]}
+]</textarea></label></div>
+<p class="form-status" data-plan-editor-status></p><div class="rating-row"><button class="button" type="submit">Сохранить черновик плана</button><button class="button secondary" type="button" data-plan-publish disabled>Опубликовать шаблон</button></div>
+</form></section></main></body></html>
