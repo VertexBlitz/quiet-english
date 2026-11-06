@@ -55,7 +55,8 @@ if (onboarding) {
           minutes_per_day: Number(form.get('minutes_per_day')),
           duration_weeks: Number(form.get('duration_weeks') || 4),
           interests,
-          preferred_language: form.get('preferred_language') || 'ru'
+          preferred_language: form.get('preferred_language') || 'ru',
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
         })
       });
       location.href = '/placement.html';
