@@ -26,7 +26,7 @@ export async function requireUser(req, res, next) {
   }
   try {
     const { rows } = await pool.query(
-      'SELECT id, email, role, age_band, account_status FROM users WHERE id = $1',
+      'SELECT id, email, role, age_band, account_status, created_at FROM users WHERE id = $1',
       [req.session.userId]
     );
     const user = rows[0];
