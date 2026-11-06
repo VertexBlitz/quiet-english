@@ -32,14 +32,140 @@ if (form) {
       status.textContent = 'CONNECTION ISSUE';
     });
 
+  // Build a small, safe Markdown subset using DOM nodes (never innerHTML).
+  const renderInlineMarkdown = (text, parent) => {
+    const pattern = /(\*\*[^*]+\*\*|__[^_]+__|\*[^*\n]+\*|_[^_\n]+_|\x60[^\x60]+\x60)/g;
+    let cursor = 0;
+    let match;
+
+    while ((match = pattern.exec(text)) !== null) {
+      if (match.index > cursor) {
+        parent.appendChild(document.createTextNode(text.slice(cursor, match.index)));
+      }
+
+      const token = match[0];
+      let element;
+      let value;
+
+      if (token.startsWith('**') || token.startsWith('__')) {
+        element = document.createElement('strong');
+        value = token.slice(2, -2);
+      } else if (token.startsWith('`')) {
+        element = document.createElement('code');
+        value = token.slice(1, -1);
+      } else {
+        element = document.createElement('em');
+        value = token.slice(1, -1);
+      }
+
+      element.textContent = value;
+      parent.appendChild(element);
+      cursor = match.index + token.length;
+    }
+
+    if (cursor < text.length) {
+      parent.appendChild(document.createTextNode(text.slice(cursor)));
+    }
+  };
+
+  const renderFormattedReply = text => {
+    const content = document.createElement('div');
+    content.className = 'message-content';
+
+    const lines = text.replace(/\r\n?/g, '\n').split('\n');
+    let paragraph = [];
+    let list = null;
+    let listType = null;
+
+    const flushParagraph = () => {
+      if (!paragraph.length) return;
+      const p = document.createElement('p');
+      renderInlineMarkdown(paragraph.join(' ').trim(), p);
+      content.appendChild(p);
+      paragraph = [];
+    };
+
+    const flushList = () => {
+      if (!list) return;
+      content.appendChild(list);
+      list = null;
+      listType = null;
+    };
+
+    for (const rawLine of lines) {
+      const line = rawLine.trimEnd();
+
+      if (!line.trim()) {
+        flushParagraph();
+        flushList();
+        continue;
+      }
+
+      if (/^\s*([-*_])\1\1+\s*$/.test(line)) {
+        flushParagraph();
+        flushList();
+        content.appendChild(document.createElement('hr'));
+        continue;
+      }
+
+      const heading = line.match(/^\s{0,3}(#{1,3})\s+(.+)$/);
+      if (heading) {
+        flushParagraph();
+        flushList();
+        const h = document.createElement(heading[1].length === 1 ? 'h3' : 'h4');
+        renderInlineMarkdown(heading[2], h);
+        content.appendChild(h);
+        continue;
+      }
+
+      const ordered = line.match(/^\s*(\d+)[.)]\s+(.+)$/);
+      const unordered = line.match(/^\s*[-*+]\s+(.+)$/);
+      const item = ordered || unordered;
+
+      if (item) {
+        flushParagraph();
+        const nextType = ordered ? 'ol' : 'ul';
+        if (!list || listType !== nextType) {
+          flushList();
+          list = document.createElement(nextType);
+          listType = nextType;
+        }
+
+        const li = document.createElement('li');
+        const indent = rawLine.match(/^\s*/)?.[0].length || 0;
+        if (indent >= 2) li.classList.add('nested-item');
+        renderInlineMarkdown(item[ordered ? 2 : 1], li);
+        list.appendChild(li);
+        continue;
+      }
+
+      flushList();
+      paragraph.push(line.trim());
+    }
+
+    flushParagraph();
+    flushList();
+
+    if (!content.childNodes.length) {
+      content.textContent = text;
+    }
+    return content;
+  };
+
   const addMessage = (role, text) => {
     const bubble = document.createElement('div');
     bubble.className = 'message ' + role;
+
     const speaker = document.createElement('span');
     speaker.className = 'speaker';
     speaker.textContent = role === 'user' ? 'YOU' : 'TUTOR';
-    const content = document.createTextNode(text);
-    bubble.append(speaker, content);
+
+    if (role === 'assistant') {
+      bubble.append(speaker, renderFormattedReply(text));
+    } else {
+      bubble.append(speaker, document.createTextNode(text));
+    }
+
     messages.appendChild(bubble);
     messages.scrollTop = messages.scrollHeight;
     return bubble;
@@ -56,7 +182,6 @@ if (form) {
     send.disabled = true;
     status.textContent = 'THINKING…';
 
-    let assistantBubble = null;
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -73,16 +198,11 @@ if (form) {
       if (typeof data.message !== 'string' || !data.message.trim()) {
         throw new Error('Модель не вернула текстовый ответ. Попробуй ещё раз.');
       }
-      assistantBubble = addMessage('assistant', data.message.trim());
+      addMessage('assistant', data.message.trim());
       history.push({ role: 'assistant', content: data.message.trim() });
       status.textContent = 'CLOUDFLARE AI · READY';
     } catch (error) {
-      const message = error.message || 'Попробуй отправить сообщение ещё раз.';
-      if (assistantBubble) {
-        assistantBubble.lastChild.textContent = message;
-      } else {
-        addMessage('assistant', message);
-      }
+      addMessage('assistant', error.message || 'Попробуй отправить сообщение ещё раз.');
       status.textContent = 'TEMPORARILY UNAVAILABLE';
     } finally {
       send.disabled = false;
