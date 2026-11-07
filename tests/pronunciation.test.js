@@ -167,3 +167,121 @@ test('rejects malformed, too-short and non-English AI responses', () => {
     /неподходящей длины/u
   );
 });
+
+
+import {
+  buildPracticeGenerationPrompt,
+  gradeGeneratedPracticeExercise,
+  parseGeneratedPracticeExercise,
+  validatePracticeGenerationRequest
+} from '../src/practice-generation.js';
+
+const samplePracticePayload = (count = 5) => ({
+  title: 'A busy morning',
+  instructions: 'Choose the best answer for each question.',
+  passage: '',
+  questions: Array.from({ length: count }, (_, index) => ({
+    id: 'q' + (index + 1),
+    prompt: 'Choose the correct form for sentence ' + (index + 1) + '.',
+    category: 'grammar',
+    options: [
+      { id: 'a', text: 'go' },
+      { id: 'b', text: 'goes' },
+      { id: 'c', text: 'going' },
+      { id: 'd', text: 'gone' }
+    ],
+    correct_option_id: 'b',
+    explanation: 'Use the third-person singular form with he, she or it.'
+  }))
+});
+
+test('validates AI practice level, skill and topic', () => {
+  assert.equal(validatePracticeGenerationRequest({
+    level: 'B2', skill: 'grammar', topic: 'Science'
+  }).ok, true);
+  assert.equal(validatePracticeGenerationRequest({
+    level: 'C2', skill: 'grammar', topic: 'Science'
+  }).ok, false);
+  assert.equal(validatePracticeGenerationRequest({
+    level: 'A2', skill: 'unknown', topic: 'Science'
+  }).ok, false);
+  assert.equal(validatePracticeGenerationRequest({
+    level: 'A2', skill: 'reading', topic: 'Unknown'
+  }).ok, false);
+});
+
+test('builds distinct level and skill instructions for AI practice', () => {
+  const request = validatePracticeGenerationRequest({
+    level: 'B1', skill: 'reading', topic: 'Science'
+  }).value;
+  const prompt = buildPracticeGenerationPrompt(request);
+  assert.match(prompt, /CEFR B1/u);
+  assert.match(prompt, /reading passage/u);
+  assert.match(prompt, /exactly four questions/u);
+});
+
+test('parses a valid grammar quiz and retains answers only in the server exercise object', () => {
+  const exercise = parseGeneratedPracticeExercise(
+    JSON.stringify(samplePracticePayload()),
+    { level: 'A2', skill: 'grammar', topic: 'Everyday life' }
+  );
+  assert.equal(exercise.questions.length, 5);
+  assert.equal(exercise.questions[0].correct_option_id, 'b');
+  assert.equal(exercise.questions[0].options.length, 4);
+});
+
+test('parses listening and reading passages with four comprehension questions', () => {
+  const payload = samplePracticePayload(4);
+  payload.passage = 'A group of students visits a science museum on Friday. They discover how clean energy can power homes and learn why careful research matters. Their guide explains how solar panels use sunlight and how wind turbines create electricity. At the end of the visit, each student writes one question for a researcher.';
+  const reading = parseGeneratedPracticeExercise(
+    JSON.stringify(payload),
+    { level: 'B1', skill: 'reading', topic: 'Science' }
+  );
+  assert.equal(reading.questions.length, 4);
+  assert.ok(reading.passage.length > 80);
+});
+
+test('grades all answers on the server and returns explanations without accepting malformed submissions', () => {
+  const exercise = parseGeneratedPracticeExercise(
+    JSON.stringify(samplePracticePayload()),
+    { level: 'A2', skill: 'grammar', topic: 'Everyday life' }
+  );
+  const answers = exercise.questions.map((question, index) => ({
+    question_id: question.id,
+    option_id: index < 3 ? 'b' : 'a'
+  }));
+  const result = gradeGeneratedPracticeExercise(exercise, answers);
+  assert.equal(result.correct, 3);
+  assert.equal(result.total, 5);
+  assert.equal(result.score, 60);
+  assert.equal(result.results[0].is_correct, true);
+  assert.equal(result.results[3].correct_answer, 'goes');
+  assert.throws(
+    () => gradeGeneratedPracticeExercise(exercise, answers.slice(0, 2)),
+    /все вопросы/u
+  );
+  assert.throws(
+    () => gradeGeneratedPracticeExercise(exercise, [
+      ...answers.slice(0, 4),
+      answers[0]
+    ]),
+    /некорректно/u
+  );
+});
+
+test('rejects invalid AI exercise schema and ambiguous answer options', () => {
+  const payload = samplePracticePayload();
+  payload.questions[0].options[1].text = 'go';
+  assert.throws(
+    () => parseGeneratedPracticeExercise(JSON.stringify(payload), {
+      level: 'A2', skill: 'grammar', topic: 'Everyday life'
+    }),
+    /некорректными/u
+  );
+  assert.throws(
+    () => parseGeneratedPracticeExercise('not json', {
+      level: 'A2', skill: 'grammar', topic: 'Everyday life'
+    }),
+    /непонятном формате/u
+  );
+});
