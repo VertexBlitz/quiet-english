@@ -526,4 +526,29 @@
       if (exportStatus) { exportStatus.textContent = error.message; exportStatus.classList.add('error-text'); }
     });
   }
+
+  const offlineSaveButton = document.querySelector('[data-knowledge-save-offline]');
+  offlineSaveButton?.addEventListener('click', async () => {
+    const article = document.querySelector('[data-kb-article]');
+    const content = article?.innerText?.trim() || '';
+    const title = article?.querySelector('h2')?.textContent?.trim() || 'Quiet English knowledge note';
+    const status = document.querySelector('[data-kb-export-status]');
+    if (!content || content.length < 80) {
+      if (status) status.textContent = 'Сначала открой конспект, который нужно сохранить.';
+      return;
+    }
+    try {
+      if (!window.QuietOffline) throw new Error('Офлайн-хранилище недоступно.');
+      await window.QuietOffline.save({
+        id: 'knowledge-' + title.toLowerCase().replace(/[^a-z0-9а-я]+/giu, '-').slice(0, 70),
+        type: 'knowledge',
+        title: title,
+        content: content
+      });
+      if (status) status.textContent = 'Конспект сохранён на этом устройстве.';
+    } catch (error) {
+      if (status) status.textContent = error.message || 'Не удалось сохранить конспект.';
+    }
+  });
+
 })();

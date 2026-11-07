@@ -184,6 +184,47 @@ if (planPage) {
       item.append(title, text);
       weeks.appendChild(item);
     });
+    const coachTasks = $('[data-plan-coach-tasks]', planPage);
+    if (coachTasks) {
+      const renderCoachTasks = data => {
+        coachTasks.replaceChildren();
+        const tasks = data && Array.isArray(data.tasks) ? data.tasks : [];
+        if (!tasks.length) {
+          const note = document.createElement('p');
+          note.className = 'fine-print';
+          note.textContent = 'Открой Quiet English AI, чтобы получить персональные рекомендации после первых упражнений.';
+          coachTasks.append(note);
+          return;
+        }
+        tasks.forEach(task => {
+          const card = document.createElement('article');
+          card.className = 'coach-task';
+          const info = document.createElement('div');
+          const heading = document.createElement('strong');
+          heading.textContent = task.title;
+          const detail = document.createElement('p');
+          detail.textContent = task.description || task.topic || '';
+          info.append(heading, detail);
+          const link = document.createElement('a');
+          link.className = 'text-link';
+          link.href = '/studio.html';
+          link.textContent = 'Открыть AI Coach →';
+          card.append(info, link);
+          coachTasks.append(card);
+        });
+      };
+      fetch('/api/studio/coach/latest', { credentials: 'same-origin' })
+        .then(response => response.ok ? response.json() : Promise.reject(new Error('AI Coach пока недоступен.')))
+        .then(data => {
+          if (data.report) renderCoachTasks(data);
+          else fetch('/api/studio/coach/analyze', {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' }, body: '{}'
+          }).then(response => response.ok ? response.json() : Promise.reject(new Error('AI Coach пока недоступен.')))
+            .then(renderCoachTasks).catch(() => renderCoachTasks({ tasks: [] }));
+        })
+        .catch(() => renderCoachTasks({ tasks: [] }));
+    }
   });
 }
 

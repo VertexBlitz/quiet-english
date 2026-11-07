@@ -1,0 +1,6 @@
+(() => {
+const root=document.querySelector('[data-offline-list]');if(!root)return;
+const make=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;};
+async function render(){root.replaceChildren();try{const items=await window.QuietOffline.all();if(!items.length){root.append(make('p','fine-print','Пока ничего не сохранено. Открой Writing Lab, Словарь или Аудирование и нажми «Сохранить офлайн».'));return;}items.sort((a,b)=>String(b.savedAt).localeCompare(String(a.savedAt)));items.forEach(item=>{const card=make('article','offline-item');card.append(make('span','eyebrow',item.type||'MATERIAL'),make('h3','',item.title||'Сохранённый материал'));const content=make('pre','offline-material',item.content||'');card.append(content,make('small','fine-print','Сохранено '+new Date(item.savedAt).toLocaleString()));if(item.audio instanceof Blob){const audio=make('audio','');audio.controls=true;audio.src=URL.createObjectURL(item.audio);card.append(audio);}const remove=make('button','text-link','Удалить');remove.type='button';remove.addEventListener('click',async()=>{await window.QuietOffline.remove(item.id);render();});card.append(remove);root.append(card);});}catch(e){root.append(make('p','error-text','Локальное хранилище недоступно: '+e.message));}}
+render();
+})();

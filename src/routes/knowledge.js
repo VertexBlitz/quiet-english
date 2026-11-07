@@ -306,8 +306,11 @@ router.get('/map', requireDatabase, requireUser, async (req, res, next) => {
 router.get('/vocabulary', requireDatabase, requireUser, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id,word,ipa,translation,definition,metadata,created_at
-       FROM learner_vocabulary WHERE user_id=$1 ORDER BY created_at DESC LIMIT 200`,
+      `SELECT v.id,v.word,v.ipa,v.translation,v.definition,v.metadata,v.source,v.created_at,
+              s.due_at,s.interval_days,s.repetitions,s.last_rating
+       FROM learner_vocabulary v
+       LEFT JOIN srs_items s ON s.user_id=v.user_id AND s.item_type='vocabulary' AND s.item_ref=v.id::text
+       WHERE v.user_id=$1 ORDER BY v.created_at DESC LIMIT 200`,
       [req.user.id]
     );
     res.json({ words: rows });
@@ -322,18 +325,29 @@ router.post('/vocabulary', requireDatabase, requireUser, async (req, res, next) 
   const ipa = cleanText(req.body?.ipa, 100);
   const translation = cleanText(req.body?.translation, 240);
   const definition = cleanText(req.body?.definition, 500);
+  const source = ['dictionary','listening'].includes(req.body?.source) ? req.body.source : 'dictionary';
   const metadata = req.body?.metadata && typeof req.body.metadata === 'object'
     ? JSON.stringify(req.body.metadata).slice(0, 12000)
     : '{}';
   try {
     const { rows } = await pool.query(
-      `INSERT INTO learner_vocabulary (user_id,word,ipa,translation,definition,metadata)
-       VALUES ($1,$2,$3,$4,$5,$6::jsonb)
+      `INSERT INTO learner_vocabulary (user_id,word,ipa,translation,definition,metadata,source)
+       VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7)
        ON CONFLICT (user_id,LOWER(word)) DO UPDATE SET
          ipa=EXCLUDED.ipa, translation=EXCLUDED.translation,
-         definition=EXCLUDED.definition, metadata=EXCLUDED.metadata, updated_at=NOW()
-       RETURNING id,word,ipa,translation,definition,metadata,created_at`,
-      [req.user.id, word, ipa, translation, definition, metadata]
+         definition=EXCLUDED.definition, metadata=EXCLUDED.metadata,
+         source=EXCLUDED.source, updated_at=NOW()
+       RETURNING id,word,ipa,translation,definition,metadata,source,created_at`,
+      [req.user.id, word, ipa, translation, definition, metadata, source]
+    );
+    await pool.query(
+      `INSERT INTO srs_items (user_id,item_type,item_ref,prompt,answer,explanation,due_at)
+       VALUES ($1,'vocabulary',$2,$3,$4,$5,NOW()+INTERVAL '1 day')
+       ON CONFLICT (user_id,item_type,item_ref) DO UPDATE SET
+         prompt=EXCLUDED.prompt,answer=EXCLUDED.answer,explanation=EXCLUDED.explanation,
+         updated_at=NOW()`,
+      [req.user.id, rows[0].id.toString(), rows[0].word,
+       rows[0].translation || rows[0].definition || 'Review this word', rows[0].definition || null]
     );
     res.status(201).json({ word: rows[0] });
   } catch (error) { next(error); }
@@ -341,6 +355,7 @@ router.post('/vocabulary', requireDatabase, requireUser, async (req, res, next) 
 
 router.delete('/vocabulary/:id', requireDatabase, requireUser, async (req, res, next) => {
   try {
+    await pool.query("DELETE FROM srs_items WHERE user_id=$1 AND item_type='vocabulary' AND item_ref=$2", [req.user.id, req.params.id]);
     const result = await pool.query('DELETE FROM learner_vocabulary WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
     if (!result.rowCount) return res.status(404).json({ error: 'Слово не найдено.' });
     res.json({ ok: true });

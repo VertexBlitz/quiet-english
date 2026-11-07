@@ -12,6 +12,8 @@ import learningRoutes from './src/routes/learning.js';
 import knowledgeRoutes from './src/routes/knowledge.js';
 import adminRoutes from './src/routes/admin.js';
 import pronunciationRoutes from './src/routes/pronunciation.js';
+import writingRoutes from './src/routes/writing.js';
+import studyToolsRoutes from './src/routes/study-tools.js';
 import {
   buildSpeakingGenerationPrompt,
   parseGeneratedSpeakingPassage,
@@ -86,6 +88,7 @@ if (sessionsConfigured) {
   app.use('/api/knowledge', sameOrigin, knowledgeRoutes);
   app.use('/api/admin', sameOrigin, adminRoutes);
   app.use('/api/pronunciation', sameOrigin, pronunciationRoutes);
+  app.use('/api/studio', sameOrigin, writingRoutes, studyToolsRoutes);
 } else {
   const notReady = (_req, res) => res.status(503).json({
     error: 'Личный кабинет ещё не настроен. Нужны DATABASE_URL и SESSION_SECRET.'
@@ -95,6 +98,7 @@ if (sessionsConfigured) {
   app.use('/api/knowledge', notReady);
   app.use('/api/admin', notReady);
   app.use('/api/pronunciation', notReady);
+  app.use('/api/studio', notReady);
 }
 
 const MODEL = process.env.CLOUDFLARE_MODEL || '@cf/google/gemma-4-26b-a4b-it';
