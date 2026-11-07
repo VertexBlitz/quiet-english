@@ -16,6 +16,7 @@ import {
   parseGeneratedSpeakingPassage,
   validateSpeakingGenerationRequest
 } from './src/speaking.js';
+import { buildInstantPracticeExercise } from './src/instant-practice.js';
 import {
   buildPracticeGenerationPrompt,
   gradeGeneratedPracticeExercise,
@@ -433,6 +434,44 @@ function cleanGeneratedPracticeSessions() {
     generatedPracticeSessions.delete(oldest);
   }
 }
+
+app.post('/api/practice/instant', async (req, res) => {
+  if (!sameRequestOrigin(req)) {
+    return res.status(403).json({ error: 'Источник запроса не разрешён.' });
+  }
+
+  const validated = validatePracticeGenerationRequest(req.body);
+  if (!validated.ok) return res.status(400).json({ error: validated.error });
+
+  try {
+    const request = validated.value;
+    const exercise = buildInstantPracticeExercise(request);
+    cleanGeneratedPracticeSessions();
+    const exerciseId = randomUUID();
+    generatedPracticeSessions.set(exerciseId, {
+      exercise,
+      expiresAt: Date.now() + PRACTICE_SESSION_TTL
+    });
+
+    const { questions, ...metadata } = exercise;
+    return res.json({
+      exercise_id: exerciseId,
+      source: 'instant-library',
+      exercise: {
+        ...metadata,
+        questions: questions.map(question => ({
+          id: question.id,
+          prompt: question.prompt,
+          category: question.category,
+          options: question.options
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Instant practice build error:', error?.message || 'unknown error');
+    return res.status(500).json({ error: 'Не удалось мгновенно подготовить задание.' });
+  }
+});
 
 app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) => {
   if (!sameRequestOrigin(req)) {
