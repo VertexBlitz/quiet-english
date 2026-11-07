@@ -43,6 +43,38 @@ function messagePageUrl(page, token) {
   return `${appUrl()}/${page}?token=${encodeURIComponent(token)}`;
 }
 
+router.post('/resend-verification', async (req, res, next) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  if (!validEmail(email)) return res.status(400).json({ error: 'Укажи корректный email.' });
+  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !appUrl()) {
+    return res.status(503).json({ error: 'Повторная отправка пока не настроена.' });
+  }
+  try {
+    const found = await pool.query(
+      "SELECT id FROM users WHERE LOWER(email)=$1 AND email_verified_at IS NULL AND account_status <> 'disabled'",
+      [email]
+    );
+    if (found.rows[0]) {
+      const userId = found.rows[0].id;
+      await pool.query(
+        "UPDATE email_tokens SET consumed_at=NOW() WHERE user_id=$1 AND token_type='email_verify' AND consumed_at IS NULL",
+        [userId]
+      );
+      const token = await createToken(pool, userId, 'email_verify', 24);
+      await sendMail({
+        to: email,
+        subject: 'Подтверди email — Quiet English',
+        html: '<p>Подтверди адрес электронной почты, чтобы активировать аккаунт Quiet English:</p>' +
+          '<p><a href="' + messagePageUrl('verify.html', token) + '">Подтвердить email</a></p>' +
+          '<p>Ссылка действует 24 часа. Если ты не создавал аккаунт, проигнорируй письмо.</p>'
+      });
+    }
+    res.json({ ok: true, message: 'Если аккаунт существует и email ещё не подтверждён, письмо отправлено.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/register', async (req, res, next) => {
   const {
     email, password, age_band, country_code,

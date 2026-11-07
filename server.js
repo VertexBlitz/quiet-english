@@ -63,6 +63,13 @@ const passwordRecoveryLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Слишком много запросов на восстановление пароля. Попробуй позже.' }
 });
+const emailResendLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: 3,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Слишком много запросов на повторное письмо. Попробуй позже.' }
+});
 const chatLimiter = rateLimit({
   windowMs: 60 * 60_000,
   limit: 30,
@@ -116,6 +123,7 @@ if (sessionsConfigured) {
   app.use('/api/auth/login', loginAttemptLimiter);
   app.use('/api/auth/register', registrationAttemptLimiter);
   app.use('/api/auth/password/forgot', passwordRecoveryLimiter);
+  app.use('/api/auth/resend-verification', emailResendLimiter);
   app.use('/api/auth', sameOrigin, authRoutes);
   app.use('/api/learning', sameOrigin, learningRoutes);
   app.use('/api/knowledge', sameOrigin, knowledgeRoutes);

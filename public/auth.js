@@ -22,6 +22,20 @@ function showAuthMessage(message, isError = false) {
 
 if (authForm?.dataset.authForm === 'register') {
   const registerButton = authForm.querySelector('button[type="submit"]');
+  const resendButton = authForm.querySelector('[data-resend-verification]');
+  let pendingVerificationEmail = '';
+  resendButton?.addEventListener('click', async () => {
+    if (!pendingVerificationEmail) return;
+    resendButton.disabled = true;
+    try {
+      const data = await authRequest('/resend-verification', { email: pendingVerificationEmail });
+      showAuthMessage(data.message || 'Проверь почту.');
+    } catch (error) {
+      showAuthMessage(error.message, true);
+    } finally {
+      resendButton.disabled = false;
+    }
+  });
   if (registerButton) registerButton.disabled = true;
   fetch('/api/registration-status', { cache: 'no-store' })
     .then(async response => {
@@ -54,6 +68,8 @@ if (authForm?.dataset.authForm === 'register') {
         terms_accepted: form.get('terms_accepted') === 'on',
         privacy_accepted: form.get('privacy_accepted') === 'on'
       });
+      pendingVerificationEmail = String(form.get('email') || '').trim().toLowerCase();
+      if (resendButton) resendButton.hidden = !data.emailPending;
       showAuthMessage(data.message || 'Проверь почту для продолжения.');
       authForm.reset();
     } catch (error) {

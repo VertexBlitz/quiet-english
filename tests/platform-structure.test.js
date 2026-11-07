@@ -78,3 +78,14 @@ test('password recovery and public AI chat have dedicated rate limits', () => {
   assert.ok(server.includes('const chatLimiter = rateLimit'));
   assert.ok(server.includes("app.post('/api/chat', chatLimiter"));
 });
+
+test('email verification can be resent safely after a temporary delivery failure', () => {
+  const authRoute = read('src/routes/auth.js');
+  const authClient = read('public/auth.js');
+  const registerPage = read('public/register.html');
+  const server = read('server.js');
+  assert.ok(authRoute.includes("router.post('/resend-verification'"));
+  assert.ok(authClient.includes("authRequest('/resend-verification'"));
+  assert.ok(registerPage.includes('data-resend-verification'));
+  assert.ok(server.includes("app.use('/api/auth/resend-verification', emailResendLimiter);"));
+});
