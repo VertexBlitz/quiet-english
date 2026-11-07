@@ -248,16 +248,16 @@ const SUBJUNCTIVE_ITEMS = [
   ['The chairperson insisted that the decision', 'be']
 ];
 const PARTICIPLE_ITEMS = [
-  ['After the researchers had reviewed the evidence', 'Having reviewed'],
-  ['Because the team had completed the survey', 'Having completed'],
-  ['After the committee had considered each option', 'Having considered'],
-  ['Because the author had examined the sources', 'Having examined'],
-  ['After the engineers had tested the prototype', 'Having tested'],
-  ['Because the students had compared the results', 'Having compared'],
-  ['After the panel had discussed the proposal', 'Having discussed'],
-  ['Because the curator had checked the records', 'Having checked'],
-  ['After the analysts had assessed the risk', 'Having assessed'],
-  ['Because the university had approved the plan', 'Having approved']
+  ['After the researchers had reviewed the evidence', 'Having reviewed', 'the evidence'],
+  ['Because the team had completed the survey', 'Having completed', 'the survey'],
+  ['After the committee had considered each option', 'Having considered', 'each option'],
+  ['Because the author had examined the sources', 'Having examined', 'the sources'],
+  ['After the engineers had tested the prototype', 'Having tested', 'the prototype'],
+  ['Because the students had compared the results', 'Having compared', 'the results'],
+  ['After the panel had discussed the proposal', 'Having discussed', 'the proposal'],
+  ['Because the curator had checked the records', 'Having checked', 'the records'],
+  ['After the analysts had assessed the risk', 'Having assessed', 'the risk'],
+  ['Because the university had approved the plan', 'Having approved', 'the plan']
 ];
 const CONCESSION_ITEMS = [
   ['The evidence was limited', 'the conclusion was carefully qualified', 'Much as'],
@@ -705,7 +705,7 @@ function makeGrammarBank(level) {
     rows.push(...expandCross(PARTICIPLE_ITEMS, SCENES[level], (item, scene) =>
       entry('Perfect participle clauses',
         '___, the team presented its conclusions ' + scene + '.',
-        item[1], ['Being reviewing the evidence', 'To have reviewed the evidence', 'Having been review the evidence'],
+        item[1] + ' ' + item[2], ['Being reviewing ' + item[2], 'To have reviewed ' + item[2], 'Having been review ' + item[2]],
         'Use Having + past participle to show that one action was completed before another.'
       )));
     rows.push(...expandCross(CONCESSION_ITEMS, SCENES[level], (item, scene) =>
@@ -716,9 +716,9 @@ function makeGrammarBank(level) {
       )));
     rows.push(...expandCross(PHRASAL_ITEMS, SCENES[level], (item, scene) =>
       entry('Precision and academic vocabulary',
-        scene + ', the author chose to ' + item[0] + ' the argument. This means to ' + '___' + '.',
-        item[1], ['conceal', 'contradict', 'postpone'],
-        'Choose the meaning that matches the academic verb or expression in context.'
+        scene + ': In this sentence, the expression "' + item[0] + '" means ___.',
+        item[1], PHRASAL_ITEMS.filter(other => other[1] !== item[1]).slice(0, 3).map(other => other[1]),
+        'Choose the meaning that matches the expression in context.'
       )));
   }
   return rows;
