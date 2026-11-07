@@ -22,8 +22,22 @@ function render(data){
   const labels={grammar:'Грамматика',naturalness:'Естественность речи',vocabulary:'Словарный запас',structure:'Структура'};
   const scores=$('[data-writing-scores]');scores.replaceChildren();
   Object.keys(labels).forEach(key=>{const card=node('article','writing-score');card.append(node('span','',labels[key]),node('strong','',String(data.scores[key])+'/100'));const track=node('div','writing-score-track'),fill=node('span','writing-score-fill');fill.style.width=data.scores[key]+'%';track.append(fill);card.append(track);scores.append(card);});
-  $('[data-writing-corrected]').textContent=data.corrected_text||'';
-  $('[data-writing-natural]').textContent=data.natural_version||'';
+  const originalText=(data.submitted_text||formText.value||'').trim();
+  const correctedText=(data.corrected_text||'').trim()||originalText;
+  const naturalText=(data.natural_version||'').trim()||correctedText;
+  const correctedNode=$('[data-writing-corrected]');
+  const naturalNode=$('[data-writing-natural]');
+  correctedNode.textContent=correctedText||'Текст не был сохранён в этой записи.';
+  naturalNode.textContent=naturalText||'Текст не был сохранён в этой записи.';
+  [correctedNode,naturalNode].forEach((target,index)=>{
+    target.classList.toggle('is-fallback',index===0?!data.corrected_text?.trim():!data.natural_version?.trim());
+    target.parentElement.querySelector('.writing-fallback-note')?.remove();
+    if(target.classList.contains('is-fallback')){
+      const note=node('span','writing-fallback-note',index===0?'Отдельная исправленная версия не пришла от ИИ — показан исходный текст.':'Отдельная естественная версия не пришла от ИИ — показан исправленный текст.');
+      target.insertAdjacentElement('afterend',note);
+    }
+  });
+  latest={...data,submitted_text:originalText,corrected_text:correctedText,natural_version:naturalText};
   const issues=$('[data-writing-issues]');issues.replaceChildren();
   if(!data.issues||!data.issues.length)issues.append(node('p','fine-print','Отдельных ошибок не найдено.'));
   (data.issues||[]).forEach(item=>{const card=node('article','writing-issue');card.append(node('span','writing-issue-type',item.type),node('p','writing-issue-original',item.original),node('p','writing-issue-correction','→ '+item.correction),node('p','writing-issue-explanation',item.explanation_ru||item.explanation_en||''));issues.append(card);});
@@ -35,7 +49,17 @@ function render(data){
 function renderHistory(items){
   const list=$('[data-writing-history]');list.replaceChildren();$('[data-writing-history-count]').textContent=items.length;
   if(!items.length){list.append(node('p','fine-print','Здесь появятся твои проверенные работы.'));return;}
-  items.forEach(item=>{const row=node('button','writing-history-row');row.type='button';const label=node('span','',item.topic||({essay:'Эссе',email:'Письмо',story:'Рассказ',article:'Статья',exam:'Экзаменационный ответ'}[item.task_type]||item.task_type));const meta=node('small','',item.level+' · '+new Date(item.created_at).toLocaleDateString());const score=node('strong','',item.overall_score+'/100');row.append(label,meta,score);row.addEventListener('click',async()=>{try{const d=await api('/writing/'+encodeURIComponent(item.id));render(d.submission);}catch(e){message(e.message,true);}});list.append(row);});
+  items.forEach(item=>{
+    const row=node('button','writing-history-row');
+    row.type='button';
+    row.setAttribute('aria-label','Открыть разбор: '+(item.topic||item.task_type));
+    const label=node('span','writing-history-title',item.topic||({essay:'Эссе',email:'Письмо',story:'Рассказ',article:'Статья',exam:'Экзаменационный ответ'}[item.task_type]||item.task_type));
+    const meta=node('small','writing-history-meta',(item.level||'')+' · '+new Date(item.created_at).toLocaleDateString('ru-RU'));
+    const score=node('strong','writing-history-score',item.overall_score+'/100');
+    row.append(label,meta,score);
+    row.addEventListener('click',async()=>{try{const d=await api('/writing/'+encodeURIComponent(item.id));render(d.submission);result.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){message(e.message,true);}});
+    list.append(row);
+  });
 }
 api('/writing/history').then(d=>renderHistory(d.submissions||[])).catch(e=>renderHistory([]));
 submit.addEventListener('click',async()=>{
