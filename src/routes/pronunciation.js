@@ -17,14 +17,14 @@ router.get('/status', (_req, res) => {
 
 router.get('/history', async (req, res, next) => {
   try {
-    const { rows } = await pool.query(
-      \`SELECT id, reference_text, recognized_text, word_match_score, word_results, created_at
-       FROM pronunciation_attempts
-       WHERE user_id=$1
-       ORDER BY created_at DESC
-       LIMIT 8\`,
-      [req.user.id]
-    );
+    const historySql = [
+      'SELECT id, reference_text, recognized_text, word_match_score, word_results, created_at',
+      'FROM pronunciation_attempts',
+      'WHERE user_id=$1',
+      'ORDER BY created_at DESC',
+      'LIMIT 8'
+    ].join(' ');
+    const { rows } = await pool.query(historySql, [req.user.id]);
     res.json({ attempts: rows });
   } catch (error) { next(error); }
 });
@@ -56,13 +56,15 @@ router.post('/attempt', async (req, res, next) => {
   }));
 
   try {
-    const { rows } = await pool.query(
-      \`INSERT INTO pronunciation_attempts
-       (user_id, reference_text, recognized_text, word_match_score, word_results)
-       VALUES ($1,$2,$3,$4,$5::jsonb)
-       RETURNING id, created_at\`,
-      [req.user.id, referenceText, recognizedText, wordMatchScore, JSON.stringify(safeWords)]
-    );
+    const insertSql = [
+      'INSERT INTO pronunciation_attempts',
+      '(user_id, reference_text, recognized_text, word_match_score, word_results)',
+      'VALUES ($1,$2,$3,$4,$5::jsonb)',
+      'RETURNING id, created_at'
+    ].join(' ');
+    const { rows } = await pool.query(insertSql, [
+      req.user.id, referenceText, recognizedText, wordMatchScore, JSON.stringify(safeWords)
+    ]);
     res.json({ attempt: rows[0] });
   } catch (error) { next(error); }
 });
