@@ -29,3 +29,34 @@ test('returns zero match when no reference words are recognized', () => {
 test('rejects an empty reference passage', () => {
   assert.throws(() => compareTranscript('', 'hello'), /Reference text/);
 });
+
+import { readLocalPronunciationHistory, saveLocalPronunciationAttempt } from '../public/pronunciation-storage.js';
+
+test('saves local speaking history and keeps only the latest eight attempts', () => {
+  const values = new Map();
+  const storage = {
+    getItem: key => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value)
+  };
+  for (let index = 0; index < 10; index++) {
+    assert.equal(saveLocalPronunciationAttempt(storage, {
+      reference_text: 'A speaking passage',
+      word_match_score: index,
+      created_at: new Date(index * 1000).toISOString()
+    }), true);
+  }
+  const history = readLocalPronunciationHistory(storage);
+  assert.equal(history.length, 8);
+  assert.equal(history[0].word_match_score, 9);
+  assert.equal(history.at(-1).word_match_score, 2);
+});
+
+test('returns an empty local history when browser storage is unavailable or corrupt', () => {
+  assert.deepEqual(readLocalPronunciationHistory({
+    getItem: () => '{not valid json'
+  }), []);
+  assert.equal(saveLocalPronunciationAttempt({
+    getItem: () => null,
+    setItem: () => { throw new Error('storage full'); }
+  }, { reference_text: 'Example' }), false);
+});
