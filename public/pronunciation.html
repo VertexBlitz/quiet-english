@@ -39,6 +39,28 @@
       <span class="pill" data-engine-status>WHISPER · ON-DEVICE</span>
     </div>
 
+    <div class="pron-ai-generator">
+      <div class="pron-ai-generator-copy">
+        <strong data-ru="Создать новое задание с ИИ" data-en="Generate a new AI passage">Создать новое задание с ИИ</strong>
+        <span data-ru="Каждое нажатие создаёт новый текст выбранного уровня." data-en="Each request creates a fresh passage for the selected level.">Каждое нажатие создаёт новый текст выбранного уровня.</span>
+      </div>
+      <label class="pron-topic-filter">
+        <span data-ru="Тема" data-en="Topic">Тема</span>
+        <select data-pron-topic aria-label="Choose a speaking passage topic">
+          <option value="Everyday life">Everyday life</option>
+          <option value="Travel">Travel</option>
+          <option value="History and culture">History and culture</option>
+          <option value="Science">Science</option>
+          <option value="Technology">Technology</option>
+          <option value="Environment">Environment</option>
+          <option value="Education">Education</option>
+          <option value="Books and media">Books and media</option>
+        </select>
+      </label>
+      <button class="button pron-generate-button" type="button" data-generate-passage data-ru="Сгенерировать ↗" data-en="Generate ↗">Сгенерировать ↗</button>
+      <p class="pron-ai-status" data-ai-generator-status role="status" aria-live="polite"></p>
+    </div>
+
     <div class="pron-library-controls">
       <label class="pron-level-filter">
         <span data-ru="Уровень" data-en="Level">Уровень</span>
