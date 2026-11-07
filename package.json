@@ -8,8 +8,7 @@
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
     "check": "node scripts/check.js",
-    "test": "node --test",
-    "prestart": "npm run migrate"
+    "test": "node --test"
   },
   "dependencies": {
     "argon2": "^0.44.0",
