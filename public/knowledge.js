@@ -61,7 +61,8 @@
   const reset = root.querySelector('[data-kb-reset]');
   const categoryButtons = [...root.querySelectorAll('[data-kb-category]')];
   let activeCategory = 'all';
-  let selectedId = 'grammar-a1';
+  const initialNoteId = new URLSearchParams(window.location.search).get('note');
+  let selectedId = initialNoteId && lessons.some(item => item.id === initialNoteId) ? initialNoteId : 'grammar-a1';
   const language = () => document.documentElement.lang === 'en' ? 1 : 0;
   const tr = value => Array.isArray(value) ? value[language()] : (value || '');
   const make = (tag, cls, text) => {
@@ -70,6 +71,131 @@
     if (text != null) node.textContent = text;
     return node;
   };
+  const noteProgress = new Map();
+  let collectionCache = null;
+  const exportStatus = root.querySelector('[data-kb-export-status]');
+  async function knowledgeApi(path, options = {}) {
+    const response = await fetch('/api/knowledge' + path, {
+      credentials: 'same-origin', ...options,
+      headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Не удалось сохранить учебные данные.');
+    return data;
+  }
+  function notePayload(item) {
+    return { title: tr(item.title), summary: tr(item.summary), category: item.category, level: item.level };
+  }
+  async function loadPersonalCollections() {
+    if (collectionCache) return collectionCache;
+    const data = await knowledgeApi('/library');
+    collectionCache = data.collections || [];
+    return collectionCache;
+  }
+  async function recordNoteOpen(item) {
+    const data = await knowledgeApi('/notes/' + encodeURIComponent(item.id) + '/open', {
+      method: 'POST', body: JSON.stringify(notePayload(item))
+    });
+    noteProgress.set(item.id, { ...(noteProgress.get(item.id) || {}), ...data.progress });
+    return data.progress;
+  }
+  function speakEnglish(text) {
+    if (!('speechSynthesis' in window)) {
+      window.alert(language() ? 'Speech is not supported in this browser.' : 'Озвучивание не поддерживается этим браузером.');
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US'; utterance.rate = 0.88;
+    window.speechSynthesis.speak(utterance);
+  }
+  async function exportLessonsPdf(items, filename) {
+    if (!items.length) throw new Error(language() ? 'There are no notes to export.' : 'Нет конспектов для экспорта.');
+    if (typeof window.html2pdf !== 'function') throw new Error(language() ? 'PDF module is unavailable.' : 'Модуль создания PDF не загружен.');
+    const bundle = make('div', 'knowledge-pdf-bundle');
+    Object.assign(bundle.style, {
+      display: 'block', width: '680px', maxWidth: '680px', minWidth: '680px',
+      boxSizing: 'border-box', padding: '0', margin: '0', background: '#fff',
+      color: '#17212b', fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '12px',
+      lineHeight: '1.65', position: 'absolute', left: '0', top: '0', zIndex: '99999',
+      overflow: 'visible'
+    });
+    items.forEach((item, index) => {
+      const page = make('section', 'knowledge-pdf-page');
+      Object.assign(page.style, {
+        display: 'block', width: '680px', boxSizing: 'border-box', padding: '12px 0 20px',
+        background: '#fff', pageBreakBefore: index ? 'always' : 'auto', breakBefore: index ? 'page' : 'auto'
+      });
+      const brand = make('p', '', 'QUIET ENGLISH · KNOWLEDGE BASE');
+      Object.assign(brand.style, { margin: '0 0 18px', padding: '0 0 10px', borderBottom: '1px solid #ddd', color: '#777', fontSize: '9px', letterSpacing: '2px' });
+      const meta = make('p', '', item.level + ' · ' + tr(cats[item.category]));
+      Object.assign(meta.style, { margin: '0 0 8px', color: '#777', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' });
+      const title = make('h1', '', tr(item.title));
+      Object.assign(title.style, { margin: '0 0 10px', color: '#17212b', fontSize: '27px', lineHeight: '1.2', fontWeight: '500' });
+      const summary = make('p', '', tr(item.summary));
+      Object.assign(summary.style, { margin: '0 0 18px', color: '#444', fontSize: '13px' });
+      const callout = make('div', '', '');
+      Object.assign(callout.style, { margin: '16px 0', padding: '14px 16px', background: '#f3f4f4', borderRadius: '8px' });
+      const introTitle = make('strong', '', language() ? 'Main idea' : 'Главная идея');
+      const intro = make('p', '', tr(item.intro));
+      Object.assign(intro.style, { margin: '5px 0 0', color: '#333' });
+      callout.append(introTitle, intro);
+      const ruleTitle = make('h2', '', language() ? 'Core rule' : 'Правило и структура');
+      Object.assign(ruleTitle.style, { margin: '20px 0 8px', fontSize: '17px', fontWeight: '600' });
+      const rule = make('p', '', tr(item.section));
+      Object.assign(rule.style, { margin: '0 0 10px', color: '#333' });
+      const points = make('ul', '', '');
+      Object.assign(points.style, { margin: '0 0 18px', paddingLeft: '21px' });
+      item.points.forEach(point => {
+        const li = make('li', '', tr(point));
+        Object.assign(li.style, { margin: '5px 0', color: '#333' }); points.append(li);
+      });
+      const examplesTitle = make('h2', '', language() ? 'Examples in context' : 'Примеры в контексте');
+      Object.assign(examplesTitle.style, { margin: '20px 0 8px', fontSize: '17px', fontWeight: '600' });
+      const exampleList = make('div', '', '');
+      item.examples.forEach(example => {
+        const card = make('div', '', '');
+        Object.assign(card.style, { margin: '8px 0', padding: '11px 13px', border: '1px solid #ddd', borderRadius: '7px', breakInside: 'avoid' });
+        const en = make('p', '', example.en); Object.assign(en.style, { margin: '0 0 5px', fontWeight: '600', color: '#17212b' });
+        const ru = make('p', '', example.ru); Object.assign(ru.style, { margin: '0', color: '#555' });
+        card.append(en, ru); exampleList.append(card);
+      });
+      const tip = make('div', '', '');
+      Object.assign(tip.style, { margin: '18px 0 0', padding: '13px 15px', border: '1px solid #ddd', borderRadius: '7px', breakInside: 'avoid' });
+      const tipTitle = make('strong', '', language() ? 'Remember' : 'Обрати внимание');
+      const tipBody = make('p', '', tr(item.tip)); Object.assign(tipBody.style, { margin: '5px 0 0', color: '#444' });
+      tip.append(tipTitle, tipBody);
+      page.append(brand, meta, title, summary, callout, ruleTitle, rule, points, examplesTitle, exampleList, tip);
+      bundle.append(page);
+    });
+    document.body.append(bundle);
+    try {
+      if (document.fonts?.ready) await document.fonts.ready;
+      await window.html2pdf().set({
+        margin: [13, 14, 15, 14], filename,
+        image: { type: 'jpeg', quality: 0.97 },
+        html2canvas: {
+          scale: 2, useCORS: true, backgroundColor: '#fff', scrollX: 0, scrollY: 0,
+          windowWidth: 794, windowHeight: 1123,
+          onclone: clonedDocument => {
+            const clonedBundle = clonedDocument.querySelector('.knowledge-pdf-bundle');
+            if (!clonedBundle) return;
+            Object.assign(clonedBundle.style, {
+              display: 'block', width: '680px', minWidth: '680px', maxWidth: '680px',
+              position: 'static', left: 'auto', top: 'auto', margin: '0', padding: '0',
+              overflow: 'visible', transform: 'none'
+            });
+            clonedBundle.querySelectorAll('.knowledge-pdf-page').forEach(page => {
+              page.style.width = '680px'; page.style.minWidth = '680px'; page.style.maxWidth = '680px';
+            });
+          }
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['.knowledge-pdf-page h1', '.knowledge-pdf-page li'] }
+      }).from(bundle).save();
+    } finally { bundle.remove(); }
+  }
+
 
   function setPlaceholder() {
     search.placeholder = language() ? 'e.g. Present Perfect, articles, essay' : 'Например: Present Perfect, артикли, эссе';
@@ -108,8 +234,18 @@
     const listExamples = make('div','knowledge-example-list');
     item.examples.forEach(example=>{
       const card = make('div','knowledge-example');
-      card.append(make('p','knowledge-example-en',example.en),make('p','knowledge-example-ru',example.ru));
-      listExamples.append(card);
+      const english = make('p','knowledge-example-en',example.en);
+      const russian = make('p','knowledge-example-ru',example.ru); russian.hidden = true;
+      const controls = make('div','knowledge-example-controls');
+      const listen = make('button','knowledge-example-action',language() ? '▶ Listen' : '▶ Прослушать');
+      listen.type = 'button'; listen.addEventListener('click', () => speakEnglish(example.en));
+      const reveal = make('button','knowledge-example-action',language() ? 'Show translation' : 'Показать перевод');
+      reveal.type = 'button';
+      reveal.addEventListener('click', () => {
+        russian.hidden = !russian.hidden;
+        reveal.textContent = russian.hidden ? (language() ? 'Show translation' : 'Показать перевод') : (language() ? 'Hide translation' : 'Скрыть перевод');
+      });
+      controls.append(listen, reveal); card.append(english, russian, controls); listExamples.append(card);
     });
     examples.append(listExamples);
     article.append(examples);
@@ -119,6 +255,60 @@
     const footer = make('div','knowledge-article-footer');
     footer.append(make('span','',language()?'QUIET ENGLISH · KNOWLEDGE BASE':'QUIET ENGLISH · БАЗА ЗНАНИЙ'));
     const actions = make('div','knowledge-article-actions');
+    const noteMeta = notePayload(item);
+    let state = noteProgress.get(item.id) || { is_favorite: false, is_read: false };
+    const favoriteButton = make('button','knowledge-print-button');
+    const readButton = make('button','knowledge-print-button');
+    const quizButton = make('button','knowledge-print-button',language() ? 'Take topic quiz ↗' : 'Пройти тест по теме ↗');
+    const collectionSelect = make('select','knowledge-collection-select');
+    const collectionButton = make('button','knowledge-print-button',language() ? 'Add to collection' : 'В подборку');
+    const actionStatus = make('span','knowledge-action-status','');
+    function syncNoteActions() {
+      favoriteButton.textContent = state.is_favorite ? (language() ? '★ Saved' : '★ В избранном') : (language() ? '☆ Add to favourites' : '☆ В избранное');
+      readButton.textContent = state.is_read ? (language() ? '✓ Read' : '✓ Прочитано') : (language() ? 'Mark as read' : 'Отметить прочитанным');
+    }
+    async function updateNote(patch) {
+      favoriteButton.disabled = true; readButton.disabled = true;
+      try {
+        const data = await knowledgeApi('/notes/' + encodeURIComponent(item.id), { method: 'PUT', body: JSON.stringify({ ...noteMeta, ...patch }) });
+        state = { ...state, ...data.progress }; noteProgress.set(item.id, state); syncNoteActions();
+        actionStatus.textContent = language() ? 'Saved to your profile.' : 'Сохранено в профиле.';
+        actionStatus.classList.remove('error-text');
+      } catch (error) { actionStatus.textContent = error.message; actionStatus.classList.add('error-text'); }
+      finally { favoriteButton.disabled = false; readButton.disabled = false; }
+    }
+    favoriteButton.type = 'button'; favoriteButton.addEventListener('click', () => updateNote({ is_favorite: !state.is_favorite }));
+    readButton.type = 'button'; readButton.addEventListener('click', () => updateNote({ is_read: !state.is_read }));
+    quizButton.type = 'button';
+    quizButton.addEventListener('click', () => {
+      try {
+        sessionStorage.setItem('qe-knowledge-quiz', JSON.stringify({ note_id: item.id, title: tr(item.title), summary: tr(item.summary), category: item.category, level: item.level }));
+        window.location.href = '/practice.html';
+      } catch { actionStatus.textContent = language() ? 'Could not start the quiz.' : 'Не удалось запустить тест.'; }
+    });
+    collectionSelect.setAttribute('aria-label', language() ? 'Choose a collection' : 'Выбрать подборку');
+    const placeholder = make('option','',language() ? 'Choose a collection…' : 'Выбери подборку…'); placeholder.value = ''; collectionSelect.append(placeholder);
+    collectionButton.type = 'button';
+    collectionButton.addEventListener('click', async () => {
+      collectionButton.disabled = true;
+      try {
+        if (!collectionSelect.value) throw new Error(language() ? 'Create or choose a collection first.' : 'Сначала создай или выбери подборку.');
+        await knowledgeApi('/collections/' + encodeURIComponent(collectionSelect.value) + '/notes', { method: 'POST', body: JSON.stringify({ note_id: item.id }) });
+        actionStatus.textContent = language() ? 'Added to collection.' : 'Добавлено в подборку.';
+        actionStatus.classList.remove('error-text');
+      } catch (error) { actionStatus.textContent = error.message; actionStatus.classList.add('error-text'); }
+      finally { collectionButton.disabled = false; }
+    });
+    syncNoteActions();
+    Promise.all([
+      recordNoteOpen(item).then(value => { state = { ...state, ...value }; syncNoteActions(); }).catch(() => {}),
+      loadPersonalCollections().then(collections => collections.forEach(collection => {
+        const option = make('option','',collection.name); option.value = collection.id; collectionSelect.append(option);
+      })).catch(() => {
+        const option = make('option','',language() ? 'Sign in to save notes' : 'Войди, чтобы сохранять конспекты');
+        option.disabled = true; collectionSelect.append(option);
+      })
+    ]);
     const printButton = make('button','knowledge-print-button',language()?'Download PDF ↓':'Скачать PDF ↓');
     printButton.type = 'button';
     printButton.setAttribute('aria-label',language()?'Download this note as a PDF file':'Скачать этот конспект PDF-файлом');
@@ -241,8 +431,8 @@
     });
     const practice = make('a','button knowledge-practice-link',language()?'Practise this topic ↗':'Закрепить тему ↗');
     practice.href='/practice.html';
-    actions.append(printButton,practice);
-    footer.append(actions);
+    actions.append(favoriteButton, readButton, quizButton, collectionSelect, collectionButton, printButton, practice);
+    footer.append(actions, actionStatus);
     article.append(footer);
   }
   function render() {
@@ -297,7 +487,43 @@
     });
     setPlaceholder(); render();
   });
+  const exportVisibleButton = root.querySelector('[data-kb-export-visible]');
+  const exportLevelButton = root.querySelector('[data-kb-export-level]');
+  const exportLevelSelect = root.querySelector('[data-kb-export-cefr]');
+  async function runPdfExport(items, label) {
+    if (exportStatus) { exportStatus.textContent = language() ? 'Preparing your PDF…' : 'Подготавливаем PDF…'; exportStatus.classList.remove('error-text'); }
+    if (exportVisibleButton) exportVisibleButton.disabled = true;
+    if (exportLevelButton) exportLevelButton.disabled = true;
+    try {
+      await exportLessonsPdf(items, 'Quiet-English-' + label.replace(/[^A-Z0-9-]/gi, '-') + '-collection.pdf');
+      if (exportStatus) exportStatus.textContent = language() ? 'The PDF file was downloaded.' : 'PDF-файл скачан.';
+    } catch (error) {
+      if (exportStatus) { exportStatus.textContent = error.message || (language() ? 'PDF export failed.' : 'Не удалось создать PDF.'); exportStatus.classList.add('error-text'); }
+    } finally { if (exportVisibleButton) exportVisibleButton.disabled = false; if (exportLevelButton) exportLevelButton.disabled = false; }
+  }
+  exportVisibleButton?.addEventListener('click', () => runPdfExport(filteredLessons(), 'visible-notes'));
+  exportLevelButton?.addEventListener('click', () => {
+    const targetLevel = exportLevelSelect?.value || 'A1';
+    runPdfExport(lessons.filter(item => item.level === targetLevel), targetLevel);
+  });
   document.querySelectorAll('[data-set-lang]').forEach(button=>button.addEventListener('click',()=>{setPlaceholder();render();}));
   setPlaceholder();
+  if (initialNoteId && lessons.some(item => item.id === initialNoteId)) {
+    const initial = lessons.find(item => item.id === initialNoteId);
+    level.value = initial.level; activeCategory = initial.category;
+    categoryButtons.forEach(button => {
+      const active = button.dataset.kbCategory === initial.category;
+      button.classList.toggle('is-active', active); button.setAttribute('aria-pressed', String(active));
+    });
+  }
   render();
+  const collectionId = new URLSearchParams(window.location.search).get('collection');
+  if (collectionId) {
+    knowledgeApi('/collections/' + encodeURIComponent(collectionId)).then(data => {
+      const ids = new Set(data.collection.note_ids || []);
+      return runPdfExport(lessons.filter(item => ids.has(item.id)), 'collection-' + data.collection.name);
+    }).catch(error => {
+      if (exportStatus) { exportStatus.textContent = error.message; exportStatus.classList.add('error-text'); }
+    });
+  }
 })();

@@ -32,6 +32,11 @@
   let lastMistakes = [];
   let pendingAiExercise = null;
   let generationSequence = 0;
+  let activeKnowledgeQuiz = null;
+  try {
+    const raw = sessionStorage.getItem('qe-knowledge-quiz');
+    if (raw) { activeKnowledgeQuiz = JSON.parse(raw); sessionStorage.removeItem('qe-knowledge-quiz'); }
+  } catch { activeKnowledgeQuiz = null; }
 
   const t = (ru, en) => document.documentElement.lang === 'en' ? en : ru;
   const setStatus = (text, error = false) => {
@@ -272,6 +277,12 @@
       'Correct: ' + result.correct + ' out of ' + result.total
     );
     heading.append(score, summary);
+    if (result.saved) {
+      const saved = document.createElement('span');
+      saved.className = 'knowledge-saved-mark';
+      saved.textContent = t('✓ Сохранено в профиле', '✓ Saved to profile');
+      heading.append(saved);
+    }
     resultNode.append(heading);
 
     result.results.forEach((item, index) => {
@@ -318,7 +329,7 @@
       retryButton.type = 'button';
       retryButton.className = 'button ai-retry-errors-button';
       retryButton.textContent = t('Повторить ошибки ↗', 'Retry mistakes ↗');
-      retryButton.addEventListener('click', () => generateExercise({ focus: lastMistakes }));
+      retryButton.addEventListener('click', () => activeKnowledgeQuiz ? generateKnowledgeQuiz(lastMistakes) : generateExercise({ focus: lastMistakes }));
       retryWrap.append(note, retryButton);
       resultNode.append(retryWrap);
     }
@@ -332,7 +343,9 @@
       createdAt: new Date().toISOString(),
       avoidText: [currentExercise.title, currentExercise.passage || '', ...currentExercise.questions.map(q => q.prompt)].join(' ').slice(0, 480)
     });
-    setStatus(t('Ответы проверены. Результат сохранён в истории этого браузера.', 'Answers checked. Result saved in this browser history.'));
+    setStatus(result.saved
+      ? t('Результат сохранён в профиле и карте знаний.', 'Result saved to your profile and knowledge map.')
+      : t('Ответы проверены. Результат сохранён в истории этого браузера.', 'Answers checked. Result saved in this browser history.'));
     checkButton.hidden = true;
     checked = true;
   }
@@ -368,7 +381,39 @@
     }
   });
 
-  generateButton.addEventListener('click', generateExercise);
+  async function generateKnowledgeQuiz(focus = []) {
+    const note = activeKnowledgeQuiz;
+    if (!note) return;
+    const skillByCategory = { grammar:'grammar', vocabulary:'vocabulary', reading:'reading', listening:'listening', speaking:'mixed', writing:'mixed' };
+    const requestedLevel = note.level === 'C2' ? 'C1' : note.level;
+    const request = {
+      level: ['A1','A2','B1','B2','C1'].includes(requestedLevel) ? requestedLevel : 'B1',
+      skill: skillByCategory[note.category] || 'mixed', topic: 'Any topic', focus,
+      knowledge_note_id: note.note_id,
+      knowledge_note_meta: { title: note.title, summary: note.summary, category: note.category, level: note.level }
+    };
+    generateButton.disabled = true; workspace.hidden = true;
+    setStatus(t('Создаём тест по конспекту…','Creating a quiz from this note…'));
+    try {
+      const response = await fetch('/api/practice/generate', {
+        method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify(request)
+      });
+      const data = await response.json().catch(()=>({}));
+      if (!response.ok) throw new Error(data.error || t('Не удалось создать тест.','Could not create the quiz.'));
+      if (!data.exercise_id || !data.exercise?.questions) throw new Error(t('Сервис вернул неполный тест.','The quiz response is incomplete.'));
+      renderExercise(Object.assign({}, data.exercise, { id:data.exercise_id }));
+      aiVariantWrap.hidden = true;
+      setStatus(t('Тест готов. Результат сохранится в карте знаний после проверки.','Quiz ready. Your result will be saved to the knowledge map.'));
+    } catch (error) { setStatus(error.message || t('Не удалось создать тест.','Could not create quiz.'),true); }
+    finally { generateButton.disabled = false; }
+  }
+  generateButton.addEventListener('click', () => activeKnowledgeQuiz ? generateKnowledgeQuiz() : generateExercise());
   listenButton.addEventListener('click', speakPassage);
   renderHistory();
+  if (activeKnowledgeQuiz) {
+    const levelForQuiz = activeKnowledgeQuiz.level === 'C2' ? 'C1' : activeKnowledgeQuiz.level;
+    if (level) level.value = levelForQuiz;
+    if (skill) skill.value = ({grammar:'grammar',vocabulary:'vocabulary',reading:'reading',listening:'listening',speaking:'mixed',writing:'mixed'})[activeKnowledgeQuiz.category] || 'mixed';
+    generateKnowledgeQuiz();
+  }
 })();

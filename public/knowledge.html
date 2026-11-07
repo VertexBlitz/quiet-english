@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
-<script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/vendor/html2pdf.bundle.min.js"></script><script defer src="/knowledge.js?v=20261107-pdf-export-2"></script>
+<script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/vendor/html2pdf.bundle.min.js"></script><script defer src="/knowledge.js?v=20261107-learning-system-1"></script>
 </head>
 <body>
 <header class="topbar wrap">
@@ -15,7 +15,7 @@
 <nav aria-label="Main navigation">
 <a href="/plan.html" data-ru="План" data-en="Plan">План</a>
 <a href="/practice.html" data-ru="Практика" data-en="Practice">Практика</a>
-<a href="/knowledge.html" aria-current="page" data-ru="База знаний" data-en="Knowledge">База знаний</a>
+<a href="/knowledge.html" aria-current="page" data-ru="База знаний" data-en="Knowledge">База знаний</a><a href="/library.html">Библиотека</a><a href="/dictionary.html">Словарь</a><a href="/knowledge-map.html">Карта знаний</a>
 <a href="/review.html" data-ru="Повторение" data-en="Review">Повторение</a>
 <a href="/progress.html" data-ru="Прогресс" data-en="Progress">Прогресс</a>
 <a href="/tutor.html" data-ru="Чат" data-en="Tutor">Чат</a>
@@ -50,6 +50,11 @@
 <button type="button" class="knowledge-filter-chip" data-kb-category="writing" aria-pressed="false" data-ru="Письмо" data-en="Writing">Письмо</button>
 </div>
 <div class="knowledge-results-heading"><div><p class="eyebrow">CURATED NOTES</p><h3 data-ru="Материалы и конспекты" data-en="Notes and materials">Материалы и конспекты</h3></div><button type="button" class="knowledge-reset" data-kb-reset data-ru="Сбросить фильтры" data-en="Clear filters">Сбросить фильтры</button></div>
+<div class="knowledge-export-toolbar">
+<button type="button" class="knowledge-print-button" data-kb-export-visible>Скачать найденные конспекты одним PDF ↓</button>
+<label class="knowledge-export-level"><span>Сборник по CEFR</span><select data-kb-export-cefr><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
+<button type="button" class="knowledge-print-button" data-kb-export-level>Скачать сборник ↓</button>
+</div><p class="form-status" data-kb-export-status aria-live="polite"></p>
 <div class="knowledge-layout"><div class="knowledge-grid" data-kb-grid aria-label="Knowledge articles"></div><article class="knowledge-article" data-kb-article aria-live="polite"></article></div>
 </section>
 <section class="panel knowledge-next-step"><div><p class="eyebrow">PUT KNOWLEDGE INTO PRACTICE</p><h2 data-ru="Правило лучше запоминается в деле." data-en="Rules stick when you use them.">Правило лучше запоминается в деле.</h2><p class="copy" data-ru="После конспекта закрепи тему упражнениями с проверкой и объяснениями." data-en="After reading a note, consolidate the topic with exercises, grading and explanations.">После конспекта закрепи тему упражнениями с проверкой и объяснениями.</p></div><a class="button" href="/practice.html" data-ru="Перейти к практике ↗" data-en="Go to practice ↗">Перейти к практике ↗</a></section>

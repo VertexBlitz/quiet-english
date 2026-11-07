@@ -508,7 +508,8 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
   };
   if (knowledgeNoteId && (
     !['grammar','vocabulary','reading','listening','speaking','writing'].includes(knowledgeNoteMeta.category) ||
-    !['A1','A2','B1','B2','C1','C2'].includes(knowledgeNoteMeta.level)
+    !['A1','A2','B1','B2','C1','C2'].includes(knowledgeNoteMeta.level) ||
+    knowledgeNoteId !== knowledgeNoteMeta.category + '-' + knowledgeNoteMeta.level.toLowerCase()
   )) {
     return res.status(400).json({ error: 'Некорректные данные конспекта.' });
   }
@@ -640,8 +641,8 @@ app.post('/api/practice/:id/check', practiceCheckLimiter, async (req, res) => {
           [
             req.session.userId,
             session.knowledgeNoteId,
-            session.exercise.skill,
-            session.exercise.level,
+            session.knowledgeNoteMeta.category,
+            session.knowledgeNoteMeta.level,
             result.score,
             result.correct,
             result.total,
@@ -679,7 +680,7 @@ app.post('/api/practice/:id/check', practiceCheckLimiter, async (req, res) => {
              VALUES ($1,$2,$3,$4,$5)`,
             [
               req.session.userId,
-              session.exercise.skill,
+              ['grammar','vocabulary','reading','listening','speaking','writing'].includes(item.category) ? item.category : session.knowledgeNoteMeta.category,
               (item.learning_point + ': ' + item.selected_answer).slice(0, 500),
               item.correct_answer.slice(0, 500),
               item.explanation.slice(0, 700)
