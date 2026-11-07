@@ -227,7 +227,7 @@ if (pronRoot) {
       const { samples, duration } = await toSamples(recordingBlob);
       const transcriber = await getTranscriber();
       message('Whisper распознаёт речь прямо на устройстве. Это может занять некоторое время.');
-      const output = await transcriber(samples, { language: 'english', task: 'transcribe' });
+      const output = await transcriber(samples);
       const recognizedText = String(output?.text || '').trim();
       if (!recognizedText) throw new Error('Whisper не распознал слова. Попробуй говорить ближе к микрофону и повторить запись.');
 
