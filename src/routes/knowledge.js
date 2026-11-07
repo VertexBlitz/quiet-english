@@ -30,15 +30,15 @@ router.get('/library', requireDatabase, requireUser, async (req, res, next) => {
   try {
     const [notes, collections] = await Promise.all([
       pool.query(
-        \`SELECT note_id, title, summary, category, level, is_favorite, is_read,
+        `SELECT note_id, title, summary, category, level, is_favorite, is_read,
                 last_score, first_opened_at, last_opened_at, read_at
          FROM knowledge_note_progress
          WHERE user_id=$1 AND (is_favorite=TRUE OR is_read=TRUE OR last_opened_at IS NOT NULL)
-         ORDER BY is_favorite DESC, last_opened_at DESC NULLS LAST, updated_at DESC\`,
+         ORDER BY is_favorite DESC, last_opened_at DESC NULLS LAST, updated_at DESC`,
         [req.user.id]
       ),
       pool.query(
-        \`SELECT c.id, c.name, c.description, c.created_at, c.updated_at,
+        `SELECT c.id, c.name, c.description, c.created_at, c.updated_at,
                 COUNT(n.note_id)::int AS note_count,
                 COALESCE(
                   json_agg(n.note_id ORDER BY n.position, n.added_at)
@@ -49,7 +49,7 @@ router.get('/library', requireDatabase, requireUser, async (req, res, next) => {
          LEFT JOIN knowledge_collection_notes n ON n.collection_id=c.id
          WHERE c.user_id=$1
          GROUP BY c.id
-         ORDER BY c.updated_at DESC\`,
+         ORDER BY c.updated_at DESC`,
         [req.user.id]
       )
     ]);
@@ -61,9 +61,9 @@ router.get('/notes/:noteId', requireDatabase, requireUser, async (req, res, next
   if (!validNoteId(req.params.noteId)) return invalidNote(res);
   try {
     const { rows } = await pool.query(
-      \`SELECT note_id, title, summary, category, level, is_favorite, is_read,
+      `SELECT note_id, title, summary, category, level, is_favorite, is_read,
               last_score, first_opened_at, last_opened_at, read_at
-       FROM knowledge_note_progress WHERE user_id=$1 AND note_id=$2\`,
+       FROM knowledge_note_progress WHERE user_id=$1 AND note_id=$2`,
       [req.user.id, req.params.noteId]
     );
     res.json({ progress: rows[0] || null });
@@ -76,7 +76,7 @@ router.post('/notes/:noteId/open', requireDatabase, requireUser, async (req, res
   if (!meta.category || !meta.level) return res.status(400).json({ error: 'Некорректные данные конспекта.' });
   try {
     const { rows } = await pool.query(
-      \`INSERT INTO knowledge_note_progress
+      `INSERT INTO knowledge_note_progress
          (user_id, note_id, title, summary, category, level, first_opened_at, last_opened_at)
        VALUES ($1,$2,$3,$4,$5,$6,NOW(),NOW())
        ON CONFLICT (user_id,note_id) DO UPDATE SET
@@ -84,7 +84,7 @@ router.post('/notes/:noteId/open', requireDatabase, requireUser, async (req, res
          category=EXCLUDED.category, level=EXCLUDED.level,
          first_opened_at=COALESCE(knowledge_note_progress.first_opened_at,NOW()),
          last_opened_at=NOW(), updated_at=NOW()
-       RETURNING note_id, is_favorite, is_read, last_score, last_opened_at\`,
+       RETURNING note_id, is_favorite, is_read, last_score, last_opened_at`,
       [req.user.id, req.params.noteId, meta.title, meta.summary, meta.category, meta.level]
     );
     res.json({ progress: rows[0] });
@@ -100,7 +100,7 @@ router.put('/notes/:noteId', requireDatabase, requireUser, async (req, res, next
   if (!meta.category || !meta.level) return res.status(400).json({ error: 'Некорректные данные конспекта.' });
   try {
     const { rows } = await pool.query(
-      \`INSERT INTO knowledge_note_progress
+      `INSERT INTO knowledge_note_progress
          (user_id, note_id, title, summary, category, level, is_favorite, is_read, read_at)
        VALUES ($1,$2,$3,$4,$5,$6,COALESCE($7,FALSE),COALESCE($8,FALSE),
                CASE WHEN $8 IS TRUE THEN NOW() ELSE NULL END)
@@ -115,7 +115,7 @@ router.put('/notes/:noteId', requireDatabase, requireUser, async (req, res, next
            ELSE knowledge_note_progress.read_at
          END,
          updated_at=NOW()
-       RETURNING note_id, is_favorite, is_read, last_score, read_at\`,
+       RETURNING note_id, is_favorite, is_read, last_score, read_at`,
       [req.user.id, req.params.noteId, meta.title, meta.summary, meta.category, meta.level, favorite, read]
     );
     res.json({ progress: rows[0] });
@@ -125,13 +125,13 @@ router.put('/notes/:noteId', requireDatabase, requireUser, async (req, res, next
 router.get('/collections', requireDatabase, requireUser, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      \`SELECT c.id, c.name, c.description, c.created_at, c.updated_at,
+      `SELECT c.id, c.name, c.description, c.created_at, c.updated_at,
               COUNT(n.note_id)::int AS note_count,
               COALESCE(json_agg(n.note_id ORDER BY n.position, n.added_at)
                 FILTER (WHERE n.note_id IS NOT NULL), '[]'::json) AS note_ids
        FROM knowledge_collections c
        LEFT JOIN knowledge_collection_notes n ON n.collection_id=c.id
-       WHERE c.user_id=$1 GROUP BY c.id ORDER BY c.updated_at DESC\`,
+       WHERE c.user_id=$1 GROUP BY c.id ORDER BY c.updated_at DESC`,
       [req.user.id]
     );
     res.json({ collections: rows });
@@ -159,12 +159,12 @@ router.post('/collections', requireDatabase, requireUser, async (req, res, next)
 router.get('/collections/:id', requireDatabase, requireUser, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      \`SELECT c.id, c.name, c.description,
+      `SELECT c.id, c.name, c.description,
               COALESCE(json_agg(n.note_id ORDER BY n.position, n.added_at)
                 FILTER (WHERE n.note_id IS NOT NULL), '[]'::json) AS note_ids
        FROM knowledge_collections c
        LEFT JOIN knowledge_collection_notes n ON n.collection_id=c.id
-       WHERE c.id=$1 AND c.user_id=$2 GROUP BY c.id\`,
+       WHERE c.id=$1 AND c.user_id=$2 GROUP BY c.id`,
       [req.params.id, req.user.id]
     );
     if (!rows[0]) return res.status(404).json({ error: 'Подборка не найдена.' });
@@ -179,9 +179,9 @@ router.post('/collections/:id/notes', requireDatabase, requireUser, async (req, 
     const owned = await pool.query('SELECT id FROM knowledge_collections WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
     if (!owned.rows[0]) return res.status(404).json({ error: 'Подборка не найдена.' });
     await pool.query(
-      \`INSERT INTO knowledge_collection_notes (collection_id,note_id,position)
+      `INSERT INTO knowledge_collection_notes (collection_id,note_id,position)
        VALUES ($1,$2,COALESCE((SELECT MAX(position)+1 FROM knowledge_collection_notes WHERE collection_id=$1),0))
-       ON CONFLICT (collection_id,note_id) DO NOTHING\`,
+       ON CONFLICT (collection_id,note_id) DO NOTHING`,
       [req.params.id, noteId]
     );
     await pool.query('UPDATE knowledge_collections SET updated_at=NOW() WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
@@ -193,9 +193,9 @@ router.delete('/collections/:id/notes/:noteId', requireDatabase, requireUser, as
   if (!validNoteId(req.params.noteId)) return invalidNote(res);
   try {
     const result = await pool.query(
-      \`DELETE FROM knowledge_collection_notes n
+      `DELETE FROM knowledge_collection_notes n
        USING knowledge_collections c
-       WHERE n.collection_id=c.id AND c.id=$1 AND c.user_id=$2 AND n.note_id=$3\`,
+       WHERE n.collection_id=c.id AND c.id=$1 AND c.user_id=$2 AND n.note_id=$3`,
       [req.params.id, req.user.id, req.params.noteId]
     );
     await pool.query('UPDATE knowledge_collections SET updated_at=NOW() WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
@@ -216,28 +216,28 @@ router.get('/map', requireDatabase, requireUser, async (req, res, next) => {
   try {
     const [notes, quizzes, exercises, speaking, errors, recent, recentErrors] = await Promise.all([
       pool.query(
-        \`SELECT category, COUNT(*)::int AS notes,
+        `SELECT category, COUNT(*)::int AS notes,
                 COUNT(*) FILTER (WHERE is_read)::int AS read_notes,
                 COUNT(*) FILTER (WHERE is_favorite)::int AS favorites
-         FROM knowledge_note_progress WHERE user_id=$1 GROUP BY category\`,
+         FROM knowledge_note_progress WHERE user_id=$1 GROUP BY category`,
         [req.user.id]
       ),
       pool.query(
-        \`SELECT category, COUNT(*)::int AS attempts,
+        `SELECT category, COUNT(*)::int AS attempts,
                 SUM(correct_count)::int AS correct,
                 SUM(question_count)::int AS questions,
                 ROUND(AVG(score))::int AS accuracy
-         FROM knowledge_quiz_attempts WHERE user_id=$1 GROUP BY category\`,
+         FROM knowledge_quiz_attempts WHERE user_id=$1 GROUP BY category`,
         [req.user.id]
       ),
       pool.query(
-        \`SELECT CASE WHEN e.skill='pronunciation' THEN 'speaking' ELSE e.skill END AS skill,
+        `SELECT CASE WHEN e.skill='pronunciation' THEN 'speaking' ELSE e.skill END AS skill,
                 COUNT(*)::int AS attempts,
                 COUNT(*) FILTER (WHERE a.is_correct)::int AS correct,
                 ROUND(AVG(a.score))::int AS accuracy
          FROM exercise_attempts a JOIN exercises e ON e.id=a.exercise_id
          WHERE a.user_id=$1
-         GROUP BY CASE WHEN e.skill='pronunciation' THEN 'speaking' ELSE e.skill END\`,
+         GROUP BY CASE WHEN e.skill='pronunciation' THEN 'speaking' ELSE e.skill END`,
         [req.user.id]
       ),
       pool.query(
@@ -249,15 +249,15 @@ router.get('/map', requireDatabase, requireUser, async (req, res, next) => {
         [req.user.id]
       ),
       pool.query(
-        \`SELECT note_id,title,category,level,last_score,is_read,is_favorite,last_opened_at
+        `SELECT note_id,title,category,level,last_score,is_read,is_favorite,last_opened_at
          FROM knowledge_note_progress WHERE user_id=$1
-         ORDER BY last_opened_at DESC NULLS LAST LIMIT 8\`,
+         ORDER BY last_opened_at DESC NULLS LAST LIMIT 8`,
         [req.user.id]
       ),
       pool.query(
-        \`SELECT error_type,incorrect_form,correction,explanation,occurrences,updated_at
+        `SELECT error_type,incorrect_form,correction,explanation,occurrences,updated_at
          FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL
-         ORDER BY updated_at DESC LIMIT 8\`,
+         ORDER BY updated_at DESC LIMIT 8`,
         [req.user.id]
       )
     ]);
@@ -305,8 +305,8 @@ router.get('/map', requireDatabase, requireUser, async (req, res, next) => {
 router.get('/vocabulary', requireDatabase, requireUser, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      \`SELECT id,word,ipa,translation,definition,metadata,created_at
-       FROM learner_vocabulary WHERE user_id=$1 ORDER BY created_at DESC LIMIT 200\`,
+      `SELECT id,word,ipa,translation,definition,metadata,created_at
+       FROM learner_vocabulary WHERE user_id=$1 ORDER BY created_at DESC LIMIT 200`,
       [req.user.id]
     );
     res.json({ words: rows });
@@ -326,12 +326,12 @@ router.post('/vocabulary', requireDatabase, requireUser, async (req, res, next) 
     : '{}';
   try {
     const { rows } = await pool.query(
-      \`INSERT INTO learner_vocabulary (user_id,word,ipa,translation,definition,metadata)
+      `INSERT INTO learner_vocabulary (user_id,word,ipa,translation,definition,metadata)
        VALUES ($1,$2,$3,$4,$5,$6::jsonb)
        ON CONFLICT (user_id,LOWER(word)) DO UPDATE SET
          ipa=EXCLUDED.ipa, translation=EXCLUDED.translation,
          definition=EXCLUDED.definition, metadata=EXCLUDED.metadata, updated_at=NOW()
-       RETURNING id,word,ipa,translation,definition,metadata,created_at\`,
+       RETURNING id,word,ipa,translation,definition,metadata,created_at`,
       [req.user.id, word, ipa, translation, definition, metadata]
     );
     res.status(201).json({ word: rows[0] });
