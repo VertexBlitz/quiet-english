@@ -161,16 +161,20 @@ if (pronRoot) {
       const heard = document.createElement('span');
       if (item.status === 'match') {
         expected.textContent = item.reference;
-        heard.textContent = 'Совпало';
+        heard.textContent = '✓';
+        heard.setAttribute('aria-label', 'Совпало');
       } else if (item.status === 'different') {
-        expected.textContent = 'Ожидалось: ' + item.reference;
-        heard.textContent = 'Распознано: ' + item.recognized;
+        expected.textContent = item.reference;
+        heard.textContent = '→ ' + item.recognized;
+        heard.setAttribute('aria-label', 'Распознано вместо ожидаемого: ' + item.recognized);
       } else if (item.status === 'missing') {
         expected.textContent = item.reference;
-        heard.textContent = 'Не распознано';
+        heard.textContent = 'пропуск';
+        heard.setAttribute('aria-label', 'Не распознано');
       } else {
         expected.textContent = item.recognized;
-        heard.textContent = 'Лишнее слово';
+        heard.textContent = '+ лишнее';
+        heard.setAttribute('aria-label', 'Лишнее слово');
       }
       row.classList.add('pron-word-' + item.status);
       head.append(expected, heard);
