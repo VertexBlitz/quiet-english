@@ -56,6 +56,20 @@ const registrationAttemptLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Слишком много попыток регистрации. Попробуй позже.' }
 });
+const passwordRecoveryLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: 3,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Слишком много запросов на восстановление пароля. Попробуй позже.' }
+});
+const chatLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: 30,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Достигнут временный лимит сообщений. Попробуй позже.' }
+});
 app.use('/api/', generalApiLimiter);
 
 const sessionsConfigured = Boolean(pool && process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32);
@@ -101,6 +115,7 @@ function sameOrigin(req, res, next) {
 if (sessionsConfigured) {
   app.use('/api/auth/login', loginAttemptLimiter);
   app.use('/api/auth/register', registrationAttemptLimiter);
+  app.use('/api/auth/password/forgot', passwordRecoveryLimiter);
   app.use('/api/auth', sameOrigin, authRoutes);
   app.use('/api/learning', sameOrigin, learningRoutes);
   app.use('/api/knowledge', sameOrigin, knowledgeRoutes);
@@ -134,6 +149,36 @@ const SYSTEM_PROMPT = [
 
 function isAiConfigured() {
   return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
+}
+
+function getRegistrationReadiness() {
+  const blockers = [];
+  if (!pool || !sessionsConfigured) blockers.push('Личный кабинет и база данных ещё не настроены.');
+  if (process.env.REGISTRATION_ENABLED !== 'true') blockers.push('Владелец сервиса ещё не включил публичную регистрацию.');
+  if (process.env.REGISTRATION_LEGAL_APPROVED !== 'true') blockers.push('Оператор ещё не подтвердил готовность условий использования и политики конфиденциальности.');
+  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !process.env.APP_BASE_URL) blockers.push('Не настроено подтверждение email.');
+  return {
+    available: blockers.length === 0,
+    blockers,
+    audience: {
+      minimumAge: 16,
+      adults: '18+; страна указывается при регистрации',
+      minors: '16–17 лет; сейчас поддерживается только Германия'
+    }
+  };
+}
+
+app.get('/api/registration-status', (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const readiness = getRegistrationReadiness();
+  res.json({
+    available: readiness.available,
+    message: readiness.available
+      ? 'Регистрация открыта для поддерживаемых возрастных категорий и стран.'
+      : 'Публичная регистрация пока закрыта. ' + readiness.blockers.join(' '),
+    blockers: readiness.blockers,
+    audience: readiness.audience
+  });
 }
 
 async function buildCommandReply(userId, command) {
@@ -743,7 +788,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Keep the original chat contract compatible with the first version of Quiet English.
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', chatLimiter, async (req, res) => {
   const incoming = req.body?.messages;
   if (!Array.isArray(incoming) || incoming.length < 1 || incoming.length > 12) {
     return res.status(400).json({ error: 'Отправь от 1 до 12 сообщений.' });

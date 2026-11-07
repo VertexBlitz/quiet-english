@@ -41,6 +41,12 @@ test('registration stays closed until the operator approves legal and privacy do
   const privacy = read('public/privacy.html');
   const terms = read('public/terms.html');
   assert.ok(auth.includes("REGISTRATION_ENABLED !== 'true'"));
+  assert.ok(auth.includes("REGISTRATION_LEGAL_APPROVED !== 'true'"));
+  const server = read('server.js');
+  assert.ok(server.includes("app.get('/api/registration-status'"));
+  assert.ok(server.includes("REGISTRATION_LEGAL_APPROVED !== 'true'"));
+  assert.ok(server.includes("app.use('/api/auth/password/forgot', passwordRecoveryLimiter);"));
+  assert.ok(server.includes("app.post('/api/chat', chatLimiter"));
   assert.ok(privacy.includes('рабочим черновиком'));
   assert.ok(terms.includes('Проект документа'));
 });

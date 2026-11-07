@@ -49,8 +49,8 @@ router.post('/register', async (req, res, next) => {
     preferred_language = 'ru', terms_accepted, privacy_accepted
   } = req.body || {};
 
-  if (process.env.REGISTRATION_ENABLED !== 'true') {
-    return res.status(503).json({ error: 'Регистрация пока закрыта на время настройки базы данных и проверки документов конфиденциальности.' });
+  if (process.env.REGISTRATION_ENABLED !== 'true' || process.env.REGISTRATION_LEGAL_APPROVED !== 'true') {
+    return res.status(503).json({ error: 'Публичная регистрация пока закрыта: оператор должен завершить юридическую проверку документов и включить регистрацию.' });
   }
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
   if (!validEmail(normalizedEmail)) return res.status(400).json({ error: 'Укажи корректный email.' });

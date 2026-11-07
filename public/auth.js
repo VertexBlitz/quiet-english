@@ -21,6 +21,24 @@ function showAuthMessage(message, isError = false) {
 }
 
 if (authForm?.dataset.authForm === 'register') {
+  const registerButton = authForm.querySelector('button[type="submit"]');
+  if (registerButton) registerButton.disabled = true;
+  fetch('/api/registration-status', { cache: 'no-store' })
+    .then(async response => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Не удалось проверить регистрацию.');
+      return data;
+    })
+    .then(data => {
+      if (data.available) {
+        if (registerButton) registerButton.disabled = false;
+        showAuthMessage(data.message || 'Регистрация доступна.');
+      } else {
+        showAuthMessage(data.message || 'Публичная регистрация пока закрыта.', true);
+      }
+    })
+    .catch(error => showAuthMessage(error.message, true));
+
   authForm.addEventListener('submit', async event => {
     event.preventDefault();
     const form = new FormData(authForm);
@@ -38,7 +56,6 @@ if (authForm?.dataset.authForm === 'register') {
       });
       showAuthMessage(data.message || 'Проверь почту для продолжения.');
       authForm.reset();
-      updateGuardianFields();
     } catch (error) {
       showAuthMessage(error.message, true);
     } finally {
