@@ -1,6 +1,15 @@
 export const REGISTRATION_CAPTCHA_ACTION = 'qe_registration';
-export const TERMS_POLICY_VERSION = '2026-11-08';
-export const PRIVACY_POLICY_VERSION = '2026-11-08';
+export const TERMS_POLICY_VERSION = '2026-11-08-1.1';
+export const PRIVACY_POLICY_VERSION = '2026-11-08-1.1';
+export const PERSONAL_DATA_CONSENT_VERSION = '2026-11-08-1.1';
+
+export function isSupportedAgeBand(ageBand) {
+  return ['13_15', '16_17', '18_plus'].includes(ageBand);
+}
+
+export function requiresGuardianConsent(ageBand) {
+  return ageBand === '13_15' || ageBand === '16_17';
+}
 
 export function isAdultRegistration(ageBand, adultConfirmed) {
   return ageBand === '18_plus' && adultConfirmed === true;

@@ -33,6 +33,20 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT) || 3000;
 const PgSession = connectPgSimple(session);
 
+async function cleanupExpiredGuardianConsentRequests() {
+  if (!pool) return;
+  try {
+    await pool.query('DELETE FROM guardian_consent_requests WHERE expires_at < NOW()');
+  } catch (error) {
+    console.error('Guardian consent request cleanup failed:', error?.message || 'unknown error');
+  }
+}
+void cleanupExpiredGuardianConsentRequests();
+if (pool) {
+  const guardianCleanupTimer = setInterval(cleanupExpiredGuardianConsentRequests, 6 * 60 * 60_000);
+  guardianCleanupTimer.unref();
+}
+
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(express.json({ limit: '24kb' }));
@@ -55,6 +69,13 @@ const registrationAttemptLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { error: 'Слишком много попыток регистрации. Попробуй позже.' }
+});
+const guardianConsentLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: 5,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Слишком много запросов на родительское подтверждение. Попробуй позже.' }
 });
 const passwordRecoveryLimiter = rateLimit({
   windowMs: 60 * 60_000,
@@ -122,6 +143,11 @@ function sameOrigin(req, res, next) {
 if (sessionsConfigured) {
   app.use('/api/auth/login', loginAttemptLimiter);
   app.use('/api/auth/register', registrationAttemptLimiter);
+  app.use('/api/auth/guardian-consent-request', guardianConsentLimiter);
+  app.use('/api/auth/guardian-consent-complete', guardianConsentLimiter);
+  app.use('/api/auth/guardian-consent-info', guardianConsentLimiter);
+  app.use('/api/auth/guardian-withdrawal-request', guardianConsentLimiter);
+  app.use('/api/auth/guardian-consent-withdraw', guardianConsentLimiter);
   app.use('/api/auth/password/forgot', passwordRecoveryLimiter);
   app.use('/api/auth/resend-verification', emailResendLimiter);
   app.use('/api/auth', sameOrigin, authRoutes);
@@ -163,18 +189,22 @@ function getRegistrationReadiness() {
   const blockers = [];
   if (!pool || !sessionsConfigured) blockers.push('Личный кабинет и база данных ещё не настроены.');
   if (process.env.REGISTRATION_ENABLED !== 'true') blockers.push('Публичная регистрация ещё не включена.');
-  if (process.env.REGISTRATION_LEGAL_APPROVED !== 'true') blockers.push('Условия использования и политика конфиденциальности ещё не утверждены оператором.');
-  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !process.env.APP_BASE_URL) blockers.push('Не настроено подтверждение email.');
+  if (process.env.REGISTRATION_LEGAL_APPROVED !== 'true') blockers.push('Новые Условия использования, Политика конфиденциальности и отдельное согласие на обработку данных не утверждены оператором.');
+  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !process.env.APP_BASE_URL) blockers.push('Не настроена отправка и подтверждение email.');
   if (!process.env.TURNSTILE_SITE_KEY || !process.env.TURNSTILE_SECRET_KEY) blockers.push('Не настроена CAPTCHA (Cloudflare Turnstile).');
   if (process.env.REGISTRATION_DATABASE_ISOLATED !== 'true' || process.env.DB_SCHEMA !== 'quiet_english_preview') blockers.push('Не настроена изолированная схема PostgreSQL для Preview.');
+  if (process.env.REGISTRATION_DATA_LOCALIZATION_APPROVED !== 'true') blockers.push('Не подтверждена локализация персональных данных для целевой аудитории.');
+  if (process.env.REGISTRATION_OPERATOR_DETAILS_APPROVED !== 'true') blockers.push('Не заполнены и не подтверждены сведения об операторе и контакты для обращений.');
   return {
     available: blockers.length === 0,
     blockers,
     captchaSiteKey: process.env.TURNSTILE_SITE_KEY || null,
     audience: {
-      minimumAge: 18,
-      adults: '18+; поддерживаются пользователи из любых стран с корректным двухбуквенным кодом страны',
-      minors: 'Регистрация пользователей младше 18 лет закрыта'
+      minimumAge: 13,
+      ageBands: ['13_15', '16_17', '18_plus'],
+      under13: 'Регистрация младше 13 лет на первом этапе недоступна.',
+      guardianConsent: 'Для возрастных групп 13–15 и 16–17 требуется предварительное подтверждение родителя или законного представителя.',
+      dateOfBirth: 'Дата рождения не запрашивается.'
     }
   };
 }
@@ -185,7 +215,7 @@ app.get('/api/registration-status', (_req, res) => {
   res.json({
     available: readiness.available,
     message: readiness.available
-      ? 'Регистрация открыта только для совершеннолетних пользователей (18+).'
+      ? 'Регистрация доступна с 13 лет. Для пользователей 13–17 лет требуется предварительное подтверждение родителя или опекуна.'
       : 'Регистрация пока недоступна. ' + readiness.blockers.join(' '),
     blockers: readiness.blockers,
     captchaSiteKey: readiness.captchaSiteKey,

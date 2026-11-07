@@ -1,10 +1,19 @@
 <!doctype html>
-<html lang="ru"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Create account — Quiet English</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=20261108-adult-signup-1"><script defer src="/i18n.js"></script><script defer src="/session.js?v=20261108-adult-signup-1"></script><script defer src="/auth.js?v=20261108-turnstile-1"></script>
-</head><body><header class="topbar wrap">
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account — Quiet English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=20261108-public-signup-2">
+  <script defer src="/i18n.js"></script>
+  <script defer src="/session.js?v=20261108-public-signup-2"></script>
+  <script defer src="/auth.js?v=20261108-public-signup-2"></script>
+</head>
+<body>
+<header class="topbar wrap">
   <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
   <nav aria-label="Main navigation">
     <a href="/plan.html" data-i18n="nav_plan" data-ru="План" data-en="Plan">План</a>
@@ -19,27 +28,93 @@
     <a class="account-link" href="/login.html" data-i18n="nav_account" data-ru="Аккаунт" data-en="Account">Аккаунт</a>
   </div>
 </header>
-<main class="wrap auth-layout"><section class="panel auth-card">
-<p class="eyebrow">YOUR LEARNING SPACE</p><h1 data-ru="Создай аккаунт." data-en="Create your account.">Создай аккаунт.</h1>
-<p class="lead" data-ru="Сохраняй план, задания и прогресс на всех своих устройствах." data-en="Save your plan, exercises and progress across devices.">Сохраняй план, задания и прогресс на всех своих устройствах.</p>
-<form data-auth-form="register" data-auth-status-id="auth-status">
-<label>Email<input type="email" name="email" autocomplete="email" required maxlength="254"></label>
-<label data-ru="Пароль (не менее 12 символов)" data-en="Password (at least 12 characters)">Пароль (не менее 12 символов)<input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="200" required></label>
-<input type="hidden" name="age_band" value="18_plus">
-<p class="fine-print" data-ru="Регистрация доступна только совершеннолетним пользователям — от 18 лет." data-en="Registration is available to adults only — age 18 and over.">Регистрация доступна только совершеннолетним пользователям — от 18 лет.</p>
-<label class="check-row"><input type="checkbox" name="adult_confirmed" required><span data-ru="Подтверждаю, что мне уже исполнилось 18 лет." data-en="I confirm that I am at least 18 years old.">Подтверждаю, что мне уже исполнилось 18 лет.</span></label>
-<div class="form-grid">
-<label data-ru="Код страны (две буквы)" data-en="Country code (two letters)">Код страны (две буквы)<input name="country_code" autocomplete="country" placeholder="DE" minlength="2" maxlength="2" pattern="[A-Za-z]{2}" required></label>
-<label data-ru="Язык интерфейса" data-en="Interface language">Язык интерфейса<select name="preferred_language"><option value="ru">Русский</option><option value="en">English</option></select></label>
-</div>
 
+<main class="wrap auth-layout">
+  <section class="panel auth-card">
+    <p class="eyebrow">YOUR LEARNING SPACE</p>
+    <h1 data-ru="Создай аккаунт." data-en="Create your account.">Создай аккаунт.</h1>
+    <p class="lead" data-ru="Сохраняй план, задания и прогресс на всех своих устройствах." data-en="Save your plan, exercises and progress across devices.">Сохраняй план, задания и прогресс на всех своих устройствах.</p>
 
-<label class="check-row"><input type="checkbox" name="terms_accepted" required><span data-ru="Я принимаю Условия использования." data-en="I accept the Terms of Service.">Я принимаю <a href="/terms.html">Условия использования</a>.</span></label>
-<label class="check-row"><input type="checkbox" name="privacy_accepted" required><span data-ru="Я ознакомился(ась) с Политикой конфиденциальности." data-en="I have read the Privacy Notice.">Я ознакомился(ась) с <a href="/privacy.html">Политикой конфиденциальности</a>.</span></label>
-<div class="turnstile-widget" data-turnstile-captcha aria-label="Проверка безопасности"></div>
-<p class="form-status" data-auth-status id="auth-status" aria-live="polite"></p>
-<button class="button" type="submit" disabled data-ru="Создать аккаунт" data-en="Create account">Создать аккаунт <span>↗</span></button>
-<button class="button secondary" type="button" data-resend-verification hidden>Отправить письмо повторно</button>
-</form>
-<p class="auth-foot" data-ru="Уже есть аккаунт? " data-en="Already have an account? ">Уже есть аккаунт? <a href="/login.html">Войти</a></p>
-</section></main><footer class="footer wrap"><span>QUIET ENGLISH</span><span>Personal learning, at your pace</span></footer></body></html>
+    <form data-auth-form="register" data-auth-status-id="auth-status" novalidate>
+      <div class="form-grid">
+        <label data-ru="Возрастная группа" data-en="Age group">
+          Возрастная группа
+          <select name="age_band" required>
+            <option value="" data-ru="Выбери группу" data-en="Choose an age group">Выбери группу</option>
+            <option value="13_15">13–15</option>
+            <option value="16_17">16–17</option>
+            <option value="18_plus">18+</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="fine-print" data-ru="Дата рождения не запрашивается. На первом этапе регистрация доступна с 13 лет. Для пользователей 13–17 лет сначала требуется подтверждение родителя или законного представителя. Пользователи младше 13 лет пока не могут создать аккаунт." data-en="Your date of birth is not requested. Registration starts at age 13. Users aged 13–17 need parent or legal guardian approval first. Users under 13 cannot create an account at this stage.">
+        Дата рождения не запрашивается. На первом этапе регистрация доступна с 13 лет. Для пользователей 13–17 лет сначала требуется подтверждение родителя или законного представителя. Пользователи младше 13 лет пока не могут создать аккаунт.
+      </p>
+
+      <div data-adult-fields hidden>
+        <label data-ru="Код страны (две буквы)" data-en="Country code (two letters)">
+          Код страны (две буквы)
+          <input name="country_code" autocomplete="country" placeholder="RU" minlength="2" maxlength="2" pattern="[A-Za-z]{2}" data-required="true">
+        </label>
+        <label>Email
+          <input type="email" name="email" autocomplete="email" maxlength="254" data-required="true">
+        </label>
+        <label data-ru="Пароль (не менее 12 символов)" data-en="Password (at least 12 characters)">
+          Пароль (не менее 12 символов)
+          <input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="200" data-required="true">
+        </label>
+        <label data-ru="Язык интерфейса" data-en="Interface language">
+          Язык интерфейса
+          <select name="preferred_language">
+            <option value="ru">Русский</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="adult_confirmed" data-required="true">
+          <span data-ru="Подтверждаю, что мне исполнилось 18 лет." data-en="I confirm that I am at least 18 years old.">Подтверждаю, что мне исполнилось 18 лет.</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="terms_accepted" data-required="true">
+          <span data-ru="Принимаю" data-en="I accept">Принимаю <a href="/terms.html">Условия использования</a>.</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="privacy_accepted" data-required="true">
+          <span data-ru="Ознакомился(ась) с" data-en="I have read the">Ознакомился(ась) с <a href="/privacy.html">Политикой конфиденциальности</a>.</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="personal_data_accepted" data-required="true">
+          <span data-ru="Отдельно соглашаюсь на обработку персональных данных по" data-en="I separately consent to personal data processing under the">Отдельно соглашаюсь на обработку персональных данных по <a href="/data-consent.html">отдельному согласию</a>.</span>
+        </label>
+      </div>
+
+      <div data-minor-fields hidden>
+        <label class="check-row">
+          <input type="checkbox" name="age_confirmed" data-required="true">
+          <span data-ru="Подтверждаю, что мне уже исполнилось 13 лет." data-en="I confirm that I am at least 13 years old.">Подтверждаю, что мне уже исполнилось 13 лет.</span>
+        </label>
+        <label data-ru="Email родителя или законного представителя" data-en="Parent or legal guardian email">
+          Email родителя или законного представителя
+          <input type="email" name="guardian_email" autocomplete="email" maxlength="254" data-required="true">
+        </label>
+        <p class="copy" data-ru="Сначала мы отправим родителю ссылку. До подтверждения родителем email и пароль пользователя не запрашиваются, а аккаунт не создаётся." data-en="We will email the parent first. The learner's email and password are not requested and no account is created until the parent approves.">
+          Сначала мы отправим родителю ссылку. До подтверждения родителем email и пароль пользователя не запрашиваются, а аккаунт не создаётся.
+        </p>
+      </div>
+
+      <div class="turnstile-widget" data-turnstile-captcha aria-label="Проверка безопасности"></div>
+      <p class="form-status" data-auth-status id="auth-status" aria-live="polite"></p>
+      <button class="button" type="submit" disabled>
+        <span data-submit-label data-ru="Создать аккаунт" data-en="Create account">Создать аккаунт</span>
+        <span>↗</span>
+      </button>
+      <button class="button secondary" type="button" data-resend-verification hidden>Отправить письмо повторно</button>
+    </form>
+
+    <p class="auth-foot" data-ru="Уже есть аккаунт? " data-en="Already have an account? ">Уже есть аккаунт? <a href="/login.html">Войти</a></p>
+  </section>
+</main>
+<footer class="footer wrap"><span>QUIET ENGLISH</span><span>Personal learning, at your pace</span></footer>
+</body>
+</html>
