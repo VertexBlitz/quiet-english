@@ -202,6 +202,7 @@ if (authForm?.dataset.authForm === 'register') {
       } else {
         const data = await authRequest('/guardian-consent-request', {
           age_band: ageBand,
+          age_confirmed: form.get('age_confirmed') === 'on',
           country_code: String(form.get('country_code') || '').trim().toUpperCase(),
           guardian_email: String(form.get('guardian_email') || '').trim().toLowerCase(),
           turnstile_token: captchaToken
