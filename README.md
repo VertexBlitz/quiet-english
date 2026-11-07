@@ -21,6 +21,11 @@ A bilingual (Russian/English) personal English-learning platform built on the ex
 - Preliminary CEFR placement test (not an official certificate)
 - Four-week personal plan with local-time daily tasks
 - 20 curated vocabulary, grammar and reading exercises
+- Listening library with 15 curated British Council and ELLLO collections/lessons across CEFR A1–C1
+- Browser-local scripted speech transcription with Whisper tiny.en, 15 curated speaking passages across CEFR A1–C1, on-demand AI-generated passages through the existing Cloudflare Workers AI integration, expected-vs-recognized word matching, targeted retry practice for missed/substituted words and an 8-attempt progress chart; recordings are not uploaded
+- AI Practice Studio adds adaptive retry rounds: after grading, the learner can generate a focused exercise from missed learning points, with the original level, skill and topic preserved; concise question prompts and lower output-token budgets reduce generation time
+- AI Practice Studio offers instant server-graded exercises across A1–C1 from a curated randomized bank; a unique Cloudflare AI alternative is prepared in the background and can be opened when ready.
+- On-demand AI-generated grammar, vocabulary, reading, listening and mixed exercises across CEFR A1–C1, with server-side answer checking and local attempt history
 - Server-side answer checking
 - Spaced repetition queue
 - Personal progress and error journal
@@ -29,16 +34,15 @@ A bilingual (Russian/English) personal English-learning platform built on the ex
 - RU/EN language switch
 - Existing AI tutor with optional account-derived context and slash commands
 
-Listening media, structured writing assessment, voice recording, ASR, pronunciation scoring, advanced CMS workflows and formal exam preparation are out of this MVP.
+Structured writing assessment, advanced CMS workflows and formal exam preparation remain outside this MVP. Listening resources are linked from their original publishers; Quiet English does not copy or host third-party audio.
 
 ## Important rollout and safety gates
 
-**Account registration is disabled by default.** Do not enable it until a persistent PostgreSQL database, email sender, final privacy notice, Terms and age/guardian workflow have been reviewed and configured.
+**Account registration is disabled by default.** Do not enable it until a persistent PostgreSQL database, verified email sender, final privacy notice and Terms have been reviewed and configured.
 
 - `REGISTRATION_ENABLED=false` by default.
-- `MINOR_SIGNUP_ENABLED=false` by default.
-- The parent/guardian link in this MVP is an email-based attestation prototype. It is not independent identity verification and is not a substitute for jurisdiction-specific legal review or a production-grade consent process.
-- The Terms and Privacy pages are drafts. They must be reviewed and completed by the service operator before public account registration.
+- The registration form accepts users aged 16 and over. Users aged 16–17 are restricted to Germany; users under 16 are rejected. This technical gate is not a substitute for checking all laws that apply where the service is offered.
+- The Terms and Privacy pages are drafts and must be completed and reviewed by the service operator before public registration.
 - The admin CMS is available only to users whose database role is `admin`. That role must be assigned manually to a trusted adult operator after their account is verified. Do not make a learner account an administrator.
 
 ## Required Render environment variables
@@ -51,7 +55,6 @@ Set these in Render → Environment. Never commit real values:
 - `RESEND_API_KEY` — email API key
 - `EMAIL_FROM` — sender address verified with the email provider
 - `REGISTRATION_ENABLED` — keep `false` until launch checks are complete
-- `MINOR_SIGNUP_ENABLED` — keep `false` until the minors/guardian process has been reviewed
 - `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` — existing AI integration
 - `NODE_ENV=production` — secure production cookies
 - `PGSSLMODE=require` if your PostgreSQL provider requires verified TLS; use `disable` only for a trusted local development database
@@ -102,7 +105,9 @@ Replace the example email with the trusted adult operator's own verified address
 - `/onboarding.html` — learning preferences
 - `/placement.html` — preliminary CEFR placement
 - `/plan.html` — four-week plan and Today
-- `/practice.html` — vocabulary, grammar and reading practice
+- `/practice.html` — AI-generated grammar, vocabulary, reading, listening and mixed practice plus the curated exercise library when account storage is configured
+- `/listening.html` — curated external listening library by CEFR level and topic
+- `/pronunciation.html` — browser-local Whisper speaking practice and personal word-match history
 - `/exercise.html?id=G01` — exercise player
 - `/review.html` — spaced repetition
 - `/progress.html` — personal progress
@@ -119,17 +124,21 @@ New route groups:
 - `/api/auth` — registration, sign-in, email verification, guardian attestation, password reset, data export and account deletion
 - `/api/learning` — onboarding, placement, plan, exercises, attempts, review, progress and errors
 - `/api/admin` — admin-only exercise and plan-template management
+- `/api/pronunciation` — authenticated history of local Whisper transcript comparisons (audio is processed in the browser and is not accepted by the API)
+- `POST /api/speaking/generate` — rate-limited Cloudflare Workers AI passage generation for CEFR A1–C1; returns short original English passages and never receives microphone audio
+- `POST /api/practice/instant` — creates an immediate exercise from a curated randomized question bank; answers remain server-side for normal grading
+- `POST /api/practice/generate` and `POST /api/practice/:id/check` — rate-limited background AI exercise generation and server-side answer checking for grammar, vocabulary, reading, listening and mixed tasks. Correct answers remain server-side; temporary exercise sessions expire after 45 minutes.
 
 CMS changes to a published template affect newly generated plans. Existing learner plans keep their copied weekly themes and daily task assignments.
 
 ## Tests
 
 - `npm run check` — syntax-checks server, client, scripts and test JavaScript; parses exercise seed JSON.
-- `npm test` — runs unit tests for preliminary CEFR placement and hiding answer keys from public questions.
-- GitHub Actions runs these checks for the feature branch and pull requests to main.
+- `npm test` — runs unit tests for preliminary CEFR placement, public answer-key filtering, local transcript alignment, the A1–C1 passage library, error-review word selection, progress-series ordering, AI exercise schema validation and server-side answer grading.
+- GitHub Actions runs these checks on pushes to `quiet-english-2-mvp` and `main`, and on pull requests targeting either branch.
 
 ## Deployment notes
 
 This work is developed in `quiet-english-2-mvp`, not deployed to the existing production Render service. The production site remains unchanged until the pull request is reviewed and merged.
 
-After merging, the site can serve the new pages, but account and learning APIs remain disabled until the required database and session settings exist. Email registration additionally requires the Resend settings. Keep the registration feature flags off until the safety and privacy review is complete.
+The pronunciation and listening improvements are developed in `feat/pronunciation-and-listening-library` as a separate reviewable change. After merging, the site can serve the new pages, but account and learning APIs remain disabled until the required database and session settings exist. Speaking history is stored locally in the current browser when account storage is unavailable; account history requires the `005_pronunciation_attempts.sql` migration and configured account/database sessions. Whisper itself runs in the browser and does not need provider credentials. AI passage generation reuses `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_MODEL`; these must also be configured on the separate Preview Render service. The endpoint limits generation to 12 requests per hour per IP and validates the model response before returning a passage. The Practice generator also reuses the same Cloudflare Workers AI credentials, limits generation to 12 requests per hour per IP, keeps answer keys server-side, and stores up to eight recent scores in the learner's browser. Email registration additionally requires the Resend settings. Keep the registration feature flags off until the safety and privacy review is complete.

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speaking practice — Quiet English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/i18n.js"></script><script defer src="/session.js"></script><script type="module" src="/pronunciation.js"></script>
+</head>
+<body>
+<header class="topbar wrap">
+  <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
+  <nav aria-label="Main navigation">
+    <a href="/plan.html" data-ru="План" data-en="Plan">План</a>
+    <a href="/practice.html" data-ru="Практика" data-en="Practice">Практика</a><a href="/knowledge.html" data-ru="База знаний" data-en="Knowledge">База знаний</a>
+    <a href="/listening.html" data-ru="Аудирование" data-en="Listening">Аудирование</a>
+    <a href="/review.html" data-ru="Повторение" data-en="Review">Повторение</a>
+    <a href="/progress.html" data-ru="Прогресс" data-en="Progress">Прогресс</a>
+  </nav>
+  <div class="language-switch" aria-label="Language">
+    <button type="button" data-set-lang="ru">RU</button><button type="button" data-set-lang="en">EN</button>
+    <a class="account-link" href="/login.html" data-ru="Аккаунт" data-en="Account">Аккаунт</a>
+  </div>
+</header>
+
+<main class="wrap" data-pronunciation-page>
+  <section class="panel page-head">
+    <p class="eyebrow">SPEAKING LAB · WHISPER</p>
+    <h1 data-ru="Произнеси фразу. Сверь результат." data-en="Say the passage. Check the transcript.">Произнеси фразу. Сверь результат.</h1>
+    <p class="lead" data-ru="Whisper распознаёт английскую речь прямо в браузере. Сайт сравнит распознанные слова с заданным текстом и покажет примерный темп. Аудиозапись не отправляется на сервер." data-en="Whisper transcribes English speech in your browser. The site compares the transcript with the passage and estimates speaking pace. Your recording is not uploaded to the server.">Whisper распознаёт английскую речь прямо в браузере. Сайт сравнит распознанные слова с заданным текстом и покажет примерный темп. Аудиозапись не отправляется на сервер.</p>
+  </section>
+
+  <p class="form-status" data-pron-status role="status" aria-live="polite"></p>
+
+  <section class="panel pronunciation-workspace">
+    <div class="section-heading">
+      <div><p class="eyebrow">01 · READING TASK</p><h2 data-ru="Выбери фразу." data-en="Choose a passage.">Выбери фразу.</h2></div>
+      <span class="pill" data-engine-status>WHISPER · ON-DEVICE</span>
+    </div>
+
+    <div class="pron-ai-generator">
+      <div class="pron-ai-generator-copy">
+        <strong data-ru="Создать новое задание с ИИ" data-en="Generate a new AI passage">Создать новое задание с ИИ</strong>
+        <span data-ru="Каждое нажатие создаёт новый текст выбранного уровня." data-en="Each request creates a fresh passage for the selected level.">Каждое нажатие создаёт новый текст выбранного уровня.</span>
+      </div>
+      <label class="pron-topic-filter">
+        <span data-ru="Тема" data-en="Topic">Тема</span>
+        <select data-pron-topic aria-label="Choose a speaking passage topic">
+          <option value="Everyday life">Everyday life</option>
+          <option value="Travel">Travel</option>
+          <option value="History and culture">History and culture</option>
+          <option value="Science">Science</option>
+          <option value="Technology">Technology</option>
+          <option value="Environment">Environment</option>
+          <option value="Education">Education</option>
+          <option value="Books and media">Books and media</option>
+        </select>
+      </label>
+      <button class="button pron-generate-button" type="button" data-generate-passage data-ru="Сгенерировать ↗" data-en="Generate ↗">Сгенерировать ↗</button>
+      <p class="pron-ai-status" data-ai-generator-status role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="pron-library-controls">
+      <label class="pron-level-filter">
+        <span data-ru="Уровень" data-en="Level">Уровень</span>
+        <select data-pron-level aria-label="Filter speaking passages by CEFR level">
+          <option value="ALL">A1–C1 · Все уровни</option>
+          <option value="A1">A1 · Beginner</option>
+          <option value="A2">A2 · Elementary</option>
+          <option value="B1">B1 · Intermediate</option>
+          <option value="B2">B2 · Upper-intermediate</option>
+          <option value="C1">C1 · Advanced</option>
+        </select>
+      </label>
+      <span class="pron-passage-count" data-pron-count>15 заданий</span>
+    </div>
+    <div class="pron-prompt-list" data-pron-prompts></div>
+    <p class="pron-active-task" data-pron-active-task aria-live="polite">Выбери текст для чтения.</p>
+
+    <div class="pron-record-box">
+      <label class="consent-line"><input type="checkbox" data-pron-consent>
+        <span data-ru="Я понимаю: запись обрабатывается локально в браузере с помощью Whisper и не отправляется на сервер. При первом запуске браузер загружает файлы модели. Результат сохраняется в истории этого браузера; если аккаунт и база данных настроены, он также сохраняется в аккаунте." data-en="I understand that Whisper processes this recording locally in my browser and that the audio is not uploaded to the server. Model files are downloaded on first use. The result is saved in this browser's history; if an account and database are configured, it is also saved to the account.">Я понимаю: запись обрабатывается локально в браузере с помощью Whisper и не отправляется на сервер. При первом запуске браузер загружает файлы модели. Для истории Quiet English сохраняет задание, распознанный текст и результат сверки слов.</span>
+    </label>
+      <div class="record-actions">
+        <button type="button" class="button" data-record disabled><span data-record-label data-ru="Начать запись" data-en="Start recording">Начать запись</span><span>●</span></button>
+        <span class="record-timer" data-record-timer>00:00 / 00:28</span>
+      </div>
+      <p class="fine-print" data-ru="Микрофон включается только после нажатия кнопки. Максимум 28 секунд. Аудио остаётся в памяти браузера и не отправляется на сервер. Для загрузки модели нужен интернет; браузер может сохранить её для следующих занятий. Не произноси личные сведения." data-en="The microphone starts only after you press the button. Maximum 28 seconds. Audio stays in browser memory and is not uploaded to the server. Internet is needed to download the model; your browser may cache it for later sessions. Do not include personal information.">Микрофон включается только после нажатия кнопки. Максимум 28 секунд. Аудио остаётся в памяти браузера и не отправляется на сервер. Для загрузки модели нужен интернет; браузер может сохранить её для следующих занятий. Не произноси личные сведения.</p>
+    </div>
+  </section>
+
+  <section class="panel" data-pron-result hidden>
+    <p class="eyebrow">02 · YOUR RESULT</p>
+    <div class="section-heading pron-result-head">
+      <div><h2 data-ru="Результат попытки." data-en="Your result.">Результат попытки.</h2><p class="copy" data-pron-transcript></p></div>
+      <div class="pron-overall"><strong data-pron-overall>—</strong><span data-ru="совпадение текста" data-en="word match">совпадение текста</span></div>
+    </div>
+    <div class="pron-metrics" data-pron-metrics></div>
+    <h3 class="pron-subheading" data-ru="Сверка слов" data-en="Word comparison">Сверка слов</h3>
+    <div class="pron-word-list" data-pron-words></div>
+    <p class="fine-print" data-ru="Это сверка текста, а не фонетическая оценка: Whisper может ошибаться при распознавании. Процент показывает совпадение слов с заданием, а темп не измеряет интонацию или качество отдельных звуков." data-en="This is transcript matching, not a phonetic assessment: Whisper can make recognition errors. The percentage shows how many words matched the passage; speaking pace does not measure intonation or individual sound quality.">Это сверка текста, а не фонетическая оценка: Whisper может ошибаться при распознавании. Процент показывает совпадение слов с заданием, а темп не измеряет интонацию или качество отдельных звуков.</p>
+    <div class="pron-retry" data-pron-retry hidden>
+      <div>
+        <p class="eyebrow" data-ru="ПОВТОРЕНИЕ ОШИБОК" data-en="ERROR PRACTICE">ПОВТОРЕНИЕ ОШИБОК</p>
+        <h3 data-ru="Потренируй сложные слова." data-en="Practise the difficult words.">Потренируй сложные слова.</h3>
+        <p class="copy" data-pron-retry-text></p>
+      </div>
+      <button class="button" type="button" data-repeat-errors data-ru="Повторить слова" data-en="Practise these words">Повторить слова</button>
+    </div>
+  </section>
+
+  <section class="panel pron-progress-panel">
+    <div class="section-heading">
+      <div><p class="eyebrow">03 · PROGRESS</p><h2 data-ru="Динамика результатов." data-en="Progress over time.">Динамика результатов.</h2></div>
+      <span class="pill" data-pron-progress-count>0 попыток</span>
+    </div>
+    <p class="copy" data-ru="Последние 8 попыток по совпадению слов. Новые результаты появляются справа." data-en="Your last 8 word-match results. New attempts appear on the right.">Последние 8 попыток по совпадению слов. Новые результаты появляются справа.</p>
+    <div class="pron-chart-empty" data-pron-chart-empty>График появится после первой попытки.</div>
+    <svg class="pron-progress-chart" data-pron-chart viewBox="0 0 340 190" role="img" aria-label="Speaking practice progress chart" hidden></svg>
+    <div class="pron-chart-legend"><span>0%</span><span>50%</span><span>100%</span></div>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading"><div><p class="eyebrow">04 · RECENT PRACTICE</p><h2 data-ru="Последние попытки." data-en="Recent attempts.">Последние попытки.</h2></div></div>
+    <div class="pron-history" data-pron-history><p data-ru="История появится после первой оценки." data-en="Your history will appear after your first assessment.">История появится после первой оценки.</p></div>
+  </section>
+</main>
+</body></html>

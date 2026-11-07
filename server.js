@@ -4,11 +4,29 @@ import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomUUID } from 'node:crypto';
 
-import { pool } from './src/db.js';
+import { pool, recordActivity } from './src/db.js';
 import authRoutes from './src/routes/auth.js';
 import learningRoutes from './src/routes/learning.js';
+import knowledgeRoutes from './src/routes/knowledge.js';
 import adminRoutes from './src/routes/admin.js';
+import pronunciationRoutes from './src/routes/pronunciation.js';
+import writingRoutes from './src/routes/writing.js';
+import studyToolsRoutes from './src/routes/study-tools.js';
+import billingRoutes from './src/routes/billing.js';
+import {
+  buildSpeakingGenerationPrompt,
+  parseGeneratedSpeakingPassage,
+  validateSpeakingGenerationRequest
+} from './src/speaking.js';
+import { buildInstantPracticeExercise } from './src/instant-practice.js';
+import {
+  buildPracticeGenerationPrompt,
+  gradeGeneratedPracticeExercise,
+  parseGeneratedPracticeExercise,
+  validatePracticeGenerationRequest
+} from './src/practice-generation.js';
 
 const app = express();
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -68,14 +86,24 @@ function sameOrigin(req, res, next) {
 if (sessionsConfigured) {
   app.use('/api/auth', sameOrigin, authRoutes);
   app.use('/api/learning', sameOrigin, learningRoutes);
+  app.use('/api/knowledge', sameOrigin, knowledgeRoutes);
   app.use('/api/admin', sameOrigin, adminRoutes);
+  app.use('/api/pronunciation', sameOrigin, pronunciationRoutes);
+  app.use('/api/studio', sameOrigin, writingRoutes, studyToolsRoutes);
+  app.use('/api/billing', billingRoutes);
+  app.use('/api/billing', billingRoutes);
 } else {
   const notReady = (_req, res) => res.status(503).json({
     error: 'Личный кабинет ещё не настроен. Нужны DATABASE_URL и SESSION_SECRET.'
   });
   app.use('/api/auth', notReady);
   app.use('/api/learning', notReady);
+  app.use('/api/knowledge', notReady);
   app.use('/api/admin', notReady);
+  app.use('/api/pronunciation', notReady);
+  app.use('/api/studio', notReady);
+  app.use('/api/billing', notReady);
+  app.use('/api/billing', notReady);
 }
 
 const MODEL = process.env.CLOUDFLARE_MODEL || '@cf/google/gemma-4-26b-a4b-it';
@@ -267,6 +295,428 @@ async function buildLearnerContext(userId, exerciseRef) {
     return '';
   }
 }
+
+
+const speakingGenerationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 12,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({
+    error: 'Достигнут временный лимит генерации. Попробуй ещё раз позже.'
+  })
+});
+
+app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) => {
+  const origin = req.get('origin');
+  if (origin) {
+    try {
+      if (new URL(origin).host !== req.get('host')) {
+        return res.status(403).json({ error: 'Источник запроса не разрешён.' });
+      }
+    } catch {
+      return res.status(403).json({ error: 'Некорректный источник запроса.' });
+    }
+  }
+
+  const validated = validateSpeakingGenerationRequest(req.body);
+  if (!validated.ok) {
+    return res.status(400).json({ error: validated.error });
+  }
+
+  if (!isAiConfigured()) {
+    return res.status(503).json({
+      error: 'Генерация ИИ пока не подключена на этом тестовом сервисе. Нужны настройки Cloudflare Workers AI.'
+    });
+  }
+
+  const { level, topic, avoid } = validated.value;
+  const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' +
+    encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID) + '/ai/v1/chat/completions';
+  const variation = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+
+  let upstream;
+  try {
+    upstream = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN,
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: 'You create original, age-appropriate English reading exercises. Follow the requested CEFR level and return only the required JSON object. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
+          },
+          {
+            role: 'user',
+            content: buildSpeakingGenerationPrompt({ level, topic, avoid }) +
+              '\nVariation identifier: ' + variation + '. Create a genuinely new scenario, not a synonym replacement.'
+          }
+        ],
+        stream: false,
+        max_tokens: 260,
+        temperature: 0.8,
+        chat_template_kwargs: { enable_thinking: false }
+      }),
+      signal: AbortSignal.timeout(45_000)
+    });
+  } catch (error) {
+    console.error('Speaking generation connection error:', error?.message || 'unknown error');
+    return res.status(503).json({ error: 'ИИ временно недоступен. Попробуй ещё раз позже.' });
+  }
+
+  if (!upstream.ok) {
+    const detail = await upstream.text().catch(() => '');
+    console.error('Speaking generation upstream status:', upstream.status, detail.slice(0, 300));
+    if (upstream.status === 429) {
+      return res.status(429).json({
+        error: 'Бесплатная дневная квота Cloudflare AI или лимит запросов исчерпаны. Попробуй после обновления квоты.'
+      });
+    }
+    if (upstream.status === 401 || upstream.status === 403) {
+      return res.status(503).json({
+        error: 'Cloudflare не разрешил генерацию. Проверь настройки и разрешения AI-токена в Render.'
+      });
+    }
+    return res.status(502).json({ error: 'Модель не смогла создать задание. Попробуй ещё раз.' });
+  }
+
+  let result;
+  try {
+    result = await upstream.json();
+  } catch {
+    return res.status(502).json({ error: 'Cloudflare вернул некорректный ответ.' });
+  }
+
+  const modelContent = result?.choices?.[0]?.message?.content ??
+    result?.result?.response ?? result?.response;
+
+  try {
+    const passage = parseGeneratedSpeakingPassage(modelContent, { level, topic });
+    return res.json({ passage, source: 'cloudflare-workers-ai' });
+  } catch (error) {
+    console.error('Speaking generation response validation failed:', error?.message || 'unknown error');
+    return res.status(502).json({
+      error: error?.message || 'ИИ вернул некорректное задание. Попробуй ещё раз.'
+    });
+  }
+});
+
+
+const practiceGenerationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 12,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({
+    error: 'Достигнут часовой лимит генерации. Попробуй ещё раз позже.'
+  })
+});
+const practiceCheckLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false
+});
+const generatedPracticeSessions = new Map();
+const PRACTICE_SESSION_TTL = 45 * 60 * 1000;
+
+function sameRequestOrigin(req) {
+  const origin = req.get('origin');
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === req.get('host');
+  } catch {
+    return false;
+  }
+}
+
+function cleanGeneratedPracticeSessions() {
+  const now = Date.now();
+  for (const [id, session] of generatedPracticeSessions) {
+    if (session.expiresAt <= now) generatedPracticeSessions.delete(id);
+  }
+  while (generatedPracticeSessions.size >= 250) {
+    const oldest = generatedPracticeSessions.keys().next().value;
+    if (!oldest) break;
+    generatedPracticeSessions.delete(oldest);
+  }
+}
+
+app.post('/api/practice/instant', async (req, res) => {
+  if (!sameRequestOrigin(req)) {
+    return res.status(403).json({ error: 'Источник запроса не разрешён.' });
+  }
+
+  const validated = validatePracticeGenerationRequest(req.body);
+  if (!validated.ok) return res.status(400).json({ error: validated.error });
+
+  try {
+    const request = validated.value;
+    const exercise = buildInstantPracticeExercise(request);
+    cleanGeneratedPracticeSessions();
+    const exerciseId = randomUUID();
+    generatedPracticeSessions.set(exerciseId, {
+      exercise,
+      expiresAt: Date.now() + PRACTICE_SESSION_TTL
+    });
+
+    const { questions, ...metadata } = exercise;
+    return res.json({
+      exercise_id: exerciseId,
+      source: 'instant-library',
+      exercise: {
+        ...metadata,
+        questions: questions.map(question => ({
+          id: question.id,
+          prompt: question.prompt,
+          category: question.category,
+          options: question.options
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Instant practice build error:', error?.message || 'unknown error');
+    return res.status(500).json({ error: 'Не удалось мгновенно подготовить задание.' });
+  }
+});
+
+app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) => {
+  if (!sameRequestOrigin(req)) {
+    return res.status(403).json({ error: 'Источник запроса не разрешён.' });
+  }
+
+  const validated = validatePracticeGenerationRequest(req.body);
+  if (!validated.ok) return res.status(400).json({ error: validated.error });
+  if (!isAiConfigured()) {
+    return res.status(503).json({ error: 'ИИ пока не настроен на этом сервисе.' });
+  }
+
+  const rawKnowledgeNoteId = typeof req.body?.knowledge_note_id === 'string'
+    ? req.body.knowledge_note_id.trim()
+    : '';
+  const knowledgeNoteId = rawKnowledgeNoteId && /^(grammar|vocabulary|reading|listening|speaking|writing)-(a1|a2|b1|b2|c1|c2)$/.test(rawKnowledgeNoteId)
+    ? rawKnowledgeNoteId
+    : null;
+  if (rawKnowledgeNoteId && !knowledgeNoteId) {
+    return res.status(400).json({ error: 'Некорректный идентификатор конспекта.' });
+  }
+  if (knowledgeNoteId && !req.session?.userId) {
+    return res.status(401).json({ error: 'Войди в аккаунт, чтобы сохранять результаты теста.' });
+  }
+  const rawNoteMeta = req.body?.knowledge_note_meta || {};
+  const knowledgeNoteMeta = {
+    title: typeof rawNoteMeta.title === 'string' ? rawNoteMeta.title.replace(/\s+/gu, ' ').trim().slice(0, 100) : '',
+    summary: typeof rawNoteMeta.summary === 'string' ? rawNoteMeta.summary.replace(/\s+/gu, ' ').trim().slice(0, 240) : '',
+    category: typeof rawNoteMeta.category === 'string' ? rawNoteMeta.category.trim().toLowerCase() : '',
+    level: typeof rawNoteMeta.level === 'string' ? rawNoteMeta.level.trim().toUpperCase() : ''
+  };
+  if (knowledgeNoteId && (
+    !['grammar','vocabulary','reading','listening','speaking','writing'].includes(knowledgeNoteMeta.category) ||
+    !['A1','A2','B1','B2','C1','C2'].includes(knowledgeNoteMeta.level) ||
+    knowledgeNoteId !== knowledgeNoteMeta.category + '-' + knowledgeNoteMeta.level.toLowerCase()
+  )) {
+    return res.status(400).json({ error: 'Некорректные данные конспекта.' });
+  }
+  const request = validated.value;
+  const variation = randomUUID();
+  const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' +
+    encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID) + '/ai/v1/chat/completions';
+
+  let upstream;
+  try {
+    upstream = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN,
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert but kind English teacher creating original, age-appropriate school exercises. Strictly follow the requested JSON schema. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
+          },
+          {
+            role: 'user',
+            content: buildPracticeGenerationPrompt(request) +
+              '\nUnique generation id: ' + variation + '. Create genuinely new questions and examples.'
+          }
+        ],
+        stream: false,
+        max_tokens: ({
+          grammar: 850,
+          vocabulary: 850,
+          mixed: 900,
+          reading: 1300,
+          listening: 1250
+        })[request.skill] || 850,
+        temperature: 0.65,
+        top_p: 0.85,
+        chat_template_kwargs: { enable_thinking: false }
+      }),
+      signal: AbortSignal.timeout(60_000)
+    });
+  } catch (error) {
+    console.error('Practice generation connection error:', error?.message || 'unknown error');
+    return res.status(503).json({ error: 'ИИ временно недоступен. Попробуй позже.' });
+  }
+
+  if (!upstream.ok) {
+    const detail = await upstream.text().catch(() => '');
+    console.error('Practice generation upstream status:', upstream.status, detail.slice(0, 300));
+    if (upstream.status === 429) {
+      return res.status(429).json({ error: 'Квота Cloudflare AI или лимит запросов исчерпаны. Попробуй позже.' });
+    }
+    if (upstream.status === 401 || upstream.status === 403) {
+      return res.status(503).json({ error: 'Cloudflare отклонил запрос. Проверь разрешения AI-токена в Render.' });
+    }
+    return res.status(502).json({ error: 'ИИ не смог создать упражнение. Попробуй ещё раз.' });
+  }
+
+  let payload;
+  try {
+    payload = await upstream.json();
+  } catch {
+    return res.status(502).json({ error: 'Cloudflare вернул некорректный ответ.' });
+  }
+
+  const generatedText = payload?.choices?.[0]?.message?.content ??
+    payload?.result?.response ?? payload?.response;
+
+  try {
+    const exercise = parseGeneratedPracticeExercise(generatedText, request);
+    cleanGeneratedPracticeSessions();
+    const exerciseId = randomUUID();
+    generatedPracticeSessions.set(exerciseId, {
+      exercise,
+      expiresAt: Date.now() + PRACTICE_SESSION_TTL,
+      knowledgeNoteId,
+      knowledgeNoteMeta,
+      userId: knowledgeNoteId ? req.session.userId : null
+    });
+
+    const { questions, ...metadata } = exercise;
+    return res.json({
+      exercise_id: exerciseId,
+      exercise: {
+        ...metadata,
+        questions: questions.map(question => ({
+          id: question.id,
+          prompt: question.prompt,
+          category: question.category,
+          options: question.options
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Practice generation validation error:', error?.message || 'unknown error');
+    return res.status(502).json({
+      error: error?.message || 'ИИ вернул упражнение неподходящего формата. Попробуй ещё раз.'
+    });
+  }
+});
+
+app.post('/api/practice/:id/check', practiceCheckLimiter, async (req, res) => {
+  if (!sameRequestOrigin(req)) {
+    return res.status(403).json({ error: 'Источник запроса не разрешён.' });
+  }
+
+  const session = generatedPracticeSessions.get(req.params.id);
+  if (!session || session.expiresAt <= Date.now()) {
+    generatedPracticeSessions.delete(req.params.id);
+    return res.status(404).json({ error: 'Срок этого задания истёк. Создай новое упражнение.' });
+  }
+
+  try {
+    const result = gradeGeneratedPracticeExercise(session.exercise, req.body?.answers);
+    if (session.knowledgeNoteId) {
+      if (!req.session?.userId || req.session.userId !== session.userId || !pool) {
+        return res.status(401).json({ error: 'Сессия теста больше не связана с этим аккаунтом. Создай тест заново.' });
+      }
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query(
+          `INSERT INTO knowledge_quiz_attempts
+             (user_id,note_id,category,level,score,correct_count,question_count,results)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`,
+          [
+            req.session.userId,
+            session.knowledgeNoteId,
+            session.knowledgeNoteMeta.category,
+            session.knowledgeNoteMeta.level,
+            result.score,
+            result.correct,
+            result.total,
+            JSON.stringify(result.results)
+          ]
+        );
+        await client.query(
+          `INSERT INTO knowledge_note_progress
+             (user_id,note_id,title,summary,category,level,is_read,read_at,last_opened_at,last_score)
+           VALUES ($1,$2,$3,$4,$5,$6,TRUE,NOW(),NOW(),$7)
+           ON CONFLICT (user_id,note_id) DO UPDATE SET
+             title=EXCLUDED.title,
+             summary=EXCLUDED.summary,
+             category=EXCLUDED.category,
+             level=EXCLUDED.level,
+             is_read=TRUE,
+             read_at=COALESCE(knowledge_note_progress.read_at,NOW()),
+             last_opened_at=NOW(),
+             last_score=EXCLUDED.last_score,
+             updated_at=NOW()`,
+          [
+            req.session.userId,
+            session.knowledgeNoteId,
+            session.knowledgeNoteMeta.title,
+            session.knowledgeNoteMeta.summary,
+            session.knowledgeNoteMeta.category,
+            session.knowledgeNoteMeta.level,
+            result.score
+          ]
+        );
+        for (const item of result.results.filter(question => !question.is_correct)) {
+          await client.query(
+            `INSERT INTO error_journal
+               (user_id,error_type,incorrect_form,correction,explanation)
+             VALUES ($1,$2,$3,$4,$5)`,
+            [
+              req.session.userId,
+              ['grammar','vocabulary','reading','listening','speaking','writing'].includes(item.category) ? item.category : session.knowledgeNoteMeta.category,
+              (item.learning_point + ': ' + item.selected_answer).slice(0, 500),
+              item.correct_answer.slice(0, 500),
+              item.explanation.slice(0, 700)
+            ]
+          );
+        }
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+      try {
+        await recordActivity(req.session.userId, { minutes: 4, completedTasks: 1 });
+      } catch (error) {
+        console.error('Knowledge quiz activity update failed:', error?.message || 'unknown error');
+      }
+      generatedPracticeSessions.delete(req.params.id);
+      return res.json({ ...result, saved: true, note_id: session.knowledgeNoteId });
+    }
+    return res.json(result);
+  } catch (error) {
+    console.error('Practice grading or persistence failed:', error?.message || 'unknown error');
+    res.status(400).json({ error: error?.message || 'Не удалось проверить ответы.' });
+  }
+});
 
 app.get('/api/health', (_req, res) => {
   res.json({

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<link rel="icon" href="/favicon.ico?v=20261107" sizes="any" type="image/x-icon">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Writing Lab — Quiet English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/offline-client.js"></script><script defer src="/writing.js?v=20261107-persist-2"></script>
+</head>
+<body>
+<header class="topbar wrap">
+<a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
+<nav aria-label="Main navigation">
+<a href="/plan.html">План</a><a href="/practice.html">Практика</a><a href="/writing.html" aria-current="page">Writing Lab</a><a href="/dictionary.html">Словарь</a><a href="/listening.html">Аудирование</a><a href="/progress.html">Прогресс</a><a href="/studio.html">Quiet English AI</a>
+</nav>
+<div class="language-switch"><button type="button" data-set-lang="ru">RU</button><button type="button" data-set-lang="en">EN</button><a class="account-link" href="/login.html">Аккаунт</a></div>
+</header>
+<main class="wrap writing-page" data-writing-page>
+<section class="panel page-head">
+<p class="eyebrow">WRITING LAB · AI FEEDBACK</p>
+<h1>Пиши свободно.<br><em>Улучшай точечно.</em></h1>
+<p class="lead">ИИ разберёт письменную работу, покажет конкретные ошибки и предложит более естественную версию, сохранив твою мысль.</p>
+</section>
+<section class="panel writing-editor-panel">
+<div class="writing-controls">
+<label>Формат работы
+<select data-writing-type>
+<option value="essay">Эссе</option><option value="email">Письмо</option><option value="story">Рассказ</option><option value="article">Статья</option><option value="exam">Экзаменационный ответ</option>
+</select></label>
+<label>Уровень CEFR
+<select data-writing-level><option>A1</option><option>A2</option><option selected>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
+<label>Тема (необязательно)<input type="text" maxlength="160" data-writing-topic placeholder="Например, technology and education"></label>
+</div>
+<label class="writing-text-label">Твой текст
+<textarea data-writing-text maxlength="7000" rows="13" placeholder="Write your text in English here..."></textarea>
+</label>
+<div class="writing-submit-row"><span class="fine-print"><span data-writing-count>0</span> / 7000 · Не добавляй пароли, адреса и другие личные сведения.</span><button class="button" type="button" data-writing-submit>Проверить текст ↗</button></div>
+<p class="form-status" data-writing-status role="status" aria-live="polite"></p>
+</section>
+<section class="panel" data-writing-result hidden>
+<div class="section-heading"><div><p class="eyebrow">YOUR FEEDBACK</p><h2>Разбор работы.</h2></div><strong class="writing-overall" data-writing-overall>—</strong></div>
+<p class="copy" data-writing-summary></p>
+<div class="writing-score-grid" data-writing-scores></div>
+<div class="writing-columns">
+<article class="writing-version"><div class="eyebrow">CORRECTED VERSION</div><h3>Исправленный текст</h3><p data-writing-corrected></p><button class="text-link" type="button" data-copy-corrected>Скопировать ↗</button></article>
+<article class="writing-version"><div class="eyebrow">MORE NATURAL ENGLISH</div><h3>Более естественная версия</h3><p data-writing-natural></p><button class="text-link" type="button" data-copy-natural>Скопировать ↗</button></article>
+</div>
+<div class="writing-section"><h3>Ошибки и объяснения</h3><div class="writing-issues" data-writing-issues></div></div>
+<div class="writing-columns">
+<div class="writing-section"><h3>Что уже хорошо</h3><ul data-writing-strengths></ul></div>
+<div class="writing-section"><h3>Что улучшить дальше</h3><ul data-writing-next></ul></div>
+</div>
+<div class="writing-section"><h3>Повторяющиеся закономерности</h3><div data-writing-patterns></div></div>
+<div class="writing-submit-row"><button class="button secondary" type="button" data-writing-save-offline>Сохранить разбор офлайн</button><span class="fine-print" data-writing-save-status></span></div>
+</section>
+<section class="panel">
+<div class="section-heading"><div><p class="eyebrow">YOUR WRITING HISTORY</p><h2>Последние работы.</h2></div><span class="pill" data-writing-history-count>0</span></div>
+<div class="writing-history" data-writing-history><p class="fine-print">Загружаем историю…</p></div>
+</section>
+</main>
+</body></html>

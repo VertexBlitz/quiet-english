@@ -20,15 +20,6 @@ function showAuthMessage(message, isError = false) {
   authStatus.classList.toggle('success-text', !isError);
 }
 
-const ageSelect = document.querySelector('#age-band');
-const guardianFields = document.querySelector('#guardian-fields');
-function updateGuardianFields() {
-  if (!ageSelect || !guardianFields) return;
-  guardianFields.hidden = ageSelect.value === '18_plus';
-}
-ageSelect?.addEventListener('change', updateGuardianFields);
-updateGuardianFields();
-
 if (authForm?.dataset.authForm === 'register') {
   authForm.addEventListener('submit', async event => {
     event.preventDefault();
@@ -41,7 +32,6 @@ if (authForm?.dataset.authForm === 'register') {
         password: form.get('password'),
         age_band: form.get('age_band'),
         country_code: String(form.get('country_code') || '').trim().toUpperCase(),
-        guardian_email: form.get('guardian_email'),
         preferred_language: form.get('preferred_language') || 'ru',
         terms_accepted: form.get('terms_accepted') === 'on',
         privacy_accepted: form.get('privacy_accepted') === 'on'
@@ -112,22 +102,4 @@ if (verifyPage) {
   else authRequest('/verify-email', { token })
     .then(data => showAuthMessage(data.message))
     .catch(error => showAuthMessage(error.message, true));
-}
-
-const guardianPage = document.querySelector('[data-guardian-consent]');
-if (guardianPage) {
-  const form = guardianPage.querySelector('form');
-  form?.addEventListener('submit', async event => {
-    event.preventDefault();
-    const checked = form.querySelector('[name="is_parent_or_guardian"]')?.checked;
-    try {
-      const data = await authRequest('/guardian-consent', {
-        token: new URLSearchParams(location.search).get('token'),
-        is_parent_or_guardian: checked === true
-      });
-      showAuthMessage(data.message);
-    } catch (error) {
-      showAuthMessage(error.message, true);
-    }
-  });
 }
