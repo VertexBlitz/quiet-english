@@ -177,6 +177,13 @@ router.post('/register', async (req, res, next) => {
     );
     verifyToken = await createToken(client, userId, 'email_verify', 24);
     await client.query('COMMIT');
+    console.info(JSON.stringify({
+      event: 'registration.account_created',
+      user_id: userId,
+      age_band: '18_plus',
+      country_code: normalizedCountryCode,
+      occurred_at: new Date().toISOString()
+    }));
   } catch (error) {
     await client.query('ROLLBACK');
     return next(error);
@@ -238,6 +245,11 @@ router.post('/verify-email', async (req, res, next) => {
       [item.user_id, item.age_band, item.country_code]
     );
     await client.query('COMMIT');
+    console.info(JSON.stringify({
+      event: 'registration.email_verified',
+      user_id: item.user_id,
+      occurred_at: new Date().toISOString()
+    }));
     res.json({ ok: true, status, message: 'Email подтверждён. Теперь можно войти.' });
   } catch (error) {
     await client.query('ROLLBACK');
