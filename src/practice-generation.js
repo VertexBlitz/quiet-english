@@ -97,36 +97,115 @@ export function parseGeneratedPracticeExercise(content, { level, skill, topic })
     throw new Error('Текст задания получился слишком длинным.');
   }
 
+  const validCategories = new Set([
+    'grammar', 'vocabulary', 'reading', 'communication', 'listening', 'mixed'
+  ]);
+  const categoryAliases = new Map([
+    ['grammatical', 'grammar'], ['grammar question', 'grammar'],
+    ['word choice', 'vocabulary'], ['vocab', 'vocabulary'],
+    ['reading comprehension', 'reading'], ['comprehension', 'reading'],
+    ['listening comprehension', 'listening'], ['speaking', 'communication'],
+    ['communicative', 'communication']
+  ]);
+  const toString = value => {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+    return '';
+  };
+
   const questions = data.questions.map((item, index) => {
     const id = 'q' + (index + 1);
-    const prompt = clean(item?.prompt).slice(0, 280);
-    const category = clean(item?.category).toLowerCase() || skill;
-    const validCategories = new Set(['grammar', 'vocabulary', 'reading', 'communication', 'listening', 'mixed']);
-    if (!validCategories.has(category) || prompt.length < 8 || !Array.isArray(item?.options) || item.options.length !== 4) {
-      throw new Error('ИИ вернул некорректный вопрос. Попробуй создать задание ещё раз.');
+    const prompt = clean(
+      item?.prompt ?? item?.question ?? item?.question_text ?? item?.text ?? item?.statement
+    ).slice(0, 280);
+    const rawCategory = clean(item?.category ?? item?.skill ?? item?.type).toLowerCase();
+    const category = validCategories.has(rawCategory)
+      ? rawCategory
+      : (categoryAliases.get(rawCategory) || (validCategories.has(skill) ? skill : 'mixed'));
+
+    if (prompt.length < 3) {
+      throw new Error('В вопросе ' + (index + 1) + ' отсутствует текст вопроса.');
+    }
+
+    let rawOptions = item?.options ?? item?.choices ?? item?.answers;
+    if (!Array.isArray(rawOptions) && rawOptions && typeof rawOptions === 'object') {
+      rawOptions = Object.entries(rawOptions).map(([optionId, optionText]) => ({
+        id: optionId,
+        text: optionText
+      }));
+    }
+    if (!Array.isArray(rawOptions) || rawOptions.length !== 4) {
+      throw new Error('В вопросе ' + (index + 1) + ' должно быть ровно четыре варианта ответа.');
     }
 
     const ids = new Set();
     const seenTexts = new Set();
-    const options = item.options.map(option => {
-      const optionId = clean(option?.id).toLowerCase();
-      const text = clean(option?.text).slice(0, 120);
+    const aliases = new Map();
+    let markedCorrectId = '';
+
+    const options = rawOptions.map((option, optionIndex) => {
+      const fallbackId = ['a', 'b', 'c', 'd'][optionIndex];
+      const rawOptionId = clean(toString(
+        typeof option === 'string' ? '' : (option?.id ?? option?.key ?? option?.label ?? option?.letter)
+      )).toLowerCase();
+      const optionId = ['a', 'b', 'c', 'd'].includes(rawOptionId) ? rawOptionId : fallbackId;
+      const text = clean(toString(
+        typeof option === 'string'
+          ? option
+          : (option?.text ?? option?.value ?? option?.content ?? option?.option ?? option?.answer)
+      )).slice(0, 120);
       const normalized = text.toLocaleLowerCase('en-US');
-      if (!['a', 'b', 'c', 'd'].includes(optionId) || !text || ids.has(optionId) || seenTexts.has(normalized)) {
-        throw new Error('Варианты ответа получились некорректными. Попробуй ещё раз.');
+
+      if (!text || ids.has(optionId) || seenTexts.has(normalized)) {
+        throw new Error('Варианты ответа в вопросе ' + (index + 1) + ' пустые или повторяются.');
       }
       ids.add(optionId);
       seenTexts.add(normalized);
+      aliases.set(optionId, optionId);
+      aliases.set(fallbackId, optionId);
+      if (rawOptionId) aliases.set(rawOptionId, optionId);
+      aliases.set(normalized, optionId);
+
+      if (typeof option === 'object' && (
+        option?.is_correct === true || option?.isCorrect === true || option?.correct === true
+      )) {
+        markedCorrectId = optionId;
+      }
       return { id: optionId, text };
     });
 
-    const correctOptionId = clean(item?.correct_option_id).toLowerCase();
-    if (ids.size !== 4 || !ids.has(correctOptionId)) {
-      throw new Error('Не удалось проверить правильный ответ. Попробуй ещё раз.');
+    const rawCorrect = item?.correct_option_id ??
+      item?.correctOptionId ??
+      item?.correct_answer_id ??
+      item?.answer_id ??
+      item?.correct_option ??
+      item?.correctAnswer ??
+      item?.correct_answer ??
+      item?.answer ??
+      item?.correct;
+
+    let correctToken = '';
+    if (typeof rawCorrect === 'string' || typeof rawCorrect === 'number') {
+      correctToken = toString(rawCorrect).trim().toLowerCase();
+    } else if (rawCorrect && typeof rawCorrect === 'object') {
+      correctToken = toString(
+        rawCorrect.id ?? rawCorrect.option_id ?? rawCorrect.key ?? rawCorrect.text ?? rawCorrect.value
+      ).trim().toLowerCase();
     }
 
-    const explanation = clean(item?.explanation).slice(0, 420);
-    if (explanation.length < 8) throw new Error('Для одного из вопросов отсутствует объяснение.');
+    const correctOptionId = aliases.get(correctToken) ||
+      aliases.get(correctToken.replace(/^[([]|[)\].,]$/gu, '')) ||
+      markedCorrectId;
+
+    if (!correctOptionId || !ids.has(correctOptionId)) {
+      throw new Error('Не удалось определить правильный ответ в вопросе ' + (index + 1) + '.');
+    }
+
+    const explanation = clean(
+      item?.explanation ?? item?.feedback ?? item?.rationale ?? item?.reason
+    ).slice(0, 420) ||
+      'Compare the correct option with the sentence context and review the rule being practised.';
+
     return {
       id,
       prompt,
