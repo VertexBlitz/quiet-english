@@ -33,6 +33,8 @@
   const createLink = ([key, href]) => {
     const link = document.createElement('a');
     link.href = href;
+    link.dataset.ru = labels[key][0];
+    link.dataset.en = labels[key][1];
     link.textContent = translated(key);
     if (currentPath === href) {
       link.classList.add('is-current');
@@ -51,6 +53,8 @@
   more.className = 'site-nav-more';
   if (secondary.some(([,href]) => href === currentPath)) more.classList.add('is-current');
   const summary = document.createElement('summary');
+  summary.dataset.ru = labels.more[0];
+  summary.dataset.en = labels.more[1];
   summary.textContent = translated('more');
   more.append(summary);
   const menu = document.createElement('div');
@@ -75,6 +79,8 @@
   const account = document.createElement('a');
   account.className = 'account-link';
   account.href = '/login.html';
+  account.dataset.ru = labels.login[0];
+  account.dataset.en = labels.login[1];
   account.textContent = translated('login');
   controls.append(account);
 
@@ -105,10 +111,14 @@
     .then(data => {
       if (!data?.user) return;
       account.href = '/account.html';
+      account.dataset.ru = labels.account[0];
+      account.dataset.en = labels.account[1];
       account.textContent = translated('account');
       const logout = document.createElement('button');
       logout.type = 'button';
       logout.className = 'nav-logout';
+      logout.dataset.ru = labels.logout[0];
+      logout.dataset.en = labels.logout[1];
       logout.textContent = translated('logout');
       logout.addEventListener('click',async () => {
         logout.disabled = true;
