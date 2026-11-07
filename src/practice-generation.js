@@ -16,9 +16,18 @@ export function validatePracticeGenerationRequest(body) {
 
   const avoid = Array.isArray(body?.avoid)
     ? body.avoid.filter(item => typeof item === 'string')
-      .slice(0, 4).map(item => item.replace(/\s+/gu, ' ').trim().slice(0, 500)).filter(Boolean)
+      .slice(0, 4).map(item => item.replace(/\\s+/gu, ' ').trim().slice(0, 260)).filter(Boolean)
     : [];
-  return { ok: true, value: { level, skill, topic, avoid } };
+  const focus = Array.isArray(body?.focus)
+    ? body.focus.slice(0, 5).map(item => ({
+        area: typeof item?.area === 'string' ? item.area.replace(/\\s+/gu, ' ').trim().slice(0, 90) : '',
+        prompt: typeof item?.prompt === 'string' ? item.prompt.replace(/\\s+/gu, ' ').trim().slice(0, 180) : '',
+        selectedAnswer: typeof item?.selectedAnswer === 'string' ? item.selectedAnswer.replace(/\\s+/gu, ' ').trim().slice(0, 100) : '',
+        correctAnswer: typeof item?.correctAnswer === 'string' ? item.correctAnswer.replace(/\\s+/gu, ' ').trim().slice(0, 100) : '',
+        explanation: typeof item?.explanation === 'string' ? item.explanation.replace(/\\s+/gu, ' ').trim().slice(0, 200) : ''
+      })).filter(item => item.area || item.prompt)
+    : [];
+  return { ok: true, value: { level, skill, topic, avoid, focus } };
 }
 
 export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [] }) {
@@ -31,31 +40,40 @@ export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [] 
   }[level];
 
   const taskGuide = {
-    grammar: 'Create five grammar multiple-choice questions. Test different useful grammar points appropriate to the level. Each question must have exactly one unambiguously correct option.',
-    vocabulary: 'Create five vocabulary multiple-choice questions in meaningful sentence contexts. Test meaning, collocations, word choice and natural usage appropriate to the level. Each question must have exactly one correct option.',
-    reading: 'Write one original reading passage of 100–170 words, then create four multiple-choice comprehension questions about details, inference, vocabulary-in-context and the main idea. The answers must be supported by the passage.',
-    listening: 'Write one natural listening script of 80–140 words that can be read aloud by text-to-speech, then create four multiple-choice listening-comprehension questions. Questions must be answerable from the script. Do not refer to sounds, music or speakers that are not in the script.',
-    mixed: 'Create five mixed multiple-choice questions: include grammar, vocabulary, reading comprehension or practical communication. Vary the skills and give each question a category field of grammar, vocabulary, reading or communication.'
+    grammar: 'Create five concise grammar multiple-choice questions. Cover level-appropriate grammar points; use short sentence prompts.',
+    vocabulary: 'Create five concise vocabulary multiple-choice questions in sentence context. Test meaning, collocations and natural usage.',
+    reading: 'Write one original reading passage of 90–130 words, then create four short comprehension questions about detail, inference, vocabulary and main idea.',
+    listening: 'Write one natural listening script of 70–110 words for text-to-speech, then create four short comprehension questions answerable from the script.',
+    mixed: 'Create five concise mixed questions across grammar, vocabulary, reading or practical communication. Give each question its skill category.'
   }[skill];
 
   const avoidText = avoid.length
-    ? '\nAvoid reusing these recent prompts, passages or examples:\n' + avoid.map((item, index) => (index + 1) + '. ' + item).join('\n')
+    ? '\nAvoid repeating these recent exercise examples: ' + avoid.map(item => item.slice(0, 180)).join(' | ')
+    : '';
+  const focusText = focus.length
+    ? '\nADAPTIVE REVIEW: Build every question around these weak learning points, but use fresh sentences and new options. Do not copy the old questions or simply reveal their answers.\n' +
+      focus.map((item, index) =>
+        (index + 1) + '. Topic: ' + (item.area || 'review') +
+        '; previous question: ' + item.prompt +
+        '; learner answer: ' + (item.selectedAnswer || 'not supplied') +
+        '; correct answer: ' + (item.correctAnswer || 'not supplied') +
+        '; explanation: ' + (item.explanation || 'review the underlying rule')
+      ).join('\n')
     : '';
 
   return [
-    'Create one original English-learning exercise for CEFR ' + level + ' (' + levelGuide + ').',
-    'Exercise type: ' + skill + '. Topic: ' + topic + '.',
+    'Create an original English-learning exercise for CEFR ' + level + ' (' + levelGuide + ').',
+    'Type: ' + skill + '. Topic: ' + topic + '.',
     taskGuide,
-    'All content must be age-appropriate, respectful, factual where relevant, and suitable for a general school learner.',
-    'Do not include personal data, dangerous instructions, sexual content, graphic violence, self-harm, politics targeted at a person, or copied passages from published works.',
-    'Avoid trick questions, ambiguous answers and obscure trivia. Explanations should teach the rule or reasoning briefly.',
-    'Return only valid JSON with these top-level keys: title, instructions, passage, questions.',
-    'For grammar/vocabulary/mixed tasks, passage may be an empty string. For reading/listening, passage must contain the full original text.',
-    'questions must be an array. Each item must have: id (q1, q2, ...), prompt, category, options, correct_option_id, explanation.',
-    'Each options array must contain exactly four objects with ids a, b, c, d and a text string.',
-    'Each question must have exactly one correct_option_id that matches one option id. All four options must be distinct.',
-    'Return exactly five questions for grammar, vocabulary and mixed, or exactly four for reading and listening.',
-    'Return no Markdown fences and no text before or after the JSON object.',
+    'Use age-appropriate, respectful, original school content. No personal data, dangerous instructions, sexual content, graphic violence, self-harm or copied published text.',
+    'Avoid ambiguous questions. Explanations must be one short sentence (maximum 18 words). Keep prompts and options concise.',
+    'Return only JSON: title, instructions, passage, questions.',
+    'Each question: id, prompt, category, learning_point, options, correct_option_id, explanation.',
+    'Each question has exactly four distinct options with ids a, b, c, d; exactly one correct_option_id.',
+    'learning_point names the precise rule or skill (for example Past Simple, Zero Conditional, comparative adjectives, phrasal verbs or collocations).',
+    'Return 5 questions for grammar/vocabulary/mixed, 4 for reading/listening. Keep reading/listening passages within requested word limits.',
+    'No Markdown fences or text outside JSON.',
+    focusText,
     avoidText
   ].join('\n');
 }
@@ -212,7 +230,8 @@ export function parseGeneratedPracticeExercise(content, { level, skill, topic })
       category,
       options,
       correct_option_id: correctOptionId,
-      explanation
+      explanation,
+      learning_point: clean(item?.learning_point ?? item?.learningPoint ?? item?.concept ?? item?.grammar_point ?? item?.topic).slice(0, 100) || category
     };
   });
 
@@ -249,7 +268,8 @@ export function gradeGeneratedPracticeExercise(exercise, answers) {
       selected_answer: selected.text,
       correct_answer: correctOption.text,
       explanation: question.explanation,
-      category: question.category
+      category: question.category,
+      learning_point: question.learning_point || question.category
     };
   });
 
