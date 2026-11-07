@@ -13,6 +13,10 @@
   const title = $('[data-ai-title]');
   const meta = $('[data-ai-meta]');
   const instructions = $('[data-ai-instructions]');
+  const aiVariantWrap = $('[data-ai-variant-wrap]');
+  const aiVariantHeading = $('[data-ai-variant-heading]');
+  const aiVariantNote = $('[data-ai-variant-note]');
+  const aiVariantOpen = $('[data-ai-variant-open]');
   const passageWrap = $('[data-ai-passage-wrap]');
   const passage = $('[data-ai-passage]');
   const listenButton = $('[data-ai-listen]');
@@ -26,6 +30,8 @@
   let currentExercise = null;
   let checked = false;
   let lastMistakes = [];
+  let pendingAiExercise = null;
+  let generationSequence = 0;
 
   const t = (ru, en) => document.documentElement.lang === 'en' ? en : ru;
   const setStatus = (text, error = false) => {
@@ -94,6 +100,9 @@
 
   function renderExercise(exercise) {
     currentExercise = exercise;
+    pendingAiExercise = null;
+    aiVariantWrap.hidden = true;
+    aiVariantOpen.hidden = true;
     checked = false;
     lastMistakes = [];
     resultNode.hidden = true;
@@ -142,52 +151,108 @@
     workspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  async function generateExercise({ focus = [] } = {}) {
-    if (generateButton.disabled) return;
-    const remedial = Array.isArray(focus) && focus.length > 0;
-    const requestLevel = remedial ? currentExercise.level : level.value;
-    const requestSkill = remedial ? currentExercise.skill : skill.value;
-    const requestTopic = remedial ? currentExercise.topic : topic.value;
-
-    generateButton.disabled = true;
-    generateButton.textContent = t('Создаём…', 'Generating…');
-    workspace.hidden = true;
-    setStatus(remedial
-      ? t('ИИ готовит короткое упражнение по твоим ошибкам…', 'AI is preparing a focused review of your mistakes…')
-      : t('ИИ готовит новое упражнение. Короткий формат ускоряет генерацию.', 'AI is creating a new exercise. The compact format makes generation faster.'));
-
+  async function prepareAiVariant(request, sequence) {
     const recent = readHistory().slice(0, 4).map(item => item.avoidText || item.title).filter(Boolean);
+    aiVariantWrap.hidden = false;
+    aiVariantOpen.hidden = true;
+    aiVariantHeading.textContent = t('ИИ готовит уникальный вариант…', 'AI is preparing a unique version…');
+    aiVariantNote.textContent = t(
+      'Можешь уже выполнять мгновенное задание. Уникальный вариант появится здесь, когда будет готов.',
+      'Start the instant exercise now. The unique AI version will appear here when ready.'
+    );
+
     try {
       const response = await fetch('/api/practice/generate', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          level: requestLevel,
-          skill: requestSkill,
-          topic: requestTopic,
-          avoid: recent,
-          focus: remedial ? focus : []
-        })
+        body: JSON.stringify(Object.assign({}, request, { avoid: recent }))
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || t('Не удалось создать упражнение.', 'Could not generate an exercise.'));
+      if (!response.ok) throw new Error(data.error || 'AI version is temporarily unavailable.');
       if (!data.exercise_id || !data.exercise || !Array.isArray(data.exercise.questions)) {
-        throw new Error(t('ИИ вернул неполное задание. Попробуй ещё раз.', 'AI returned an incomplete exercise. Please try again.'));
+        throw new Error('AI returned an incomplete exercise.');
       }
+      if (sequence !== generationSequence) return;
+
+      pendingAiExercise = Object.assign({}, data.exercise, { id: data.exercise_id });
+      aiVariantHeading.textContent = t('Уникальный вариант ИИ готов.', 'Your unique AI version is ready.');
+      aiVariantNote.textContent = t(
+        'Мгновенное задание уже доступно. Можешь открыть и уникальную версию ИИ.',
+        'The instant exercise is ready. You can also open the unique AI version.'
+      );
+      aiVariantOpen.hidden = false;
+    } catch (error) {
+      if (sequence !== generationSequence) return;
+      aiVariantHeading.textContent = t('Мгновенное задание готово.', 'Your instant exercise is ready.');
+      aiVariantNote.textContent = t(
+        'Дополнительный вариант ИИ пока недоступен. Ты можешь продолжить текущее упражнение.',
+        'The additional AI version is unavailable for now. You can continue with the current exercise.'
+      );
+      console.warn('Background AI exercise generation failed:', error?.message || 'unknown error');
+    }
+  }
+
+  async function generateExercise({ focus = [] } = {}) {
+    if (generateButton.disabled) return;
+    const remedial = Array.isArray(focus) && focus.length > 0;
+    const request = {
+      level: remedial ? currentExercise.level : level.value,
+      skill: remedial ? currentExercise.skill : skill.value,
+      topic: remedial ? currentExercise.topic : topic.value,
+      focus: remedial ? focus : []
+    };
+    const sequence = ++generationSequence;
+
+    pendingAiExercise = null;
+    aiVariantWrap.hidden = true;
+    generateButton.disabled = true;
+    generateButton.textContent = t('Готовим…', 'Preparing…');
+    setStatus(
+      remedial
+        ? t('Подбираем задания по твоим ошибкам…', 'Selecting exercises based on your mistakes…')
+        : t('Готовим упражнение без ожидания ИИ…', 'Preparing an exercise without waiting for AI…')
+    );
+
+    try {
+      const response = await fetch('/api/practice/instant', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request)
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || t('Не удалось мгновенно создать упражнение.', 'Could not prepare the instant exercise.'));
+      if (!data.exercise_id || !data.exercise || !Array.isArray(data.exercise.questions)) {
+        throw new Error(t('Не удалось подготовить упражнение.', 'The exercise could not be prepared.'));
+      }
+
       currentExercise = Object.assign({}, data.exercise, { id: data.exercise_id });
       renderExercise(currentExercise);
       setStatus(remedial
-        ? t('Упражнение по твоим ошибкам готово. Попробуй ещё раз.', 'Your targeted review exercise is ready. Try again.')
-        : t('Новое упражнение готово. Ответь на вопросы и проверь результат.', 'Your new exercise is ready. Answer the questions and check your result.'));
+        ? t('Упражнение по твоим ошибкам готово сразу. Ответь на вопросы.', 'Your mistake-review exercise is ready. Answer the questions.')
+        : t('Упражнение готово сразу. Уникальный вариант ИИ создаётся в фоне.', 'Your exercise is ready instantly. A unique AI version is being prepared in the background.'));
+      prepareAiVariant(request, sequence);
     } catch (error) {
-      workspace.hidden = false;
-      setStatus(error.message || t('Генерация временно недоступна.', 'Generation is temporarily unavailable.'), true);
+      setStatus(error.message || t('Не удалось создать упражнение.', 'Could not create the exercise.'), true);
     } finally {
       generateButton.disabled = false;
       generateButton.textContent = t('Создать задание ↗', 'Generate exercise ↗');
     }
   }
+
+  aiVariantOpen.addEventListener('click', () => {
+    if (!pendingAiExercise) return;
+    const hasAnswers = Boolean(form.querySelector('input[type="radio"]:checked'));
+    if (hasAnswers && !window.confirm(t(
+      'Открыть вариант ИИ? Выбранные ответы в текущем задании будут потеряны.',
+      'Open the AI version? Your selected answers in the current exercise will be lost.'
+    ))) return;
+
+    const exercise = pendingAiExercise;
+    renderExercise(exercise);
+    setStatus(t('Открыт уникальный вариант, созданный ИИ.', 'The unique AI-generated version is open.'));
+  });
 
   function renderCheckedResults(result) {
     resultNode.replaceChildren();
