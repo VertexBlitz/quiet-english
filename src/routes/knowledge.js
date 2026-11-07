@@ -1,5 +1,6 @@
 import express from 'express';
 import { pool, requireDatabase, requireUser } from '../db.js';
+import { rateLimit } from 'express-rate-limit';
 
 const router = express.Router();
 const CATEGORIES = new Set(['grammar', 'vocabulary', 'reading', 'listening', 'speaking', 'writing']);
@@ -346,7 +347,8 @@ router.delete('/vocabulary/:id', requireDatabase, requireUser, async (req, res, 
   } catch (error) { next(error); }
 });
 
-router.post('/dictionary-enrich/:word', async (req, res) => {
+const dictionaryEnrichLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
+router.post('/dictionary-enrich/:word', dictionaryEnrichLimiter, async (req, res) => {
   const word = cleanText(req.params.word, 60);
   if (!/^[a-z][a-z' -]{0,58}$/iu.test(word)) return res.status(400).json({ error: 'Введи одно английское слово или короткую фразу.' });
   const definitions = Array.isArray(req.body?.definitions)
