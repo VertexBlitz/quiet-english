@@ -27,18 +27,15 @@
 <label data-ru="Пароль (не менее 12 символов)" data-en="Password (at least 12 characters)">Пароль (не менее 12 символов)<input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="200" required></label>
 <label data-ru="Возрастная категория" data-en="Age range">Возрастная категория
 <select id="age-band" name="age_band" required>
-<option value="13_15" data-ru="13–15 лет" data-en="13–15">13–15 лет</option>
-<option value="16_17" data-ru="16–17 лет" data-en="16–17">16–17 лет</option>
+<option value="16_17" data-ru="16–17 лет (только Германия)" data-en="16–17 (Germany only)">16–17 лет (только Германия)</option>
 <option value="18_plus" data-ru="18 лет и старше" data-en="18 or older">18 лет и старше</option>
 </select></label>
 <div class="form-grid">
-<label data-ru="Код страны (например, FI)" data-en="Country code (for example, FI)">Код страны (например, FI)<input name="country_code" autocomplete="country" placeholder="FI" maxlength="2" required></label>
+<label data-ru="Код страны (для 16–17 лет — DE)" data-en="Country code (for ages 16–17 — DE)">Код страны (для 16–17 лет — DE)<input name="country_code" autocomplete="country" placeholder="DE" maxlength="2" required></label>
 <label data-ru="Язык интерфейса" data-en="Interface language">Язык интерфейса<select name="preferred_language"><option value="ru">Русский</option><option value="en">English</option></select></label>
 </div>
-<div id="guardian-fields" class="notice-card">
-<label data-ru="Email родителя или опекуна" data-en="Parent or guardian email">Email родителя или опекуна<input type="email" name="guardian_email" autocomplete="off" maxlength="254"></label>
-<p class="fine-print" data-ru="Для пользователей младше 18 лет Quiet English запрашивает подтверждение родителя или законного опекуна. На этот адрес придёт отдельное письмо." data-en="For users under 18, Quiet English requests confirmation from a parent or legal guardian. A separate email will be sent to this address.">Для пользователей младше 18 лет Quiet English запрашивает подтверждение родителя или законного опекуна. На этот адрес придёт отдельное письмо.</p>
-</div>
+<p class="fine-print" data-ru="Регистрация доступна с 16 лет. Для пользователей 16–17 лет пока поддерживается только Германия." data-en="Registration is available from age 16. For users aged 16–17, Germany is currently the only supported country.">Регистрация доступна с 16 лет. Для пользователей 16–17 лет пока поддерживается только Германия.</p>
+
 <label class="check-row"><input type="checkbox" name="terms_accepted" required><span data-ru="Я принимаю Условия использования." data-en="I accept the Terms of Service.">Я принимаю <a href="/terms.html">Условия использования</a>.</span></label>
 <label class="check-row"><input type="checkbox" name="privacy_accepted" required><span data-ru="Я ознакомился(ась) с Политикой конфиденциальности." data-en="I have read the Privacy Notice.">Я ознакомился(ась) с <a href="/privacy.html">Политикой конфиденциальности</a>.</span></label>
 <p class="form-status" data-auth-status id="auth-status" aria-live="polite"></p>
