@@ -325,7 +325,7 @@ router.get('/guardian-consent-info', async (req, res, next) => {
 router.post('/guardian-consent-complete', async (req, res, next) => {
   const {
     token, email, password, preferred_language = 'ru',
-    guardian_confirmed, terms_accepted, privacy_accepted, personal_data_accepted
+    guardian_confirmed, minimum_age_confirmed, terms_accepted, privacy_accepted, personal_data_accepted
   } = req.body || {};
   if (typeof token !== 'string' || token.length < 30 || token.length > 200) {
     return res.status(400).json({ error: 'Ссылка подтверждения некорректна.' });
