@@ -1,19 +1,31 @@
 import { compareTranscript } from '/pronunciation-scoring.js';
 import { readLocalPronunciationHistory, saveLocalPronunciationAttempt } from '/pronunciation-storage.js';
+import { PASSAGES, buildProgressSeries, getReviewWords } from '/pronunciation-content.js';
 
 const pronRoot = document.querySelector('[data-pronunciation-page]');
+
 if (pronRoot) {
   const statusNode = pronRoot.querySelector('[data-pron-status]');
   const recordButton = pronRoot.querySelector('[data-record]');
   const recordLabel = pronRoot.querySelector('[data-record-label]');
   const timerNode = pronRoot.querySelector('[data-record-timer]');
   const consent = pronRoot.querySelector('[data-pron-consent]');
-  const prompts = [...pronRoot.querySelectorAll('input[name="pron-prompt"]')];
+  const promptList = pronRoot.querySelector('[data-pron-prompts]');
+  const levelFilter = pronRoot.querySelector('[data-pron-level]');
+  const activeTaskNode = pronRoot.querySelector('[data-pron-active-task]');
+  const retryPanel = pronRoot.querySelector('[data-pron-retry]');
+  const retryTextNode = pronRoot.querySelector('[data-pron-retry-text]');
+  const repeatErrorsButton = pronRoot.querySelector('[data-repeat-errors]');
+  const progressChart = pronRoot.querySelector('[data-pron-chart]');
+  const chartEmpty = pronRoot.querySelector('[data-pron-chart-empty]');
+  const progressCount = pronRoot.querySelector('[data-pron-progress-count]');
   const engineBadge = pronRoot.querySelector('[data-engine-status]');
   const resultSection = pronRoot.querySelector('[data-pron-result]');
+
   const MAX_SECONDS = 28;
   const MODEL_ID = 'onnx-community/whisper-tiny.en';
   const TRANSFORMERS_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2';
+
   let transcriberPromise = null;
   let recorder = null;
   let mediaStream = null;
@@ -21,42 +33,130 @@ if (pronRoot) {
   let startedAt = 0;
   let clockId = null;
   let autoStopId = null;
+  let activeReviewText = '';
+  let lastReviewWords = [];
+  let recordingReferenceText = '';
 
   const message = (text, error = false) => {
     statusNode.textContent = text;
     statusNode.classList.toggle('error-text', error);
     statusNode.classList.toggle('success-text', !error);
   };
-  const selectedText = () => prompts.find(item => item.checked)?.value || prompts[0]?.value || '';
+
+  const selectedPrompt = () => promptList.querySelector('input[name="pron-prompt"]:checked');
+  const selectedPassage = () => PASSAGES.find(item => item.id === selectedPrompt()?.dataset.passageId);
+  const selectedText = () => activeReviewText || selectedPrompt()?.value || PASSAGES[0].text;
+
   const formatTime = seconds => {
     const safe = Math.max(0, Math.floor(seconds));
     return String(Math.floor(safe / 60)).padStart(2, '0') + ':' + String(safe % 60).padStart(2, '0');
   };
+
   const updateRecordAvailability = () => {
     recordButton.disabled = !consent.checked && !recorder;
   };
 
-  consent.addEventListener('change', updateRecordAvailability);
-  prompts.forEach(input => input.addEventListener('change', () => {
-    pronRoot.querySelectorAll('.pron-prompt').forEach(label => {
-      label.classList.toggle('selected', label.querySelector('input')?.checked === true);
-    });
-  }));
+  function updateActiveTask() {
+    if (!activeTaskNode) return;
+    activeTaskNode.textContent = activeReviewText
+      ? 'Режим повторения: ' + activeReviewText
+      : 'Выбрано: ' + (selectedPassage()?.level || 'A1') + ' · ' + (selectedPassage()?.topic || 'Everyday life');
+  }
 
-  pronRoot.querySelectorAll('[data-speak]').forEach(button => {
-    button.addEventListener('click', () => {
-      if (!('speechSynthesis' in window)) return message('В этом браузере недоступно воспроизведение примера.', true);
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(button.dataset.speak);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.88;
-      window.speechSynthesis.speak(utterance);
+  function speakText(text) {
+    if (!('speechSynthesis' in window)) {
+      message('В этом браузере недоступно воспроизведение примера.', true);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.88;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function renderPassages() {
+    const level = levelFilter.value;
+    const visiblePassages = level === 'ALL'
+      ? PASSAGES
+      : PASSAGES.filter(item => item.level === level);
+    const currentId = selectedPrompt()?.dataset.passageId || PASSAGES[0].id;
+    const selectedId = visiblePassages.some(item => item.id === currentId)
+      ? currentId
+      : visiblePassages[0]?.id;
+
+    promptList.replaceChildren();
+
+    visiblePassages.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'pron-prompt' + (item.id === selectedId ? ' selected' : '');
+
+      const label = document.createElement('label');
+      label.className = 'pron-prompt-choice';
+
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'pron-prompt';
+      radio.value = item.text;
+      radio.dataset.passageId = item.id;
+      radio.checked = item.id === selectedId;
+
+      const words = document.createElement('span');
+      const meta = document.createElement('strong');
+      meta.textContent = item.level + ' · ' + item.topic;
+      const passage = document.createElement('span');
+      passage.textContent = item.text;
+      words.append(meta, passage);
+      label.append(radio, words);
+
+      const listen = document.createElement('button');
+      listen.className = 'pron-listen';
+      listen.type = 'button';
+      listen.textContent = '▶';
+      listen.setAttribute('aria-label', 'Listen to ' + item.level + ' passage');
+      listen.addEventListener('click', () => speakText(item.text));
+
+      card.append(label, listen);
+      promptList.append(card);
     });
+
+    const count = visiblePassages.length;
+    pronRoot.querySelector('[data-pron-count]').textContent =
+      count + (count === 1 ? ' задание' : ' заданий');
+    updateActiveTask();
+  }
+
+  consent.addEventListener('change', updateRecordAvailability);
+  levelFilter.addEventListener('change', renderPassages);
+
+  promptList.addEventListener('click', event => {
+    if (!event.target.closest('.pron-prompt-choice')) return;
+    activeReviewText = '';
+    updateActiveTask();
+  });
+
+  promptList.addEventListener('change', event => {
+    const radio = event.target.closest('input[name="pron-prompt"]');
+    if (!radio) return;
+    promptList.querySelectorAll('.pron-prompt').forEach(card => {
+      card.classList.toggle('selected', card.querySelector('input')?.checked === true);
+    });
+    updateActiveTask();
+  });
+
+  repeatErrorsButton.addEventListener('click', () => {
+    if (!lastReviewWords.length) return;
+    activeReviewText = lastReviewWords.join(' ');
+    updateActiveTask();
+    message('Теперь прочитай только слова, которые требуют дополнительной практики.');
+    pronRoot.querySelector('.pron-record-box').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    recordButton.focus({ preventScroll: true });
   });
 
   async function toSamples(recordingBlob) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) throw new Error('В этом браузере не поддерживается обработка аудио.');
+
     const context = new AudioContextClass();
     try {
       const decoded = await context.decodeAudioData(await recordingBlob.arrayBuffer());
@@ -128,6 +228,7 @@ if (pronRoot) {
       ['Лишние слова', String(analysis.extra)],
       ['Темп речи', pace + ' слов/мин']
     ];
+
     const metricsNode = pronRoot.querySelector('[data-pron-metrics]');
     metricsNode.replaceChildren();
     metrics.forEach(([label, value], index) => {
@@ -138,6 +239,7 @@ if (pronRoot) {
       const strong = document.createElement('strong');
       strong.textContent = value;
       card.append(name, strong);
+
       if (index === 0) {
         const track = document.createElement('div');
         track.className = 'progress-track';
@@ -159,6 +261,7 @@ if (pronRoot) {
       head.className = 'pron-word-head';
       const expected = document.createElement('strong');
       const heard = document.createElement('span');
+
       if (item.status === 'match') {
         expected.textContent = item.reference;
         heard.textContent = '✓';
@@ -176,11 +279,13 @@ if (pronRoot) {
         heard.textContent = '+ лишнее';
         heard.setAttribute('aria-label', 'Лишнее слово');
       }
+
       row.classList.add('pron-word-' + item.status);
       head.append(expected, heard);
       row.append(head);
       wordList.append(row);
     });
+
     lastReviewWords = getReviewWords(analysis.words);
     retryPanel.hidden = lastReviewWords.length === 0;
     if (lastReviewWords.length) {
@@ -189,6 +294,7 @@ if (pronRoot) {
       activeReviewText = '';
       updateActiveTask();
     }
+
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -258,6 +364,7 @@ if (pronRoot) {
         x, y: 164, fill: '#888', 'font-size': 9, 'text-anchor': 'middle'
       }, point.dateLabel));
     });
+
     progressChart.append(svgElement('text', {
       x: right, y: 184, fill: '#888', 'font-size': 9, 'text-anchor': 'end'
     }, 'новые →'));
@@ -267,10 +374,12 @@ if (pronRoot) {
     renderProgressChart(attempts);
     const history = pronRoot.querySelector('[data-pron-history]');
     history.replaceChildren();
+
     if (!attempts.length) {
       history.textContent = 'История появится после первой оценки.';
       return;
     }
+
     attempts.slice(0, 8).forEach(item => {
       const row = document.createElement('article');
       row.className = 'pron-history-row';
@@ -295,6 +404,7 @@ if (pronRoot) {
     try {
       localAttempts = readLocalPronunciationHistory(window.localStorage);
     } catch {}
+
     const attempts = [...remoteAttempts, ...localAttempts]
       .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
     renderHistory(attempts);
@@ -322,7 +432,6 @@ if (pronRoot) {
           words: analysis.words
         })
       });
-      const data = await response.json().catch(() => ({}));
       if (response.ok) return 'account';
     } catch {}
 
@@ -330,11 +439,12 @@ if (pronRoot) {
     try {
       savedLocally = saveLocalPronunciationAttempt(window.localStorage, attempt);
     } catch {}
+
     if (savedLocally) return 'device';
     throw new Error('Результат показан, но его не удалось сохранить. Проверь свободное место и настройки хранения браузера.');
   }
 
-  async function processRecording(recordingBlob) {
+  async function processRecording(recordingBlob, referenceText) {
     recordButton.disabled = true;
     try {
       message('Подготавливаем аудио для обработки в браузере…');
@@ -343,11 +453,13 @@ if (pronRoot) {
       message('Whisper распознаёт речь прямо на устройстве. Это может занять некоторое время.');
       const output = await transcriber(samples);
       const recognizedText = String(output?.text || '').trim();
-      if (!recognizedText) throw new Error('Whisper не распознал слова. Попробуй говорить ближе к микрофону и повторить запись.');
+      if (!recognizedText) {
+        throw new Error('Whisper не распознал слова. Попробуй говорить ближе к микрофону и повторить запись.');
+      }
 
-      const referenceText = selectedText();
       const analysis = compareTranscript(referenceText, recognizedText);
       renderResult(recognizedText, analysis, duration);
+
       try {
         const savedTo = await saveAttempt(referenceText, recognizedText, analysis);
         message(savedTo === 'account'
@@ -368,21 +480,32 @@ if (pronRoot) {
   }
 
   async function startRecording() {
-    if (!consent.checked) return message('Сначала подтверди обработку записи локально в браузере.', true);
-    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-      return message('Этот браузер не поддерживает запись с микрофона. Попробуй актуальную версию Chrome, Edge или Safari.', true);
+    if (!consent.checked) {
+      message('Сначала подтверди обработку записи локально в браузере.', true);
+      return;
     }
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+      message('Этот браузер не поддерживает запись с микрофона. Попробуй актуальную версию Chrome, Edge или Safari.', true);
+      return;
+    }
+
     try {
+      recordingReferenceText = selectedText();
       mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 }
       });
+
       const mimeType = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4']
         .find(type => MediaRecorder.isTypeSupported(type));
-      recorder = mimeType ? new MediaRecorder(mediaStream, { mimeType }) : new MediaRecorder(mediaStream);
+      recorder = mimeType
+        ? new MediaRecorder(mediaStream, { mimeType })
+        : new MediaRecorder(mediaStream);
       chunks = [];
+
       recorder.addEventListener('dataavailable', event => {
         if (event.data?.size) chunks.push(event.data);
       });
+
       recorder.addEventListener('stop', () => {
         const recording = new Blob(chunks, { type: recorder?.mimeType || 'audio/webm' });
         chunks = [];
@@ -394,7 +517,8 @@ if (pronRoot) {
         timerNode.textContent = '00:00 / 00:28';
         recordLabel.textContent = 'Начать запись';
         recordButton.classList.remove('recording');
-        if (recording.size) processRecording(recording);
+
+        if (recording.size) processRecording(recording, recordingReferenceText);
         else {
           message('Запись пустая. Попробуй ещё раз.', true);
           updateRecordAvailability();
@@ -407,6 +531,7 @@ if (pronRoot) {
       recordButton.classList.add('recording');
       recordButton.disabled = false;
       message('Говори чётко и в обычном темпе. Нажми кнопку, когда закончишь.');
+
       clockId = setInterval(() => {
         const elapsed = (Date.now() - startedAt) / 1000;
         timerNode.textContent = formatTime(elapsed) + ' / 00:28';
