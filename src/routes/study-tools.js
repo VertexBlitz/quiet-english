@@ -61,6 +61,10 @@ router.post('/listening/prepare',listeningLimiter,async function(req,res,next) {
   const sentences=transcript.split(/(?<=[.!?])\s+|\n+/u).map(function(x){return x.trim();}).filter(Boolean).slice(0,16);
   if (sentences.length<2) return res.status(400).json({error:'Нужно хотя бы два предложения для тренажёра.'});
   try {
+    const quota=await consumeMonthlyQuota(req.user.id,'listening_prepare',3,60);
+    if (!quota.allowed) return res.status(429).json({
+      error:'Лимит подготовки аудирования с ИИ на этот месяц исчерпан ('+quota.used+'/'+quota.limit+'). Premium увеличивает лимит до 60.'
+    });
     const data=await callAi(
       'Create listening comprehension from the learner transcript. Use only the supplied text. Return JSON with sentence_translations (exactly one Russian translation per sentence in the same order) and exactly four questions. Each question has id, question, four options, correct_option integer 0-3, explanation_ru. Questions test details present in the text. Use age-appropriate neutral topics. JSON only.',
       JSON.stringify({level:level,title:title,sentences:sentences}),1500
@@ -77,10 +81,6 @@ router.post('/listening/prepare',listeningLimiter,async function(req,res,next) {
       return !q.question || q.options.length!==4 || q.options.some(function(x){return !x;}) ||
         !Number.isInteger(q.correct_option) || q.correct_option<0 || q.correct_option>3;
     })) throw new Error('AI_QUESTIONS');
-    const quota=await consumeMonthlyQuota(req.user.id,'listening_prepare',3,60);
-    if (!quota.allowed) return res.status(429).json({
-      error:'Лимит подготовки аудирования с ИИ на этот месяц исчерпан ('+quota.used+'/'+quota.limit+'). Premium увеличивает лимит до 60.'
-    });
     const inserted=await pool.query(
       "INSERT INTO listening_quiz_sessions (user_id,title,level,question_set,expires_at) VALUES ($1,$2,$3,$4::jsonb,NOW()+INTERVAL '90 minutes') RETURNING id",
       [req.user.id,title || 'Listening practice',level,JSON.stringify(questions)]

@@ -126,8 +126,10 @@ async function applySucceededPayment(payment) {
       await client.query('ROLLBACK');
       throw new Error('PAYMENT_VALIDATION_FAILED');
     }
-    const savedMethod=payment.payment_method && payment.payment_method.saved===true &&
-      typeof payment.payment_method.id==='string' ? payment.payment_method.id : null;
+    const returnedMethodId=payment.payment_method && typeof payment.payment_method.id==='string'
+      ? payment.payment_method.id : null;
+    const savedMethod=payment.payment_method && payment.payment_method.saved===true && returnedMethodId
+      ? returnedMethodId : order.payment_method_id || null;
     const autoRenew=Boolean(order.auto_renew_requested && savedMethod);
     await client.query(
       "UPDATE billing_orders SET status='succeeded',paid_at=NOW(),payment_method_id=$2,provider_payload=$3::jsonb WHERE id=$1",
@@ -339,9 +341,9 @@ async function createRenewalCharge(subscription) {
   const plan=PLANS[subscription.plan_code];
   if (!plan || !subscription.payment_method_id) return 'skipped';
   const inserted=await pool.query(
-    "INSERT INTO billing_orders (user_id,plan_code,amount,currency,status,auto_renew_requested) " +
-    "VALUES ($1,$2,$3,'RUB','creating',TRUE) RETURNING id",
-    [subscription.user_id,subscription.plan_code,plan.amount]
+    "INSERT INTO billing_orders (user_id,plan_code,amount,currency,status,auto_renew_requested,payment_method_id) " +
+    "VALUES ($1,$2,$3,'RUB','creating',TRUE,$4) RETURNING id",
+    [subscription.user_id,subscription.plan_code,plan.amount,subscription.payment_method_id]
   );
   const orderId=inserted.rows[0].id;
   try {

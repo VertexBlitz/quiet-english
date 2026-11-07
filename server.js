@@ -43,8 +43,6 @@ app.use('/api/', rateLimit({
   legacyHeaders: false
 }));
 
-app.use('/api/billing', billingRoutes);
-
 const sessionsConfigured = Boolean(pool && process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32);
 if (sessionsConfigured) {
   app.use(session({
@@ -92,6 +90,7 @@ if (sessionsConfigured) {
   app.use('/api/admin', sameOrigin, adminRoutes);
   app.use('/api/pronunciation', sameOrigin, pronunciationRoutes);
   app.use('/api/studio', sameOrigin, writingRoutes, studyToolsRoutes);
+  app.use('/api/billing', billingRoutes);
 } else {
   const notReady = (_req, res) => res.status(503).json({
     error: 'Личный кабинет ещё не настроен. Нужны DATABASE_URL и SESSION_SECRET.'
@@ -102,6 +101,7 @@ if (sessionsConfigured) {
   app.use('/api/admin', notReady);
   app.use('/api/pronunciation', notReady);
   app.use('/api/studio', notReady);
+  app.use('/api/billing', notReady);
 }
 
 const MODEL = process.env.CLOUDFLARE_MODEL || '@cf/google/gemma-4-26b-a4b-it';
