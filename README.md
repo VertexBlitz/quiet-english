@@ -24,6 +24,7 @@ A bilingual (Russian/English) personal English-learning platform built on the ex
 - Listening library with 15 curated British Council and ELLLO collections/lessons across CEFR A1–C1
 - Browser-local scripted speech transcription with Whisper tiny.en, 15 curated speaking passages across CEFR A1–C1, on-demand AI-generated passages through the existing Cloudflare Workers AI integration, expected-vs-recognized word matching, targeted retry practice for missed/substituted words and an 8-attempt progress chart; recordings are not uploaded
 - AI Practice Studio adds adaptive retry rounds: after grading, the learner can generate a focused exercise from missed learning points, with the original level, skill and topic preserved; concise question prompts and lower output-token budgets reduce generation time
+- AI Practice Studio offers instant server-graded exercises across A1–C1 from a curated randomized bank; a unique Cloudflare AI alternative is prepared in the background and can be opened when ready.
 - On-demand AI-generated grammar, vocabulary, reading, listening and mixed exercises across CEFR A1–C1, with server-side answer checking and local attempt history
 - Server-side answer checking
 - Spaced repetition queue
@@ -127,7 +128,8 @@ New route groups:
 - `/api/admin` — admin-only exercise and plan-template management
 - `/api/pronunciation` — authenticated history of local Whisper transcript comparisons (audio is processed in the browser and is not accepted by the API)
 - `POST /api/speaking/generate` — rate-limited Cloudflare Workers AI passage generation for CEFR A1–C1; returns short original English passages and never receives microphone audio
-- `POST /api/practice/generate` and `POST /api/practice/:id/check` — rate-limited AI exercise generation and server-side answer checking for grammar, vocabulary, reading, listening and mixed tasks. Correct answers remain server-side; temporary exercise sessions expire after 45 minutes.
+- `POST /api/practice/instant` — creates an immediate exercise from a curated randomized question bank; answers remain server-side for normal grading
+- `POST /api/practice/generate` and `POST /api/practice/:id/check` — rate-limited background AI exercise generation and server-side answer checking for grammar, vocabulary, reading, listening and mixed tasks. Correct answers remain server-side; temporary exercise sessions expire after 45 minutes.
 
 CMS changes to a published template affect newly generated plans. Existing learner plans keep their copied weekly themes and daily task assignments.
 
