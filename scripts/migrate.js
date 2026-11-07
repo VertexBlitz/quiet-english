@@ -2,6 +2,11 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
+import {
+  getDatabaseSchema,
+  getPostgresSchemaOptions,
+  ensureDatabaseSchema
+} from '../src/db-schema.js';
 
 const { Pool } = pg;
 if (!process.env.DATABASE_URL) {
@@ -11,12 +16,42 @@ if (!process.env.DATABASE_URL) {
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const migrationsDir = path.join(root, '../db/migrations');
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.PGSSLMODE === 'disable' ? false : process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: true } : undefined
-});
+const ssl = process.env.PGSSLMODE === 'disable'
+  ? false
+  : process.env.PGSSLMODE === 'require'
+    ? { rejectUnauthorized: true }
+    : undefined;
+
+let pool;
 
 try {
+  const schema = getDatabaseSchema();
+
+  if (schema) {
+    // Bootstrap through the database's default schema. The scoped pool is only
+    // created after the Preview schema exists.
+    const bootstrapPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl,
+      max: 1,
+      connectionTimeoutMillis: 5_000
+    });
+    try {
+      await ensureDatabaseSchema(bootstrapPool, schema);
+      console.log('Prepared isolated database schema:', schema);
+    } finally {
+      await bootstrapPool.end();
+    }
+  }
+
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl,
+    options: getPostgresSchemaOptions(schema),
+    max: 4,
+    connectionTimeoutMillis: 5_000
+  });
+
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
     filename TEXT PRIMARY KEY,
     applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -54,5 +89,5 @@ try {
   console.error('Migration failed:', error.message);
   process.exitCode = 1;
 } finally {
-  await pool.end();
+  if (pool) await pool.end();
 }
