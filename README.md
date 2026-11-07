@@ -130,7 +130,7 @@ CMS changes to a published template affect newly generated plans. Existing learn
 ## Tests
 
 - `npm run check` — syntax-checks server, client, scripts and test JavaScript; parses exercise seed JSON.
-- `npm test` — runs unit tests for preliminary CEFR placement, public answer-key filtering and local transcript alignment.
+- `npm test` — runs unit tests for preliminary CEFR placement, public answer-key filtering, local transcript alignment, the A1–C1 passage library, error-review word selection and progress-series ordering.
 - GitHub Actions runs these checks on pushes to `quiet-english-2-mvp` and `main`, and on pull requests targeting either branch.
 
 ## Deployment notes
