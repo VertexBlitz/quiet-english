@@ -11,6 +11,7 @@ import authRoutes from './src/routes/auth.js';
 import learningRoutes from './src/routes/learning.js';
 import adminRoutes from './src/routes/admin.js';
 import { estimateLevel, placementQuestions, publicQuestions } from './src/content/placement.js';
+import { sameOrigin } from './src/middleware/security.js';
 
 const app = express();
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -27,6 +28,14 @@ app.use('/api/', rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false
 }));
+
+const chatRateLimit = rateLimit({
+  windowMs: 60_000,
+  limit: 5,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Слишком много запросов к ИИ. Попробуй снова через минуту.' }
+});
 
 const sessionsConfigured = Boolean(pool && process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32);
 if (sessionsConfigured) {
@@ -123,23 +132,6 @@ app.post('/api/demo/exercises/:id/attempts', sameOrigin, (req, res) => {
     practice_only: true
   });
 });
-
-function sameOrigin(req, res, next) {
-  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
-  const origin = req.get('origin');
-  const base = process.env.APP_BASE_URL;
-  if (!origin || !base) {
-    return res.status(403).json({ error: 'Запрос должен быть отправлен с официального адреса сайта.' });
-  }
-  try {
-    if (new URL(origin).origin !== new URL(base).origin) {
-      return res.status(403).json({ error: 'Источник запроса не разрешён.' });
-    }
-  } catch {
-    return res.status(403).json({ error: 'Проверь APP_BASE_URL в настройках сервера.' });
-  }
-  next();
-}
 
 if (sessionsConfigured) {
   app.use('/api/auth', sameOrigin, authRoutes);
@@ -356,7 +348,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Keep the original chat contract compatible with the first version of Quiet English.
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', sameOrigin, chatRateLimit, async (req, res) => {
   const incoming = req.body?.messages;
   if (!Array.isArray(incoming) || incoming.length < 1 || incoming.length > 12) {
     return res.status(400).json({ error: 'Отправь от 1 до 12 сообщений.' });
