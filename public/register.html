@@ -3,7 +3,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Create account — Quiet English</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=20261107-public-audit-1"><script defer src="/i18n.js"></script><script defer src="/session.js?v=20261107-public-audit-1"></script><script defer src="/auth.js?v=20261107-public-audit-1"></script>
+<link rel="stylesheet" href="/styles.css?v=20261108-adult-signup-1"><script defer src="/i18n.js"></script><script defer src="/session.js?v=20261108-adult-signup-1"></script><script defer src="/auth.js?v=20261108-turnstile-1"></script>
 </head><body><header class="topbar wrap">
   <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
   <nav aria-label="Main navigation">
@@ -25,20 +25,17 @@
 <form data-auth-form="register" data-auth-status-id="auth-status">
 <label>Email<input type="email" name="email" autocomplete="email" required maxlength="254"></label>
 <label data-ru="Пароль (не менее 12 символов)" data-en="Password (at least 12 characters)">Пароль (не менее 12 символов)<input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="200" required></label>
-<label data-ru="Возрастная категория" data-en="Age range">Возрастная категория
-<select id="age-band" name="age_band" required>
-<option value="" selected disabled data-ru="Выбери возрастную категорию" data-en="Choose your age range">Выбери возрастную категорию</option>
-<option value="16_17" data-ru="16–17 лет (только Германия)" data-en="16–17 (Germany only)">16–17 лет (только Германия)</option>
-<option value="18_plus" data-ru="18 лет и старше" data-en="18 or older">18 лет и старше</option>
-</select></label>
+<input type="hidden" name="age_band" value="18_plus">
+<p class="fine-print" data-ru="Регистрация доступна только совершеннолетним пользователям — от 18 лет." data-en="Registration is available to adults only — age 18 and over.">Регистрация доступна только совершеннолетним пользователям — от 18 лет.</p>
 <div class="form-grid">
-<label data-ru="Код страны (для 16–17 лет — DE)" data-en="Country code (for ages 16–17 — DE)">Код страны (для 16–17 лет — DE)<input name="country_code" autocomplete="country" placeholder="DE" maxlength="2" required></label>
+<label data-ru="Код страны (две буквы)" data-en="Country code (two letters)">Код страны (две буквы)<input name="country_code" autocomplete="country" placeholder="DE" minlength="2" maxlength="2" pattern="[A-Za-z]{2}" required></label>
 <label data-ru="Язык интерфейса" data-en="Interface language">Язык интерфейса<select name="preferred_language"><option value="ru">Русский</option><option value="en">English</option></select></label>
 </div>
-<p class="fine-print" data-ru="Регистрация предусмотрена с 16 лет. Для пользователей 16–17 лет сейчас поддерживается только Германия. Возрастные и страновые ограничения нельзя обходить." data-en="Registration is currently supported from age 16. For users aged 16–17, only Germany is supported. Age and country restrictions must not be bypassed.">Регистрация предусмотрена с 16 лет. Для пользователей 16–17 лет сейчас поддерживается только Германия. Возрастные и страновые ограничения нельзя обходить.</p>
+
 
 <label class="check-row"><input type="checkbox" name="terms_accepted" required><span data-ru="Я принимаю Условия использования." data-en="I accept the Terms of Service.">Я принимаю <a href="/terms.html">Условия использования</a>.</span></label>
 <label class="check-row"><input type="checkbox" name="privacy_accepted" required><span data-ru="Я ознакомился(ась) с Политикой конфиденциальности." data-en="I have read the Privacy Notice.">Я ознакомился(ась) с <a href="/privacy.html">Политикой конфиденциальности</a>.</span></label>
+<div class="turnstile-widget" data-turnstile-captcha aria-label="Проверка безопасности"></div>
 <p class="form-status" data-auth-status id="auth-status" aria-live="polite"></p>
 <button class="button" type="submit" disabled data-ru="Создать аккаунт" data-en="Create account">Создать аккаунт <span>↗</span></button>
 <button class="button secondary" type="button" data-resend-verification hidden>Отправить письмо повторно</button>
