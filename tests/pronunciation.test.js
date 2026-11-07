@@ -232,7 +232,7 @@ test('parses a valid grammar quiz and retains answers only in the server exercis
 
 test('parses listening and reading passages with four comprehension questions', () => {
   const payload = samplePracticePayload(4);
-  payload.passage = 'A group of students visits a science museum on Friday. They discover how clean energy can power homes and learn why careful research matters. Their guide explains how solar panels use sunlight and how wind turbines create electricity. At the end of the visit, each student writes one question for a researcher.';
+  payload.passage = 'A group of students visits a science museum on Friday. They discover how clean energy can power homes and learn why careful research matters. Their guide explains how solar panels use sunlight and how wind turbines create electricity. At the end of the visit, each student writes one question for a researcher. A small exhibition also shows how engineers test new ideas before using them in real buildings and public spaces.';
   const reading = parseGeneratedPracticeExercise(
     JSON.stringify(payload),
     { level: 'B1', skill: 'reading', topic: 'Science' }
