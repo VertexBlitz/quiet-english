@@ -473,7 +473,7 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
           }
         ],
         stream: false,
-        max_tokens: request.skill === 'reading' || request.skill === 'listening' ? 1000 : 850,
+        max_tokens: request.skill === 'reading' || request.skill === 'listening' ? 1450 : 1050,
         temperature: 0.85,
         chat_template_kwargs: { enable_thinking: false }
       }),
