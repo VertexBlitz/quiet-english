@@ -713,3 +713,31 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
 .ai-option-row input{flex:0 0 15px}
 @media(max-width:900px){.ai-question-list{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:600px){.ai-question-card{padding:14px}}
+
+
+.knowledge-article-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.knowledge-print-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:11px 15px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font:400 11px Inter,Arial,sans-serif;cursor:pointer;transition:border-color .18s,background .18s}
+.knowledge-print-button:hover{border-color:var(--ink);background:var(--soft)}
+@media(max-width:520px){.knowledge-article-actions{width:100%;align-items:stretch;flex-direction:column}.knowledge-print-button,.knowledge-practice-link{width:100%;justify-content:center}}
+@page{size:A4;margin:16mm 15mm 17mm}
+@media print{
+  html,body{margin:0!important;padding:0!important;background:#fff!important;color:#111!important}
+  body *{visibility:hidden!important}
+  .knowledge-article,.knowledge-article *{visibility:visible!important}
+  .knowledge-article{
+    position:absolute!important;top:0!important;left:0!important;width:100%!important;max-width:none!important;
+    min-width:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+    box-shadow:none!important;background:#fff!important;overflow:visible!important
+  }
+  .knowledge-article-head,.knowledge-callout,.knowledge-article-section,.knowledge-example,
+  .knowledge-examples-section,.knowledge-tip{break-inside:avoid;page-break-inside:avoid}
+  .knowledge-article-head h2{font-size:25pt!important}
+  .knowledge-article-summary,.knowledge-callout p,.knowledge-article-section>p,
+  .knowledge-point-list li,.knowledge-example-en,.knowledge-example-ru,.knowledge-tip p{
+    color:#222!important
+  }
+  .knowledge-callout{background:#f2f2f2!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .knowledge-example,.knowledge-tip{border-color:#ccc!important}
+  .knowledge-article-footer{margin-top:22px!important;padding-top:12px!important}
+  .knowledge-article-actions,.knowledge-print-button,.knowledge-practice-link{display:none!important}
+}

@@ -88,6 +88,7 @@
     article.replaceChildren();
     if (!item) { article.hidden = true; return; }
     article.hidden = false;
+    document.title = tr(item.title) + ' — Quiet English';
     const head = make('div','knowledge-article-head');
     const meta = make('div','knowledge-article-meta');
     meta.append(make('span','knowledge-level-tag',item.level),make('span','knowledge-category-label',tr(cats[item.category])),make('span','knowledge-reading-time',language()?item.minutes+' min read':item.minutes+' мин чтения'));
@@ -117,9 +118,15 @@
     article.append(tip);
     const footer = make('div','knowledge-article-footer');
     footer.append(make('span','',language()?'QUIET ENGLISH · KNOWLEDGE BASE':'QUIET ENGLISH · БАЗА ЗНАНИЙ'));
+    const actions = make('div','knowledge-article-actions');
+    const printButton = make('button','knowledge-print-button',language()?'Save as PDF ↓':'Сохранить PDF ↓');
+    printButton.type = 'button';
+    printButton.setAttribute('aria-label',language()?'Save this note as PDF':'Сохранить этот конспект в PDF');
+    printButton.addEventListener('click',() => window.print());
     const practice = make('a','button knowledge-practice-link',language()?'Practise this topic ↗':'Закрепить тему ↗');
     practice.href='/practice.html';
-    footer.append(practice);
+    actions.append(printButton,practice);
+    footer.append(actions);
     article.append(footer);
   }
   function render() {
