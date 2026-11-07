@@ -276,7 +276,7 @@ test('rejects invalid AI exercise schema and ambiguous answer options', () => {
     () => parseGeneratedPracticeExercise(JSON.stringify(payload), {
       level: 'A2', skill: 'grammar', topic: 'Everyday life'
     }),
-    /некорректными/u
+    /Варианты ответа/u
   );
   assert.throws(
     () => parseGeneratedPracticeExercise('not json', {
