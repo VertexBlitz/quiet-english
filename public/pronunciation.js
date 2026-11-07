@@ -1,4 +1,5 @@
 import { compareTranscript } from '/pronunciation-scoring.js';
+import { readLocalPronunciationHistory, saveLocalPronunciationAttempt } from '/pronunciation-storage.js';
 
 const pronRoot = document.querySelector('[data-pronunciation-page]');
 if (pronRoot) {
@@ -179,45 +180,74 @@ if (pronRoot) {
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  function renderHistory(attempts) {
+    const history = pronRoot.querySelector('[data-pron-history]');
+    history.replaceChildren();
+    if (!attempts.length) {
+      history.textContent = 'История появится после первой оценки.';
+      return;
+    }
+    attempts.slice(0, 8).forEach(item => {
+      const row = document.createElement('article');
+      row.className = 'pron-history-row';
+      const summary = document.createElement('span');
+      summary.textContent = item.reference_text;
+      const score = document.createElement('strong');
+      score.textContent = Math.round(Number(item.word_match_score)) + '% совпадение';
+      row.append(summary, score);
+      history.append(row);
+    });
+  }
+
   async function loadHistory() {
+    let remoteAttempts = [];
     try {
       const response = await fetch('/api/pronunciation/history', { credentials: 'same-origin' });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) return;
-      const history = pronRoot.querySelector('[data-pron-history]');
-      history.replaceChildren();
-      if (!data.attempts?.length) {
-        history.textContent = 'История появится после первой оценки.';
-        return;
-      }
-      data.attempts.forEach(item => {
-        const row = document.createElement('article');
-        row.className = 'pron-history-row';
-        const summary = document.createElement('span');
-        summary.textContent = item.reference_text;
-        const score = document.createElement('strong');
-        score.textContent = Math.round(Number(item.word_match_score)) + '% совпадение';
-        row.append(summary, score);
-        history.append(row);
-      });
+      if (response.ok && Array.isArray(data.attempts)) remoteAttempts = data.attempts;
     } catch {}
+
+    let localAttempts = [];
+    try {
+      localAttempts = readLocalPronunciationHistory(window.localStorage);
+    } catch {}
+    const attempts = [...remoteAttempts, ...localAttempts]
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    renderHistory(attempts);
   }
 
   async function saveAttempt(referenceText, recognizedText, analysis) {
-    const response = await fetch('/api/pronunciation/attempt', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        referenceText,
-        recognizedText,
-        wordMatchScore: analysis.wordMatchPercent,
-        words: analysis.words
-      })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || 'Результат не удалось сохранить в историю.');
-    return data;
+    const attempt = {
+      id: (globalThis.crypto?.randomUUID?.() || String(Date.now())),
+      reference_text: referenceText,
+      recognized_text: recognizedText,
+      word_match_score: analysis.wordMatchPercent,
+      word_results: analysis.words,
+      created_at: new Date().toISOString()
+    };
+
+    try {
+      const response = await fetch('/api/pronunciation/attempt', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          referenceText,
+          recognizedText,
+          wordMatchScore: analysis.wordMatchPercent,
+          words: analysis.words
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok) return 'account';
+    } catch {}
+
+    let savedLocally = false;
+    try {
+      savedLocally = saveLocalPronunciationAttempt(window.localStorage, attempt);
+    } catch {}
+    if (savedLocally) return 'device';
+    throw new Error('Результат показан, но его не удалось сохранить. Проверь свободное место и настройки хранения браузера.');
   }
 
   async function processRecording(recordingBlob) {
@@ -235,11 +265,13 @@ if (pronRoot) {
       const analysis = compareTranscript(referenceText, recognizedText);
       renderResult(recognizedText, analysis, duration);
       try {
-        await saveAttempt(referenceText, recognizedText, analysis);
-        message('Готово. Аудио обработано локально; текст и учебный результат сохранены в истории.');
+        const savedTo = await saveAttempt(referenceText, recognizedText, analysis);
+        message(savedTo === 'account'
+          ? 'Готово. Аудио обработано на устройстве; текст и результат сохранены в аккаунте.'
+          : 'Готово. Аудио обработано на устройстве; результат сохранён в истории этого браузера.');
         await loadHistory();
-      } catch {
-        message('Результат показан, но история не сохранилась. Для истории нужен настроенный аккаунт.', true);
+      } catch (error) {
+        message(error.message || 'Результат показан, но историю не удалось сохранить.', true);
       }
     } catch (error) {
       const detail = error?.message || 'Не удалось распознать запись.';
