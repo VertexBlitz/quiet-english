@@ -363,3 +363,37 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
   .pron-word-head strong{font-size:12px}
   .pron-word-head span{font-size:10px}
 }
+
+/* Expanded Speaking Lab */
+.pron-library-controls{
+  display:flex;align-items:end;justify-content:space-between;gap:16px;margin:4px 0 18px;
+}
+.pron-level-filter{display:grid;gap:7px;max-width:280px;color:var(--muted);font-size:11px}
+.pron-level-filter select{
+  min-width:220px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;
+  background:#fff;color:var(--ink);font:400 13px Inter,Arial,sans-serif;
+}
+.pron-passage-count{color:var(--mid);font-size:11px;white-space:nowrap;padding-bottom:12px}
+.pron-prompt-list{max-height:620px;overflow:auto;overscroll-behavior:contain;padding:2px 4px 2px 0}
+.pron-active-task{margin:14px 0 0;color:var(--mid);font-size:11px;line-height:1.5}
+.pron-retry{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  margin-top:24px;padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--soft);
+}
+.pron-retry .eyebrow{margin:0 0 8px}
+.pron-retry h3{margin:0 0 8px;font-size:19px;font-weight:400;letter-spacing:-.03em}
+.pron-retry .copy{margin:0;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.pron-retry .button{flex:0 0 auto;white-space:nowrap}
+.pron-progress-panel .copy{margin-bottom:14px}
+.pron-progress-chart{display:block;width:100%;height:auto;max-height:230px;overflow:visible}
+.pron-chart-empty{padding:28px 12px;border:1px dashed var(--line);border-radius:14px;color:var(--mid);font-size:12px;text-align:center}
+.pron-chart-legend{display:flex;justify-content:space-between;margin:0 3px;color:var(--mid);font-size:10px}
+@media(max-width:760px){
+  .pron-library-controls{align-items:center}
+  .pron-level-filter{flex:1;max-width:none}
+  .pron-level-filter select{min-width:0;width:100%}
+  .pron-prompt-list{max-height:520px}
+  .pron-retry{display:grid;gap:13px;padding:15px}
+  .pron-retry .button{justify-self:start}
+  .pron-progress-chart{max-height:none}
+}
