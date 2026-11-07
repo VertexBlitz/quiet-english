@@ -2,8 +2,8 @@ export const REGISTRATION_CAPTCHA_ACTION = 'qe_registration';
 export const TERMS_POLICY_VERSION = '2026-11-08';
 export const PRIVACY_POLICY_VERSION = '2026-11-08';
 
-export function isAdultRegistration(ageBand) {
-  return ageBand === '18_plus';
+export function isAdultRegistration(ageBand, adultConfirmed) {
+  return ageBand === '18_plus' && adultConfirmed === true;
 }
 
 export function normalizeCountryCode(value) {
