@@ -69,7 +69,7 @@ test('provides three speaking passages for every CEFR level from A1 to C1', () =
   for (const level of levels) {
     const passages = PASSAGES.filter(item => item.level === level);
     assert.equal(passages.length, 3);
-    assert.ok(passages.every(item => item.text.split(/\\s+/u).length <= 55));
+    assert.ok(passages.every(item => item.text.split(/\s+/u).length <= 55));
   }
 });
 
