@@ -22,7 +22,7 @@ A bilingual (Russian/English) personal English-learning platform built on the ex
 - Four-week personal plan with local-time daily tasks
 - 20 curated vocabulary, grammar and reading exercises
 - Listening library with 15 curated British Council and ELLLO collections/lessons across CEFR A1–C1
-- Browser-local scripted speech transcription with Whisper tiny.en, 15 speaking passages across CEFR A1–C1, expected-vs-recognized word matching, targeted retry practice for missed/substituted words and an 8-attempt progress chart; recordings are not uploaded
+- Browser-local scripted speech transcription with Whisper tiny.en, 15 curated speaking passages across CEFR A1–C1, on-demand AI-generated passages through the existing Cloudflare Workers AI integration, expected-vs-recognized word matching, targeted retry practice for missed/substituted words and an 8-attempt progress chart; recordings are not uploaded
 - Server-side answer checking
 - Spaced repetition queue
 - Personal progress and error journal
@@ -124,6 +124,7 @@ New route groups:
 - `/api/learning` — onboarding, placement, plan, exercises, attempts, review, progress and errors
 - `/api/admin` — admin-only exercise and plan-template management
 - `/api/pronunciation` — authenticated history of local Whisper transcript comparisons (audio is processed in the browser and is not accepted by the API)
+- `POST /api/speaking/generate` — rate-limited Cloudflare Workers AI passage generation for CEFR A1–C1; returns short original English passages and never receives microphone audio
 
 CMS changes to a published template affect newly generated plans. Existing learner plans keep their copied weekly themes and daily task assignments.
 
@@ -137,4 +138,4 @@ CMS changes to a published template affect newly generated plans. Existing learn
 
 This work is developed in `quiet-english-2-mvp`, not deployed to the existing production Render service. The production site remains unchanged until the pull request is reviewed and merged.
 
-The pronunciation and listening improvements are developed in `feat/pronunciation-and-listening-library` as a separate reviewable change. After merging, the site can serve the new pages, but account and learning APIs remain disabled until the required database and session settings exist. Speaking history is stored locally in the current browser when account storage is unavailable; account history requires the `005_pronunciation_attempts.sql` migration and configured account/database sessions. Whisper itself runs in the browser and does not need provider credentials. Email registration additionally requires the Resend settings. Keep the registration feature flags off until the safety and privacy review is complete.
+The pronunciation and listening improvements are developed in `feat/pronunciation-and-listening-library` as a separate reviewable change. After merging, the site can serve the new pages, but account and learning APIs remain disabled until the required database and session settings exist. Speaking history is stored locally in the current browser when account storage is unavailable; account history requires the `005_pronunciation_attempts.sql` migration and configured account/database sessions. Whisper itself runs in the browser and does not need provider credentials. AI passage generation reuses `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_MODEL`; these must also be configured on the separate Preview Render service. The endpoint limits generation to 12 requests per hour per IP and validates the model response before returning a passage. Email registration additionally requires the Resend settings. Keep the registration feature flags off until the safety and privacy review is complete.
