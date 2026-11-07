@@ -13,7 +13,7 @@ document.querySelector('[data-export]')?.addEventListener('click',async()=>{
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const link=document.createElement('a');link.href=url;link.download='quiet-english-data-export.json';link.click();
-    URL.revokeObjectURL(url);showAccountStatus('Экспорт подготовлен и сохранён на этом устройстве.');
+    setTimeout(() => URL.revokeObjectURL(url), 1000);showAccountStatus('Экспорт подготовлен и сохранён на этом устройстве.');
   }catch(e){showAccountStatus(e.message,true);}finally{button.disabled=false;}
 });
 

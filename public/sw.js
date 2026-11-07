@@ -1,5 +1,5 @@
-const CACHE='quiet-english-shell-v2';
-const SHELL=["/","/index.html","/plan.html","/practice.html","/writing.html","/listening.html","/dictionary.html","/progress.html","/calendar.html","/studio.html","/offline.html","/styles.css","/i18n.js","/session.js","/learning.js","/ai-practice.js","/writing.js","/listening.js","/listening-trainer.js","/dictionary.js","/analytics.js","/calendar.js","/studio.js","/offline-client.js","/offline.js","/coach-practice.js","/pronunciation.html","/knowledge.html","/review.html"]
+const CACHE='quiet-english-shell-v3';
+const SHELL=["/login.html","/register.html","/account.html","/subscription.html","/privacy.html","/terms.html","/","/index.html","/plan.html","/practice.html","/writing.html","/listening.html","/dictionary.html","/progress.html","/calendar.html","/studio.html","/offline.html","/styles.css","/i18n.js","/session.js","/learning.js","/ai-practice.js","/writing.js","/listening.js","/listening-trainer.js","/dictionary.js","/analytics.js","/calendar.js","/studio.js","/offline-client.js","/offline.js","/coach-practice.js","/pronunciation.html","/knowledge.html","/review.html"]
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
