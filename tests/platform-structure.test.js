@@ -44,6 +44,8 @@ test('adult registration requires explicit operator approval, an isolated databa
   assert.ok(auth.includes("REGISTRATION_ENABLED !== 'true'"));
   assert.ok(auth.includes("REGISTRATION_LEGAL_APPROVED !== 'true'"));
   assert.ok(auth.includes("REGISTRATION_DATABASE_ISOLATED !== 'true'"));
+  assert.ok(auth.includes("process.env.DB_SCHEMA !== 'quiet_english_preview'"));
+  assert.ok(server.includes("process.env.DB_SCHEMA !== 'quiet_english_preview'"));
   assert.ok(auth.includes("isAdultRegistration(age_band, adult_confirmed)"));
   assert.ok(auth.includes('verifyTurnstileToken'));
   assert.ok(server.includes("app.get('/api/registration-status'"));
