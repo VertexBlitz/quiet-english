@@ -6,6 +6,7 @@ const registerHtml = await readFile(new URL('../public/register.html', import.me
 const guardianHtml = await readFile(new URL('../public/guardian-consent.html', import.meta.url), 'utf8');
 const guardianJs = await readFile(new URL('../public/guardian-consent.js', import.meta.url), 'utf8');
 const authRoutes = await readFile(new URL('../src/routes/auth.js', import.meta.url), 'utf8');
+const serverConfig = await readFile(new URL('../server.js', import.meta.url), 'utf8');
 
 test('registration asks for an age band, not a date of birth', () => {
   assert.match(registerHtml, /name="age_band"/);
@@ -57,4 +58,30 @@ test('minor account creation happens only through the guardian approval route', 
   assert.match(authRoutes, /if \(!isAdultRegistration\(age_band, adult_confirmed\)\)/);
   assert.match(authRoutes, /if \(requiresGuardianConsent\(item\.age_band\) && !item\.guardian_consented_at\)/);
   assert.match(authRoutes, /guardian_consented_at\)/);
+});
+
+test('public registration requires all operational and legal launch gates', () => {
+  const start = serverConfig.indexOf('function getRegistrationReadiness()');
+  const end = serverConfig.indexOf("app.get('/api/registration-status'", start);
+  assert.ok(start >= 0 && end > start);
+  const readiness = serverConfig.slice(start, end);
+  for (const name of [
+    'REGISTRATION_ENABLED',
+    'REGISTRATION_LEGAL_APPROVED',
+    'REGISTRATION_DATABASE_ISOLATED',
+    'REGISTRATION_DATA_LOCALIZATION_APPROVED',
+    'REGISTRATION_OPERATOR_DETAILS_APPROVED',
+    'TURNSTILE_SECRET_KEY',
+    'RESEND_API_KEY'
+  ]) {
+    assert.match(readiness, new RegExp(name));
+  }
+});
+
+test('guardian approval token is not placed in page query strings', () => {
+  assert.match(authRoutes, /function guardianConsentPageUrl\(token\)/);
+  assert.match(authRoutes, /router.post\('\/guardian-consent-info'/);
+  assert.match(guardianJs, /new URLSearchParams\(location.hash/);
+  assert.match(guardianJs, /guardianRequest\('\/api\/auth\/guardian-consent-info', \{ token \}\)/);
+  assert.doesNotMatch(guardianJs, /guardian-consent-info\?token=/);
 });
