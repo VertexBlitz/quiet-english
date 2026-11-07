@@ -3,11 +3,7 @@ CREATE TABLE IF NOT EXISTS pronunciation_attempts (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   reference_text TEXT NOT NULL,
   recognized_text TEXT NOT NULL DEFAULT '',
-  pron_score NUMERIC(5,2),
-  accuracy_score NUMERIC(5,2),
-  fluency_score NUMERIC(5,2),
-  completeness_score NUMERIC(5,2),
-  prosody_score NUMERIC(5,2),
+  word_match_score NUMERIC(5,2) NOT NULL,
   word_results JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
