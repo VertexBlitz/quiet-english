@@ -512,3 +512,77 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
   .pron-prompt-title{font-size:12px}
   .pron-prompt .pron-listen{width:38px;height:38px}
 }
+
+/* AI-generated practice studio */
+.ai-practice-controls{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr)) minmax(170px,auto);
+  align-items:end;
+  gap:13px;
+  padding:20px;
+  margin:22px 0 14px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--soft);
+}
+.ai-practice-controls label{display:grid;gap:7px;min-width:0;color:var(--muted);font-size:11px}
+.ai-practice-controls select{
+  width:100%;min-width:0;padding:12px 13px;border:1px solid var(--line);border-radius:11px;
+  color:var(--ink);background:#fff;font:400 13px Inter,Arial,sans-serif;
+}
+.ai-generate-button{justify-content:center;white-space:nowrap;min-height:42px}
+.ai-generate-button:disabled{opacity:.55;cursor:wait}
+.ai-practice-workspace{display:grid;gap:22px;margin-top:24px}
+.ai-practice-title{border-bottom:1px solid var(--line);padding-bottom:18px}
+.ai-practice-title h3{font-size:clamp(24px,3vw,34px);font-weight:300;letter-spacing:-.045em;line-height:1.15;margin:0 0 10px}
+.ai-practice-title .eyebrow{margin-bottom:10px}
+.ai-practice-title>p:last-child{color:var(--muted);font-size:14px;line-height:1.65;margin:0}
+.ai-practice-passage-wrap{padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--soft)}
+.ai-passage-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.ai-passage-toolbar strong{font-size:12px;font-weight:500}
+.ai-listen-button{font-size:11px;white-space:nowrap}
+.ai-practice-passage-wrap blockquote{margin:0;padding:0;border:0;font-size:15px;line-height:1.8;color:var(--ink);white-space:pre-wrap}
+.ai-question-form{display:grid;gap:16px}
+.ai-question-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.ai-question-card{
+  min-width:0;margin:0;padding:17px;border:1px solid var(--line);border-radius:14px;
+}
+.ai-question-card legend{padding:0 2px;font-size:14px;font-weight:500;line-height:1.55}
+.ai-question-category{display:inline-block;margin:9px 0 10px;color:var(--mid);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+.ai-option-row{
+  display:flex;align-items:flex-start;gap:10px;margin-top:7px;padding:10px 11px;
+  border:1px solid transparent;border-radius:9px;background:var(--soft);cursor:pointer;
+  font-size:13px;line-height:1.5;
+}
+.ai-option-row:has(input:checked){border-color:var(--ink);background:#fff}
+.ai-option-row input{flex:0 0 15px;width:15px;height:15px;margin:2px 0 0;accent-color:var(--ink)}
+.ai-question-form>[data-ai-check]{justify-self:start}
+.ai-practice-result{display:grid;gap:12px;padding-top:18px;border-top:1px solid var(--line)}
+.ai-score-heading{display:flex;align-items:baseline;gap:14px;padding:6px 0 12px}
+.ai-score-heading strong{font-size:clamp(42px,6vw,64px);font-weight:300;letter-spacing:-.07em;line-height:1}
+.ai-score-heading span{color:var(--muted);font-size:13px}
+.ai-feedback-card{padding:15px 16px;border:1px solid var(--line);border-radius:12px}
+.ai-feedback-card.is-correct{background:#f8faf8}
+.ai-feedback-card.is-wrong{background:#fcf8f8}
+.ai-feedback-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.ai-feedback-top strong{font-size:13px;line-height:1.5;font-weight:500}
+.ai-feedback-top>span{font-size:16px;font-weight:600}
+.ai-feedback-card>p{margin:9px 0 0;font-size:12px;line-height:1.6;color:var(--muted)}
+.ai-feedback-card .ai-explanation{color:var(--ink)}
+.ai-practice-history{margin-top:28px;padding-top:22px;border-top:1px solid var(--line)}
+.ai-practice-history h3{font-size:24px;font-weight:300;letter-spacing:-.04em;margin:0}
+.ai-history-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12px}
+.ai-history-row strong{white-space:nowrap;font-size:13px}
+@media(max-width:900px){
+  .ai-practice-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ai-question-list{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .ai-practice-controls{grid-template-columns:1fr;padding:14px}
+  .ai-generate-button{width:100%}
+  .ai-question-card{padding:14px}
+  .ai-practice-passage-wrap{padding:15px}
+  .ai-passage-toolbar{align-items:flex-start}
+  .ai-score-heading{gap:10px}
+  .ai-history-row{align-items:flex-start}
+}
