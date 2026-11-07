@@ -2,7 +2,30 @@
 const root=document.querySelector('[data-writing-page]');if(!root)return;
 const $=s=>root.querySelector(s);
 const formText=$('[data-writing-text]'),status=$('[data-writing-status]'),submit=$('[data-writing-submit]'),result=$('[data-writing-result]');
+const DRAFT_KEY='quiet-english:writing:draft:v1';
+const LAST_KEY='quiet-english:writing:last-submission:v1';
 let latest=null;
+function storageGet(key){try{return localStorage.getItem(key);}catch(_){return null;}}
+function storageSet(key,value){try{localStorage.setItem(key,value);}catch(_){}}
+function restoreDraft(){
+  try{
+    const raw=storageGet(DRAFT_KEY);if(!raw)return;
+    const draft=JSON.parse(raw);
+    if(typeof draft.text==='string')formText.value=draft.text;
+    if(draft.taskType)$('[data-writing-type]').value=draft.taskType;
+    if(draft.level)$('[data-writing-level]').value=draft.level;
+    if(typeof draft.topic==='string')$('[data-writing-topic]').value=draft.topic;
+    $('[data-writing-count]').textContent=formText.value.length;
+  }catch(_){}
+}
+function saveDraft(){
+  storageSet(DRAFT_KEY,JSON.stringify({
+    text:formText.value,
+    taskType:$('[data-writing-type]').value,
+    level:$('[data-writing-level]').value,
+    topic:$('[data-writing-topic]').value
+  }));
+}
 const t=(ru,en)=>document.documentElement.lang==='en'?en:ru;
 function message(text,error){status.textContent=text||'';status.classList.toggle('error-text',!!error);status.classList.toggle('success-text',!error);}
 async function api(path,options){
@@ -12,7 +35,10 @@ async function api(path,options){
   if(!response.ok)throw new Error(data.error||'Не удалось выполнить запрос.');
   return data;
 }
-formText.addEventListener('input',()=>{$('[data-writing-count]').textContent=formText.value.length;});
+restoreDraft();
+formText.addEventListener('input',()=>{$('[data-writing-count]').textContent=formText.value.length;saveDraft();});
+['[data-writing-type]','[data-writing-level]','[data-writing-topic]'].forEach(selector=>$(selector).addEventListener('change',saveDraft));
+$('[data-writing-topic]').addEventListener('input',saveDraft);
 function node(tag,cls,text){const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;}
 function renderList(target,items){target.replaceChildren();(items||[]).forEach(x=>target.append(node('li','',x)));if(!items||!items.length)target.append(node('li','fine-print','Пока нет рекомендаций.'));}
 function render(data){
@@ -57,17 +83,37 @@ function renderHistory(items){
     const meta=node('small','writing-history-meta',(item.level||'')+' · '+new Date(item.created_at).toLocaleDateString('ru-RU'));
     const score=node('strong','writing-history-score',item.overall_score+'/100');
     row.append(label,meta,score);
-    row.addEventListener('click',async()=>{try{const d=await api('/writing/'+encodeURIComponent(item.id));render(d.submission);result.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){message(e.message,true);}});
+    row.addEventListener('click',async()=>{try{const d=await api('/writing/'+encodeURIComponent(item.id));storageSet(LAST_KEY,String(item.id));if(d.submission.submitted_text!==undefined){formText.value=d.submission.submitted_text;$('[data-writing-count]').textContent=formText.value.length;saveDraft();}$('[data-writing-type]').value=d.submission.task_type||'essay';$('[data-writing-level]').value=d.submission.level||'B1';$('[data-writing-topic]').value=d.submission.topic||'';saveDraft();render(d.submission);result.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){message(e.message,true);}});
     list.append(row);
   });
 }
-api('/writing/history').then(d=>renderHistory(d.submissions||[])).catch(e=>renderHistory([]));
+api('/writing/history').then(async d=>{
+  const items=d.submissions||[];
+  renderHistory(items);
+  if(!items.length)return;
+  const rememberedId=storageGet(LAST_KEY);
+  const remembered=items.find(item=>String(item.id)===String(rememberedId));
+  const last=remembered||items[0];
+  try{
+    const saved=await api('/writing/'+encodeURIComponent(last.id));
+    storageSet(LAST_KEY,String(last.id));
+    if(!formText.value.trim()&&saved.submission.submitted_text){
+      formText.value=saved.submission.submitted_text;
+      $('[data-writing-count]').textContent=formText.value.length;
+      if(saved.submission.task_type)$('[data-writing-type]').value=saved.submission.task_type;
+      if(saved.submission.level)$('[data-writing-level]').value=saved.submission.level;
+      if(saved.submission.topic)$('[data-writing-topic]').value=saved.submission.topic;
+      saveDraft();
+    }
+    render(saved.submission);
+  }catch(e){message('Не удалось восстановить последний разбор: '+e.message,true);}
+}).catch(e=>renderHistory([]));
 submit.addEventListener('click',async()=>{
   const text=formText.value.trim();if(text.length<30)return message('Добавь текст минимум из 30 символов.',true);
   submit.disabled=true;message('ИИ анализирует текст, ошибки и структуру…',false);
   try{
     const data=await api('/writing/review',{method:'POST',body:JSON.stringify({text:text,task_type:$('[data-writing-type]').value,level:$('[data-writing-level]').value,topic:$('[data-writing-topic]').value})});
-    render(data.submission);message('Разбор сохранён в истории работ.');const history=await api('/writing/history');renderHistory(history.submissions||[]);
+    render(data.submission);if(data.submission.id)storageSet(LAST_KEY,String(data.submission.id));saveDraft();message('Разбор сохранён в истории работ.');const history=await api('/writing/history');renderHistory(history.submissions||[]);
   }catch(e){message(e.message,true);}finally{submit.disabled=false;}
 });
 $('[data-copy-corrected]').addEventListener('click',()=>navigator.clipboard?.writeText(latest?.corrected_text||''));
