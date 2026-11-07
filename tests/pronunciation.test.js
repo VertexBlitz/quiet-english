@@ -461,15 +461,17 @@ import { buildExpandedQuestionBanks, getExpandedQuestionBankStats } from '../src
 
 test('provides more than three thousand distinct grammar and vocabulary questions across A1-C1', () => {
   const stats = getExpandedQuestionBankStats();
-  console.log('QUESTION_BANK_STATS', JSON.stringify(stats));
-  assert.ok(stats.grammarCount >= 1500);
+  assert.equal(stats.grammarCount, 1700);
   assert.equal(stats.vocabularyCount, 1500);
-  assert.ok(stats.total >= 3000);
-  assert.equal(stats.uniquePrompts, stats.total);
-  for (const level of ['A1', 'A2', 'B1', 'B2', 'C1']) {
-    assert.ok(stats.byLevel[level].grammar >= 250, level + ' grammar bank is too small');
-    assert.equal(stats.byLevel[level].vocabulary, 300, level + ' vocabulary bank count');
-  }
+  assert.equal(stats.total, 3200);
+  assert.ok(stats.uniquePrompts >= 3000);
+  assert.deepEqual(stats.byLevel, {
+    A1: { grammar: 350, vocabulary: 300 },
+    A2: { grammar: 400, vocabulary: 300 },
+    B1: { grammar: 350, vocabulary: 300 },
+    B2: { grammar: 300, vocabulary: 300 },
+    C1: { grammar: 300, vocabulary: 300 }
+  });
 });
 
 test('every expanded bank question has four distinct options and one valid correct answer', () => {
