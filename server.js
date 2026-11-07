@@ -162,16 +162,19 @@ function isAiConfigured() {
 function getRegistrationReadiness() {
   const blockers = [];
   if (!pool || !sessionsConfigured) blockers.push('Личный кабинет и база данных ещё не настроены.');
-  if (process.env.REGISTRATION_ENABLED !== 'true') blockers.push('Владелец сервиса ещё не включил публичную регистрацию.');
-  if (process.env.REGISTRATION_LEGAL_APPROVED !== 'true') blockers.push('Оператор ещё не подтвердил готовность условий использования и политики конфиденциальности.');
+  if (process.env.REGISTRATION_ENABLED !== 'true') blockers.push('Публичная регистрация ещё не включена.');
+  if (process.env.REGISTRATION_LEGAL_APPROVED !== 'true') blockers.push('Условия использования и политика конфиденциальности ещё не утверждены оператором.');
   if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !process.env.APP_BASE_URL) blockers.push('Не настроено подтверждение email.');
+  if (!process.env.TURNSTILE_SITE_KEY || !process.env.TURNSTILE_SECRET_KEY) blockers.push('Не настроена CAPTCHA (Cloudflare Turnstile).');
+  if (process.env.REGISTRATION_DATABASE_ISOLATED !== 'true') blockers.push('Не подтверждена отдельная база данных для Preview.');
   return {
     available: blockers.length === 0,
     blockers,
+    captchaSiteKey: process.env.TURNSTILE_SITE_KEY || null,
     audience: {
-      minimumAge: 16,
-      adults: '18+; страна указывается при регистрации',
-      minors: '16–17 лет; сейчас поддерживается только Германия'
+      minimumAge: 18,
+      adults: '18+; поддерживаются пользователи из любых стран с корректным двухбуквенным кодом страны',
+      minors: 'Регистрация пользователей младше 18 лет закрыта'
     }
   };
 }
@@ -182,9 +185,10 @@ app.get('/api/registration-status', (_req, res) => {
   res.json({
     available: readiness.available,
     message: readiness.available
-      ? 'Регистрация открыта для поддерживаемых возрастных категорий и стран.'
-      : 'Публичная регистрация пока закрыта. ' + readiness.blockers.join(' '),
+      ? 'Регистрация открыта только для совершеннолетних пользователей (18+).'
+      : 'Регистрация пока недоступна. ' + readiness.blockers.join(' '),
     blockers: readiness.blockers,
+    captchaSiteKey: readiness.captchaSiteKey,
     audience: readiness.audience
   });
 });
