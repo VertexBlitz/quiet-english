@@ -501,8 +501,8 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
   }
   const rawNoteMeta = req.body?.knowledge_note_meta || {};
   const knowledgeNoteMeta = {
-    title: typeof rawNoteMeta.title === 'string' ? rawNoteMeta.title.replace(/\\s+/gu, ' ').trim().slice(0, 100) : '',
-    summary: typeof rawNoteMeta.summary === 'string' ? rawNoteMeta.summary.replace(/\\s+/gu, ' ').trim().slice(0, 240) : '',
+    title: typeof rawNoteMeta.title === 'string' ? rawNoteMeta.title.replace(/\s+/gu, ' ').trim().slice(0, 100) : '',
+    summary: typeof rawNoteMeta.summary === 'string' ? rawNoteMeta.summary.replace(/\s+/gu, ' ').trim().slice(0, 240) : '',
     category: typeof rawNoteMeta.category === 'string' ? rawNoteMeta.category.trim().toLowerCase() : '',
     level: typeof rawNoteMeta.level === 'string' ? rawNoteMeta.level.trim().toUpperCase() : ''
   };
