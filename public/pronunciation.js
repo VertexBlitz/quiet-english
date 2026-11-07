@@ -121,8 +121,8 @@ if (pronRoot) {
     });
 
     const count = visiblePassages.length;
-    pronRoot.querySelector('[data-pron-count]').textContent =
-      count + (count === 1 ? ' задание' : ' заданий');
+    const noun = count === 1 ? ' задание' : count >= 2 && count <= 4 ? ' задания' : ' заданий';
+    pronRoot.querySelector('[data-pron-count]').textContent = count + noun;
     updateActiveTask();
   }
 
@@ -360,6 +360,9 @@ if (pronRoot) {
       });
       circle.append(svgElement('title', {}, 'Попытка ' + point.attempt + ': ' + point.score + '%'));
       progressChart.append(circle);
+      progressChart.append(svgElement('text', {
+        x, y: Math.max(top + 10, y - 9), fill: '#171717', 'font-size': 9, 'text-anchor': 'middle'
+      }, point.score + '%'));
       progressChart.append(svgElement('text', {
         x, y: 164, fill: '#888', 'font-size': 9, 'text-anchor': 'middle'
       }, point.dateLabel));
