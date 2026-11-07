@@ -176,18 +176,24 @@ router.post('/login', async (req, res, next) => {
   if (!validEmail(email) || typeof password !== 'string') return res.status(400).json({ error: 'Проверь email и пароль.' });
   try {
     const { rows } = await pool.query(
-      'SELECT id, email, password_hash, role, account_status FROM users WHERE LOWER(email)=$1',
+      'SELECT id, email, password_hash, role, account_status, age_band, country_code, email_verified_at FROM users WHERE LOWER(email)=$1',
       [email]
     );
     const user = rows[0];
     if (!user || !(await argon2.verify(user.password_hash, password))) {
       return res.status(401).json({ error: 'Неверный email или пароль.' });
     }
+    if (user.account_status === 'pending_guardian' && user.email_verified_at &&
+        (user.age_band === '18_plus' || (user.age_band === '16_17' && user.country_code === 'DE'))) {
+      await pool.query(
+        "UPDATE users SET account_status='active', updated_at=NOW() WHERE id=$1 AND account_status='pending_guardian'",
+        [user.id]
+      );
+      user.account_status = 'active';
+    }
     if (user.account_status !== 'active') {
       return res.status(403).json({
-        error: user.account_status === 'pending_guardian'
-          ? 'Ожидается подтверждение родителя или опекуна.'
-          : 'Сначала подтверди email и необходимые согласия.'
+        error: 'Сначала подтверди email или проверь доступность аккаунта по возрастным условиям.'
       });
     }
     await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
@@ -317,7 +323,7 @@ router.post('/password/reset', async (req, res, next) => {
     const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
     await client.query('UPDATE users SET password_hash=$2, updated_at=NOW() WHERE id=$1', [found.rows[0].user_id, passwordHash]);
     await client.query("DELETE FROM user_sessions WHERE sess->>'userId'=$1", [found.rows[0].user_id]);
-    await client.query('UPDATE email_tokens SET consumed_at=NOW() WHERE user_id=$1 AND token_type IN (\'password_reset\',\'email_verify\',\'guardian_consent\') AND consumed_at IS NULL', [found.rows[0].user_id]);
+    await client.query('UPDATE email_tokens SET consumed_at=NOW() WHERE user_id=$1 AND token_type IN (\'password_reset\',\'email_verify\') AND consumed_at IS NULL', [found.rows[0].user_id]);
     await client.query('COMMIT');
     res.json({ ok: true, message: 'Пароль обновлён. Теперь можно войти.' });
   } catch (error) {
