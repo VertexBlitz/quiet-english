@@ -461,12 +461,12 @@ import { buildExpandedQuestionBanks, getExpandedQuestionBankStats } from '../src
 
 test('provides more than three thousand distinct grammar and vocabulary questions across A1-C1', () => {
   const stats = getExpandedQuestionBankStats();
-  assert.equal(stats.grammarCount, 1600);
+  assert.equal(stats.grammarCount, 1650);
   assert.equal(stats.vocabularyCount, 1500);
-  assert.equal(stats.total, 3100);
+  assert.equal(stats.total, 3150);
   assert.equal(stats.uniquePrompts, stats.total);
   assert.deepEqual(stats.byLevel, {
-    A1: { grammar: 300, vocabulary: 300 },
+    A1: { grammar: 350, vocabulary: 300 },
     A2: { grammar: 400, vocabulary: 300 },
     B1: { grammar: 300, vocabulary: 300 },
     B2: { grammar: 300, vocabulary: 300 },
