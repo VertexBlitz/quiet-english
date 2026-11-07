@@ -22,7 +22,7 @@ A bilingual (Russian/English) personal English-learning platform built on the ex
 - Four-week personal plan with local-time daily tasks
 - 20 curated vocabulary, grammar and reading exercises
 - Listening library with 15 curated British Council and ELLLO collections/lessons across CEFR A1–C1
-- Browser-local scripted speech transcription with Whisper tiny.en, expected-vs-recognized word matching and an estimated speaking pace; recordings are not uploaded
+- Browser-local scripted speech transcription with Whisper tiny.en, 15 speaking passages across CEFR A1–C1, expected-vs-recognized word matching, targeted retry practice for missed/substituted words and an 8-attempt progress chart; recordings are not uploaded
 - Server-side answer checking
 - Spaced repetition queue
 - Personal progress and error journal
