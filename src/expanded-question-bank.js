@@ -517,16 +517,16 @@ const EXTRA_VOCABULARY_ITEMS = {
   ]
 };
 const VOCAB_QUESTION_FRAMES = [
-  'Which word or phrase best matches this meaning: "{meaning}"? ___',
-  'Select the vocabulary item defined as "{meaning}": ___',
-  'A learner wants to express this idea: "{meaning}". Which option fits? ___',
-  'Complete the vocabulary note. "{meaning}" = ___',
-  'Choose the expression described here: "{meaning}" ___',
-  'Which item would be appropriate when you need to say "{meaning}"? ___',
-  'The dictionary gives this explanation: "{meaning}". Which headword matches it? ___',
-  'Identify the word or phrase whose meaning is "{meaning}": ___',
-  'A text uses an expression meaning "{meaning}". Choose it: ___',
-  'Which vocabulary item is described by the definition "{meaning}"? ___'
+  'Which word or phrase best matches this meaning: "{meaning}"? Example context: "{example}". ___',
+  'Select the vocabulary item defined as "{meaning}" for this context: "{example}". ___',
+  'A learner wants to express this idea: "{meaning}". The example is "{example}". Which option fits? ___',
+  'Complete the vocabulary note for "{example}". The word means "{meaning}": ___',
+  'Choose the expression described here: "{meaning}". It is used in "{example}": ___',
+  'Which item would be appropriate when you need to say "{meaning}" in this context: "{example}"? ___',
+  'The dictionary gives this explanation: "{meaning}". Example: "{example}". Which headword matches it? ___',
+  'Identify the word or phrase whose meaning is "{meaning}" and which fits "{example}": ___',
+  'A text uses an expression meaning "{meaning}" in this context: "{example}". Choose it: ___',
+  'Which vocabulary item is described by "{meaning}" and fits this example: "{example}"? ___'
 ];
 
 function makeGrammarBank(level) {
@@ -733,7 +733,7 @@ function makeVocabularyBank(level) {
   const items = [...VOCABULARY_ITEMS[level], ...EXTRA_VOCABULARY_ITEMS[level]];
   return expandCross(items, VOCAB_QUESTION_FRAMES, (item, frame, itemIndex, frameIndex) =>
     entry('Vocabulary in context: ' + (itemIndex < 10 ? 'core' : 'extended'),
-      frame.replace('{meaning}', item[3]),
+      frame.replace('{meaning}', item[3]).replace('{example}', item[1]),
       item[0], item[2], item[3]
     )
   );
