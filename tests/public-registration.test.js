@@ -27,7 +27,7 @@ test('the minor signup step only requests guardian contact and age attestation',
   assert.doesNotMatch(minorFields, /name="password"/);
   assert.doesNotMatch(minorFields, /name="country_code"/);
   const requestStart = authRoutes.indexOf("router.post('/guardian-consent-request'");
-  const requestEnd = authRoutes.indexOf("router.get('/guardian-consent-info'", requestStart);
+  const requestEnd = authRoutes.indexOf("router.post('/guardian-consent-info'", requestStart);
   const requestRoute = authRoutes.slice(requestStart, requestEnd);
   assert.ok(requestStart >= 0 && requestEnd > requestStart);
   assert.doesNotMatch(requestRoute, /country_code|childEmail|password/);
