@@ -29,5 +29,5 @@ test('schema bootstrap creates only the validated schema', async () => {
   await ensureDatabaseSchema(fakePool, 'quiet_english_preview');
   assert.equal(statement, 'CREATE SCHEMA IF NOT EXISTS "quiet_english_preview"');
   await ensureDatabaseSchema(fakePool, null);
-  assert.throws(() => ensureDatabaseSchema(fakePool, 'preview"; DROP SCHEMA public;--'));
+  await assert.rejects(() => ensureDatabaseSchema(fakePool, 'preview"; DROP SCHEMA public;--'));
 });
