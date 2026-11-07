@@ -6,9 +6,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 
-import { pool } from './src/db.js';
+import { pool, recordActivity } from './src/db.js';
 import authRoutes from './src/routes/auth.js';
 import learningRoutes from './src/routes/learning.js';
+import knowledgeRoutes from './src/routes/knowledge.js';
 import adminRoutes from './src/routes/admin.js';
 import pronunciationRoutes from './src/routes/pronunciation.js';
 import {
@@ -82,6 +83,7 @@ function sameOrigin(req, res, next) {
 if (sessionsConfigured) {
   app.use('/api/auth', sameOrigin, authRoutes);
   app.use('/api/learning', sameOrigin, learningRoutes);
+  app.use('/api/knowledge', sameOrigin, knowledgeRoutes);
   app.use('/api/admin', sameOrigin, adminRoutes);
   app.use('/api/pronunciation', sameOrigin, pronunciationRoutes);
 } else {
@@ -90,6 +92,7 @@ if (sessionsConfigured) {
   });
   app.use('/api/auth', notReady);
   app.use('/api/learning', notReady);
+  app.use('/api/knowledge', notReady);
   app.use('/api/admin', notReady);
   app.use('/api/pronunciation', notReady);
 }
@@ -484,6 +487,31 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
     return res.status(503).json({ error: 'ИИ пока не настроен на этом сервисе.' });
   }
 
+  const rawKnowledgeNoteId = typeof req.body?.knowledge_note_id === 'string'
+    ? req.body.knowledge_note_id.trim()
+    : '';
+  const knowledgeNoteId = rawKnowledgeNoteId && /^(grammar|vocabulary|reading|listening|speaking|writing)-(a1|a2|b1|b2|c1|c2)$/.test(rawKnowledgeNoteId)
+    ? rawKnowledgeNoteId
+    : null;
+  if (rawKnowledgeNoteId && !knowledgeNoteId) {
+    return res.status(400).json({ error: 'Некорректный идентификатор конспекта.' });
+  }
+  if (knowledgeNoteId && !req.session?.userId) {
+    return res.status(401).json({ error: 'Войди в аккаунт, чтобы сохранять результаты теста.' });
+  }
+  const rawNoteMeta = req.body?.knowledge_note_meta || {};
+  const knowledgeNoteMeta = {
+    title: typeof rawNoteMeta.title === 'string' ? rawNoteMeta.title.replace(/\\s+/gu, ' ').trim().slice(0, 100) : '',
+    summary: typeof rawNoteMeta.summary === 'string' ? rawNoteMeta.summary.replace(/\\s+/gu, ' ').trim().slice(0, 240) : '',
+    category: typeof rawNoteMeta.category === 'string' ? rawNoteMeta.category.trim().toLowerCase() : '',
+    level: typeof rawNoteMeta.level === 'string' ? rawNoteMeta.level.trim().toUpperCase() : ''
+  };
+  if (knowledgeNoteId && (
+    !['grammar','vocabulary','reading','listening','speaking','writing'].includes(knowledgeNoteMeta.category) ||
+    !['A1','A2','B1','B2','C1','C2'].includes(knowledgeNoteMeta.level)
+  )) {
+    return res.status(400).json({ error: 'Некорректные данные конспекта.' });
+  }
   const request = validated.value;
   const variation = randomUUID();
   const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' +
@@ -558,7 +586,10 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
     const exerciseId = randomUUID();
     generatedPracticeSessions.set(exerciseId, {
       exercise,
-      expiresAt: Date.now() + PRACTICE_SESSION_TTL
+      expiresAt: Date.now() + PRACTICE_SESSION_TTL,
+      knowledgeNoteId,
+      knowledgeNoteMeta,
+      userId: knowledgeNoteId ? req.session.userId : null
     });
 
     const { questions, ...metadata } = exercise;
@@ -582,7 +613,7 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
   }
 });
 
-app.post('/api/practice/:id/check', practiceCheckLimiter, (req, res) => {
+app.post('/api/practice/:id/check', practiceCheckLimiter, async (req, res) => {
   if (!sameRequestOrigin(req)) {
     return res.status(403).json({ error: 'Источник запроса не разрешён.' });
   }
@@ -595,8 +626,84 @@ app.post('/api/practice/:id/check', practiceCheckLimiter, (req, res) => {
 
   try {
     const result = gradeGeneratedPracticeExercise(session.exercise, req.body?.answers);
-    res.json(result);
+    if (session.knowledgeNoteId) {
+      if (!req.session?.userId || req.session.userId !== session.userId || !pool) {
+        return res.status(401).json({ error: 'Сессия теста больше не связана с этим аккаунтом. Создай тест заново.' });
+      }
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query(
+          `INSERT INTO knowledge_quiz_attempts
+             (user_id,note_id,category,level,score,correct_count,question_count,results)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`,
+          [
+            req.session.userId,
+            session.knowledgeNoteId,
+            session.exercise.skill,
+            session.exercise.level,
+            result.score,
+            result.correct,
+            result.total,
+            JSON.stringify(result.results)
+          ]
+        );
+        await client.query(
+          `INSERT INTO knowledge_note_progress
+             (user_id,note_id,title,summary,category,level,is_read,read_at,last_opened_at,last_score)
+           VALUES ($1,$2,$3,$4,$5,$6,TRUE,NOW(),NOW(),$7)
+           ON CONFLICT (user_id,note_id) DO UPDATE SET
+             title=EXCLUDED.title,
+             summary=EXCLUDED.summary,
+             category=EXCLUDED.category,
+             level=EXCLUDED.level,
+             is_read=TRUE,
+             read_at=COALESCE(knowledge_note_progress.read_at,NOW()),
+             last_opened_at=NOW(),
+             last_score=EXCLUDED.last_score,
+             updated_at=NOW()`,
+          [
+            req.session.userId,
+            session.knowledgeNoteId,
+            session.knowledgeNoteMeta.title,
+            session.knowledgeNoteMeta.summary,
+            session.knowledgeNoteMeta.category,
+            session.knowledgeNoteMeta.level,
+            result.score
+          ]
+        );
+        for (const item of result.results.filter(question => !question.is_correct)) {
+          await client.query(
+            `INSERT INTO error_journal
+               (user_id,error_type,incorrect_form,correction,explanation)
+             VALUES ($1,$2,$3,$4,$5)`,
+            [
+              req.session.userId,
+              session.exercise.skill,
+              (item.learning_point + ': ' + item.selected_answer).slice(0, 500),
+              item.correct_answer.slice(0, 500),
+              item.explanation.slice(0, 700)
+            ]
+          );
+        }
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+      try {
+        await recordActivity(req.session.userId, { minutes: 4, completedTasks: 1 });
+      } catch (error) {
+        console.error('Knowledge quiz activity update failed:', error?.message || 'unknown error');
+      }
+      generatedPracticeSessions.delete(req.params.id);
+      return res.json({ ...result, saved: true, note_id: session.knowledgeNoteId });
+    }
+    return res.json(result);
   } catch (error) {
+    console.error('Practice grading or persistence failed:', error?.message || 'unknown error');
     res.status(400).json({ error: error?.message || 'Не удалось проверить ответы.' });
   }
 });
