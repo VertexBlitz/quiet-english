@@ -106,7 +106,7 @@ Replace the example email with the trusted adult operator's own verified address
 - `/plan.html` — four-week plan and Today
 - `/practice.html` — vocabulary, grammar and reading practice
 - `/listening.html` — curated external listening library by CEFR level and topic
-- `/pronunciation.html` — short scripted pronunciation assessment and personal score history
+- `/pronunciation.html` — browser-local Whisper speaking practice and personal word-match history
 - `/exercise.html?id=G01` — exercise player
 - `/review.html` — spaced repetition
 - `/progress.html` — personal progress
