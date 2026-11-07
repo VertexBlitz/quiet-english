@@ -41,6 +41,6 @@ test('registration stays closed until the operator approves legal and privacy do
   const privacy = read('public/privacy.html');
   const terms = read('public/terms.html');
   assert.ok(auth.includes("REGISTRATION_ENABLED !== 'true'"));
-  assert.ok(privacy.includes('рабочий черновик'));
+  assert.ok(privacy.includes('рабочим черновиком'));
   assert.ok(terms.includes('Проект документа'));
 });
