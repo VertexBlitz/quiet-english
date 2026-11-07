@@ -132,6 +132,34 @@ if (placementRoot) {
 
 const planPage = $('[data-plan-page]');
 if (planPage) {
+  const dashboardSummary = $('[data-dashboard-summary]', planPage);
+  const dashboardStatus = $('[data-dashboard-status]', planPage);
+  if (dashboardSummary) {
+    learningApi('/progress').then(({ summary }) => {
+      dashboardSummary.replaceChildren();
+      [
+        [summary.minutes, 'Минут обучения'],
+        [summary.completed_tasks, 'Выполнено заданий'],
+        [summary.active_days, 'Активных дней'],
+        [summary.open_errors, 'Открытых ошибок']
+      ].forEach(([value, label]) => {
+        const card = document.createElement('article');
+        card.className = 'dashboard-metric';
+        const number = document.createElement('strong');
+        number.textContent = String(value ?? 0);
+        const caption = document.createElement('span');
+        caption.textContent = label;
+        card.append(number, caption);
+        dashboardSummary.append(card);
+      });
+      if (dashboardStatus) dashboardStatus.textContent = 'Данные собраны из сохранённых занятий и результатов.';
+    }).catch(error => {
+      if (dashboardStatus) {
+        dashboardStatus.textContent = error.message;
+        dashboardStatus.classList.add('error-text');
+      }
+    });
+  }
   Promise.all([
     learningApi('/plan').catch(error => ({ planError: error.message })),
     learningApi('/today').catch(error => ({ todayError: error.message }))

@@ -36,12 +36,27 @@ const PgSession = connectPgSimple(session);
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(express.json({ limit: '24kb' }));
-app.use('/api/', rateLimit({
+const generalApiLimiter = rateLimit({
   windowMs: 60_000,
-  limit: 10,
+  limit: 120,
   standardHeaders: 'draft-8',
   legacyHeaders: false
-}));
+});
+const loginAttemptLimiter = rateLimit({
+  windowMs: 15 * 60_000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Слишком много попыток входа. Подожди 15 минут и попробуй снова.' }
+});
+const registrationAttemptLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: 5,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Слишком много попыток регистрации. Попробуй позже.' }
+});
+app.use('/api/', generalApiLimiter);
 
 const sessionsConfigured = Boolean(pool && process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32);
 if (sessionsConfigured) {
@@ -84,13 +99,14 @@ function sameOrigin(req, res, next) {
 }
 
 if (sessionsConfigured) {
+  app.use('/api/auth/login', loginAttemptLimiter);
+  app.use('/api/auth/register', registrationAttemptLimiter);
   app.use('/api/auth', sameOrigin, authRoutes);
   app.use('/api/learning', sameOrigin, learningRoutes);
   app.use('/api/knowledge', sameOrigin, knowledgeRoutes);
   app.use('/api/admin', sameOrigin, adminRoutes);
   app.use('/api/pronunciation', sameOrigin, pronunciationRoutes);
   app.use('/api/studio', sameOrigin, writingRoutes, studyToolsRoutes);
-  app.use('/api/billing', billingRoutes);
   app.use('/api/billing', billingRoutes);
 } else {
   const notReady = (_req, res) => res.status(503).json({
@@ -102,7 +118,6 @@ if (sessionsConfigured) {
   app.use('/api/admin', notReady);
   app.use('/api/pronunciation', notReady);
   app.use('/api/studio', notReady);
-  app.use('/api/billing', notReady);
   app.use('/api/billing', notReady);
 }
 
