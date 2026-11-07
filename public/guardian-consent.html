@@ -56,6 +56,10 @@
           <span data-ru="Отдельно даю согласие на обработку персональных данных пользователя по" data-en="I separately consent to processing the learner's personal data under the">Отдельно даю согласие на обработку персональных данных пользователя по <a href="/data-consent.html" target="_blank" rel="noopener">отдельному согласию</a>.</span>
         </label>
 
+        <label data-ru="Код страны пользователя (две буквы)" data-en="Learner country code (two letters)">
+          Код страны пользователя (две буквы)
+          <input name="country_code" autocomplete="country" placeholder="RU" minlength="2" maxlength="2" pattern="[A-Za-z]{2}" required>
+        </label>
         <label>Email пользователя
           <input type="email" name="email" autocomplete="off" maxlength="254" required>
         </label>
