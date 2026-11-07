@@ -285,3 +285,60 @@ test('rejects invalid AI exercise schema and ambiguous answer options', () => {
     /непонятном формате/u
   );
 });
+
+test('normalizes common AI question aliases and option answer formats', () => {
+  const payload = {
+    title: 'Grammar in context',
+    instructions: 'Choose the best answer for each sentence.',
+    passage: '',
+    questions: Array.from({ length: 5 }, (_, index) => ({
+      question: 'Which form completes sentence ' + (index + 1) + '?',
+      type: 'grammar question',
+      options: [
+        { key: 'A', value: 'go', is_correct: false },
+        { key: 'B', value: 'goes', is_correct: true },
+        { key: 'C', value: 'going', is_correct: false },
+        { key: 'D', value: 'gone', is_correct: false }
+      ],
+      correct_answer: 'goes',
+      feedback: 'Use the third-person singular form with he, she or it.'
+    }))
+  };
+
+  const exercise = parseGeneratedPracticeExercise(JSON.stringify(payload), {
+    level: 'A2', skill: 'grammar', topic: 'Everyday life'
+  });
+
+  assert.equal(exercise.questions.length, 5);
+  assert.equal(exercise.questions[0].prompt, 'Which form completes sentence 1?');
+  assert.equal(exercise.questions[0].category, 'grammar');
+  assert.deepEqual(exercise.questions[0].options.map(option => option.id), ['a', 'b', 'c', 'd']);
+  assert.equal(exercise.questions[0].correct_option_id, 'b');
+  assert.match(exercise.questions[0].explanation, /third-person singular/u);
+});
+
+test('accepts string options and letter-based correct answer fields', () => {
+  const payload = samplePracticePayload();
+  payload.questions = payload.questions.map(question => ({
+    question: question.prompt,
+    choices: ['go', 'goes', 'going', 'gone'],
+    correctAnswer: 'B',
+    explanation: question.explanation
+  }));
+
+  const exercise = parseGeneratedPracticeExercise(JSON.stringify(payload), {
+    level: 'A2', skill: 'grammar', topic: 'Everyday life'
+  });
+
+  assert.equal(exercise.questions[0].correct_option_id, 'b');
+  assert.equal(exercise.questions[0].options[1].text, 'goes');
+});
+
+test('uses the requested exercise skill when an AI category is not recognised', () => {
+  const payload = samplePracticePayload();
+  payload.questions[0].category = 'grammar practice';
+  const exercise = parseGeneratedPracticeExercise(JSON.stringify(payload), {
+    level: 'A2', skill: 'grammar', topic: 'Everyday life'
+  });
+  assert.equal(exercise.questions[0].category, 'grammar');
+});
