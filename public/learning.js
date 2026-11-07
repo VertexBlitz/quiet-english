@@ -210,7 +210,13 @@ if (practicePage) {
       card.append(meta, heading, text, link);
       list.appendChild(card);
     });
-  }).catch(error => learningMessage(status, error.message, true));
+  }).catch(() => {
+    list.replaceChildren();
+    const note = document.createElement('p');
+    note.className = 'copy';
+    note.textContent = 'Готовые упражнения из личной библиотеки требуют настроенной базы аккаунтов. Генератор ИИ выше работает отдельно — выбери грамматику, лексику, чтение или аудирование.';
+    list.appendChild(note);
+  });
 }
 
 const exercisePage = $('[data-exercise-page]');
