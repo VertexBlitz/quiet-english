@@ -181,10 +181,90 @@ if (pronRoot) {
       row.append(head);
       wordList.append(row);
     });
+    lastReviewWords = getReviewWords(analysis.words);
+    retryPanel.hidden = lastReviewWords.length === 0;
+    if (lastReviewWords.length) {
+      retryTextNode.textContent = lastReviewWords.join(' · ');
+    } else {
+      activeReviewText = '';
+      updateActiveTask();
+    }
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  function svgElement(name, attributes = {}, text = '') {
+    const element = document.createElementNS('http://www.w3.org/2000/svg', name);
+    Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, String(value)));
+    if (text) element.textContent = text;
+    return element;
+  }
+
+  function renderProgressChart(attempts) {
+    const series = buildProgressSeries(attempts);
+    progressCount.textContent = series.length + (series.length === 1 ? ' попытка' : ' попыток');
+    progressChart.replaceChildren();
+
+    if (!series.length) {
+      progressChart.hidden = true;
+      chartEmpty.hidden = false;
+      return;
+    }
+
+    chartEmpty.hidden = true;
+    progressChart.hidden = false;
+    progressChart.setAttribute('aria-label',
+      'Совпадение текста по последним попыткам: ' + series.map(item => item.score + '%').join(', '));
+
+    const left = 38;
+    const right = 326;
+    const top = 18;
+    const bottom = 142;
+    const plotHeight = bottom - top;
+    const xFor = index => series.length === 1
+      ? (left + right) / 2
+      : left + (index * (right - left)) / (series.length - 1);
+    const yFor = score => bottom - (score / 100) * plotHeight;
+
+    [0, 50, 100].forEach(score => {
+      const y = yFor(score);
+      progressChart.append(
+        svgElement('line', {
+          x1: left, y1: y, x2: right, y2: y,
+          stroke: '#e5e5e5', 'stroke-width': 1
+        }),
+        svgElement('text', {
+          x: 2, y: y + 4, fill: '#888', 'font-size': 10
+        }, score + '%')
+      );
+    });
+
+    if (series.length > 1) {
+      const points = series.map((point, index) => xFor(index) + ',' + yFor(point.score)).join(' ');
+      progressChart.append(svgElement('polyline', {
+        points, fill: 'none', stroke: '#171717', 'stroke-width': 2.5,
+        'stroke-linecap': 'round', 'stroke-linejoin': 'round'
+      }));
+    }
+
+    series.forEach((point, index) => {
+      const x = xFor(index);
+      const y = yFor(point.score);
+      const circle = svgElement('circle', {
+        cx: x, cy: y, r: 4.5, fill: '#fff', stroke: '#171717', 'stroke-width': 2
+      });
+      circle.append(svgElement('title', {}, 'Попытка ' + point.attempt + ': ' + point.score + '%'));
+      progressChart.append(circle);
+      progressChart.append(svgElement('text', {
+        x, y: 164, fill: '#888', 'font-size': 9, 'text-anchor': 'middle'
+      }, point.dateLabel));
+    });
+    progressChart.append(svgElement('text', {
+      x: right, y: 184, fill: '#888', 'font-size': 9, 'text-anchor': 'end'
+    }, 'новые →'));
+  }
+
   function renderHistory(attempts) {
+    renderProgressChart(attempts);
     const history = pronRoot.querySelector('[data-pron-history]');
     history.replaceChildren();
     if (!attempts.length) {
@@ -354,7 +434,8 @@ if (pronRoot) {
   });
 
   engineBadge.textContent = 'WHISPER · ON-DEVICE';
-  message('Выбери фразу, подтверди локальную обработку и начни запись. При первом запуске модель будет загружена в браузер.');
+  renderPassages();
+  message('Выбери уровень и текст, подтверди локальную обработку и начни запись. В библиотеке есть 15 заданий A1–C1.');
   updateRecordAvailability();
   loadHistory();
 }
