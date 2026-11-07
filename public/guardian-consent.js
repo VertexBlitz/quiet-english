@@ -81,6 +81,7 @@ parentSignupForm?.addEventListener('submit', async event => {
     const data = await guardianRequest('/api/auth/guardian-consent-complete', {
       token,
       guardian_confirmed: form.get('guardian_confirmed') === 'on',
+      minimum_age_confirmed: form.get('minimum_age_confirmed') === 'on',
       terms_accepted: form.get('terms_accepted') === 'on',
       privacy_accepted: form.get('privacy_accepted') === 'on',
       personal_data_accepted: form.get('personal_data_accepted') === 'on',
