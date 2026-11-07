@@ -179,7 +179,7 @@ app.get('/api/registration-status', (_req, res) => {
     blockers: readiness.blockers,
     audience: readiness.audience
   });
-}
+});
 
 async function buildCommandReply(userId, command) {
   if (!userId || !pool) {
