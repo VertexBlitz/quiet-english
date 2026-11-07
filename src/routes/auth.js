@@ -54,6 +54,10 @@ function messagePageUrl(page, token) {
   return `${appUrl()}/${page}?token=${encodeURIComponent(token)}`;
 }
 
+function guardianConsentPageUrl(token) {
+  return `${appUrl()}/guardian-consent.html#token=${encodeURIComponent(token)}`;
+}
+
 function registrationBlocker() {
   if (process.env.REGISTRATION_ENABLED !== 'true') return 'Публичная регистрация пока закрыта.';
   if (process.env.REGISTRATION_LEGAL_APPROVED !== 'true') return 'Новые условия, политика и отдельное согласие на обработку данных ещё не утверждены.';
@@ -273,7 +277,7 @@ router.post('/guardian-consent-request', async (req, res, next) => {
         html: `<p>Поступил запрос на создание учебного аккаунта Quiet English для возрастной группы ${ageBand === '13_15' ? '13–15' : '16–17'}.</p>
           <p>Аккаунт ещё не создан. Email пользователя, код страны и пароль пока не собирались.</p>
           <p>Открой ссылку, ознакомься с документами и подтверди запрос только в том случае, если ты являешься родителем или законным представителем:</p>
-          <p><a href="${messagePageUrl('guardian-consent.html', rawToken)}">Проверить запрос и дать согласие</a></p>
+          <p><a href="${guardianConsentPageUrl(rawToken)}">Проверить запрос и дать согласие</a></p>
           <p>Ссылка действует 24 часа. Если ты не ожидаешь этот запрос, проигнорируй письмо.</p>`
       });
     } catch (error) {
@@ -290,8 +294,8 @@ router.post('/guardian-consent-request', async (req, res, next) => {
   }
 });
 
-router.get('/guardian-consent-info', async (req, res, next) => {
-  const token = req.query?.token;
+router.post('/guardian-consent-info', async (req, res, next) => {
+  const token = req.body?.token;
   if (typeof token !== 'string' || token.length < 30 || token.length > 200) {
     return res.status(400).json({ error: 'Ссылка подтверждения некорректна.' });
   }
@@ -491,7 +495,7 @@ router.post('/guardian-withdrawal-request', async (req, res, next) => {
           subject: 'Отзыв родительского согласия — Quiet English',
           html: `<p>Получен запрос на отзыв согласия и удаление учебного аккаунта, связанного с этим адресом родителя.</p>
             <p>Подтверди действие по ссылке в течение 24 часов:</p>
-            <p><a href="${messagePageUrl('guardian-consent.html', rawToken)}">Отозвать согласие и удалить аккаунт</a></p>
+            <p><a href="${guardianConsentPageUrl(rawToken)}">Отозвать согласие и удалить аккаунт</a></p>
             <p>Если ты не запрашивал это действие, проигнорируй письмо.</p>`
         });
       } catch (error) {
