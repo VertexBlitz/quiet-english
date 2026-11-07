@@ -91,6 +91,7 @@ if (sessionsConfigured) {
   app.use('/api/pronunciation', sameOrigin, pronunciationRoutes);
   app.use('/api/studio', sameOrigin, writingRoutes, studyToolsRoutes);
   app.use('/api/billing', billingRoutes);
+  app.use('/api/billing', billingRoutes);
 } else {
   const notReady = (_req, res) => res.status(503).json({
     error: 'Личный кабинет ещё не настроен. Нужны DATABASE_URL и SESSION_SECRET.'
@@ -101,6 +102,7 @@ if (sessionsConfigured) {
   app.use('/api/admin', notReady);
   app.use('/api/pronunciation', notReady);
   app.use('/api/studio', notReady);
+  app.use('/api/billing', notReady);
   app.use('/api/billing', notReady);
 }
 
