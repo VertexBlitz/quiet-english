@@ -31,7 +31,8 @@ function ageBandLabel(value) {
 }
 
 const params = new URLSearchParams(location.search);
-const token = params.get('token') || '';
+const fragmentParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+const token = fragmentParams.get('token') || '';
 
 if (params.get('mode') === 'withdrawal-request') {
   if (withdrawalRequestForm) withdrawalRequestForm.hidden = false;
@@ -39,15 +40,7 @@ if (params.get('mode') === 'withdrawal-request') {
 } else if (!token) {
   showGuardianMessage('В ссылке отсутствует токен подтверждения.', true);
 } else {
-  fetch('/api/auth/guardian-consent-info?token=' + encodeURIComponent(token), {
-    cache: 'no-store',
-    credentials: 'same-origin'
-  })
-    .then(async response => {
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'Ссылка недействительна.');
-      return data;
-    })
+  guardianRequest('/api/auth/guardian-consent-info', { token })
     .then(data => {
       if (consentFlow) consentFlow.hidden = false;
       if (data.requestType === 'signup') {
