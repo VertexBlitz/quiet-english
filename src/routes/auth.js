@@ -86,7 +86,7 @@ router.post('/resend-verification', async (req, res, next) => {
 router.post('/register', async (req, res, next) => {
   const {
     email, password, age_band, country_code,
-    preferred_language = 'ru', terms_accepted, privacy_accepted
+    preferred_language = 'ru', terms_accepted, privacy_accepted, adult_confirmed
   } = req.body || {};
 
   if (process.env.REGISTRATION_ENABLED !== 'true' || process.env.REGISTRATION_LEGAL_APPROVED !== 'true') {
@@ -103,8 +103,8 @@ router.post('/register', async (req, res, next) => {
   if (typeof password !== 'string' || password.length < 12 || password.length > 200) {
     return res.status(400).json({ error: 'Пароль должен содержать от 12 до 200 символов.' });
   }
-  if (!isAdultRegistration(age_band)) {
-    return res.status(403).json({ error: 'Публичная регистрация доступна только совершеннолетним пользователям (18+).' });
+  if (!isAdultRegistration(age_band, adult_confirmed)) {
+    return res.status(403).json({ error: 'Подтверди, что тебе уже исполнилось 18 лет. Регистрация несовершеннолетних закрыта.' });
   }
   const normalizedCountryCode = normalizeCountryCode(country_code);
   if (!isValidCountryCode(normalizedCountryCode)) {
@@ -166,13 +166,13 @@ router.post('/register', async (req, res, next) => {
       [
         userId,
         TERMS_POLICY_VERSION,
-        JSON.stringify({ source: 'registration', language: preferred_language }),
+        JSON.stringify({ source: 'registration', language: preferred_language, adult_confirmation: true }),
         PRIVACY_POLICY_VERSION
       ]
     );
     await client.query(
-      `INSERT INTO registration_events (user_id, event_type, age_band, country_code)
-       VALUES ($1,'account_created','18_plus',$2)`,
+      `INSERT INTO registration_events (user_id, event_type, age_band, country_code, adult_attested)
+       VALUES ($1,'account_created','18_plus',$2,TRUE)`,
       [userId, normalizedCountryCode]
     );
     verifyToken = await createToken(client, userId, 'email_verify', 24);
@@ -240,9 +240,9 @@ router.post('/verify-email', async (req, res, next) => {
     const status = 'active';
     await client.query('UPDATE users SET email_verified_at=NOW(), account_status=$2, updated_at=NOW() WHERE id=$1', [item.user_id, status]);
     await client.query(
-      `INSERT INTO registration_events (user_id, event_type, age_band, country_code)
-       VALUES ($1,'email_verified',$2,$3)`,
-      [item.user_id, item.age_band, item.country_code]
+      `INSERT INTO registration_events (user_id, event_type, age_band, country_code, adult_attested)
+       VALUES ($1,'email_verified',$2,$3,$4)`,
+      [item.user_id, item.age_band, item.country_code, item.age_band === '18_plus']
     );
     await client.query('COMMIT');
     console.info(JSON.stringify({
