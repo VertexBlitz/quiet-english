@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS guardian_consent_requests (
   consumed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (
-    (request_type = 'signup' AND target_user_id IS NULL AND age_band IS NOT NULL AND country_code IS NOT NULL)
+    (request_type = 'signup' AND target_user_id IS NULL AND age_band IS NOT NULL)
     OR
     (request_type = 'withdrawal' AND age_band IS NULL AND country_code IS NULL)
   )
