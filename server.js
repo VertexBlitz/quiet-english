@@ -166,7 +166,7 @@ function getRegistrationReadiness() {
   if (process.env.REGISTRATION_LEGAL_APPROVED !== 'true') blockers.push('Условия использования и политика конфиденциальности ещё не утверждены оператором.');
   if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !process.env.APP_BASE_URL) blockers.push('Не настроено подтверждение email.');
   if (!process.env.TURNSTILE_SITE_KEY || !process.env.TURNSTILE_SECRET_KEY) blockers.push('Не настроена CAPTCHA (Cloudflare Turnstile).');
-  if (process.env.REGISTRATION_DATABASE_ISOLATED !== 'true') blockers.push('Не подтверждена отдельная база данных для Preview.');
+  if (process.env.REGISTRATION_DATABASE_ISOLATED !== 'true' || process.env.DB_SCHEMA !== 'quiet_english_preview') blockers.push('Не настроена изолированная схема PostgreSQL для Preview.');
   return {
     available: blockers.length === 0,
     blockers,
