@@ -406,3 +406,53 @@ test('preserves the exact learning point through grading for future adaptive rev
   assert.equal(result.results[0].is_correct, false);
   assert.equal(result.results[0].learning_point, 'Past Simple');
 });
+
+import { buildInstantPracticeExercise } from '../src/instant-practice.js';
+
+test('builds instant exercises for all CEFR levels and supported skills', () => {
+  const levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
+  const skills = ['grammar', 'vocabulary', 'reading', 'listening', 'mixed'];
+
+  for (const level of levels) {
+    for (const skill of skills) {
+      const exercise = buildInstantPracticeExercise({
+        level,
+        skill,
+        topic: 'Science'
+      });
+      const expectedCount = ['reading', 'listening'].includes(skill) ? 4 : 5;
+
+      assert.equal(exercise.level, level);
+      assert.equal(exercise.skill, skill);
+      assert.equal(exercise.questions.length, expectedCount);
+      assert.ok(exercise.title.length > 0);
+      assert.ok(exercise.instructions.length > 0);
+      if (['reading', 'listening'].includes(skill)) assert.ok(exercise.passage.length > 80);
+
+      for (const question of exercise.questions) {
+        assert.equal(question.options.length, 4);
+        assert.equal(question.options.filter(option => option.id === question.correct_option_id).length, 1);
+        assert.ok(question.learning_point.length > 0);
+        assert.equal(new Set(question.options.map(option => option.text)).size, 4);
+      }
+    }
+  }
+});
+
+test('instant practice keeps grammar and vocabulary topics available for targeted review', () => {
+  const grammar = buildInstantPracticeExercise({
+    level: 'B1',
+    skill: 'grammar',
+    topic: 'Science',
+    focus: [{ area: 'Zero Conditional', prompt: 'If plants do not get light...' }]
+  });
+  assert.ok(grammar.questions.some(question => question.learning_point === 'Zero Conditional'));
+
+  const vocabulary = buildInstantPracticeExercise({
+    level: 'C1',
+    skill: 'vocabulary',
+    topic: 'Education',
+    focus: [{ area: 'Academic vocabulary', prompt: 'The argument is...' }]
+  });
+  assert.ok(vocabulary.questions.every(question => question.category === 'vocabulary'));
+});
