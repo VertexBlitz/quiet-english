@@ -50,3 +50,31 @@ test('registration stays closed until the operator approves legal and privacy do
   assert.ok(privacy.includes('рабочим черновиком'));
   assert.ok(terms.includes('Проект документа'));
 });
+
+test('offline storage and service-worker cache are present after release updates', () => {
+  const offlineClient = read('public/offline-client.js');
+  const serviceWorker = read('public/sw.js');
+  const dictionary = read('public/dictionary.html');
+  assert.ok(offlineClient.includes('window.QuietOffline = { save, all, remove }'));
+  assert.ok(offlineClient.includes('navigator.serviceWorker.register'));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v3'"));
+  assert.ok(serviceWorker.includes('"/register.html"'));
+  assert.equal(dictionary.split('/offline-client.js').length - 1, 1);
+});
+
+test('registration UI checks server readiness and cannot submit before the check succeeds', () => {
+  const authJs = read('public/auth.js');
+  const registerHtml = read('public/register.html');
+  assert.ok(authJs.includes('/api/registration-status'));
+  assert.ok(!authJs.includes('updateGuardianFields'));
+  assert.ok(registerHtml.includes('type="submit" disabled'));
+  assert.ok(registerHtml.includes('selected disabled'));
+});
+
+test('password recovery and public AI chat have dedicated rate limits', () => {
+  const server = read('server.js');
+  assert.ok(server.includes('const passwordRecoveryLimiter = rateLimit'));
+  assert.ok(server.includes("app.use('/api/auth/password/forgot', passwordRecoveryLimiter);"));
+  assert.ok(server.includes('const chatLimiter = rateLimit'));
+  assert.ok(server.includes("app.post('/api/chat', chatLimiter"));
+});
