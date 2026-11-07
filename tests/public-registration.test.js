@@ -24,6 +24,7 @@ test('the minor signup step only requests guardian contact and age attestation',
   assert.match(minorFields, /name="age_confirmed"/);
   assert.doesNotMatch(minorFields, /name="email"/);
   assert.doesNotMatch(minorFields, /name="password"/);
+  assert.doesNotMatch(minorFields, /name="country_code"/);
 });
 
 test('parent page separately captures authority, Terms, Privacy and data consent', () => {
@@ -31,6 +32,8 @@ test('parent page separately captures authority, Terms, Privacy and data consent
   assert.match(guardianHtml, /name="terms_accepted"/);
   assert.match(guardianHtml, /name="privacy_accepted"/);
   assert.match(guardianHtml, /name="personal_data_accepted"/);
+  assert.match(guardianHtml, /name="minimum_age_confirmed"/);
+  assert.match(guardianHtml, /name="country_code"/);
   assert.match(guardianHtml, /guardian-consent.js/);
 });
 
