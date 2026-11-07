@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS guardian_consent_requests (
   CHECK (
     (request_type = 'signup' AND target_user_id IS NULL AND age_band IS NOT NULL AND country_code IS NOT NULL)
     OR
-    (request_type = 'withdrawal' AND target_user_id IS NOT NULL AND age_band IS NULL AND country_code IS NULL)
+    (request_type = 'withdrawal' AND age_band IS NULL AND country_code IS NULL)
   )
 );
 
