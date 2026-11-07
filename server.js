@@ -10,6 +10,11 @@ import authRoutes from './src/routes/auth.js';
 import learningRoutes from './src/routes/learning.js';
 import adminRoutes from './src/routes/admin.js';
 import pronunciationRoutes from './src/routes/pronunciation.js';
+import {
+  buildSpeakingGenerationPrompt,
+  parseGeneratedSpeakingPassage,
+  validateSpeakingGenerationRequest
+} from './src/speaking.js';
 
 const app = express();
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -270,6 +275,116 @@ async function buildLearnerContext(userId, exerciseRef) {
     return '';
   }
 }
+
+
+const speakingGenerationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 12,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({
+    error: 'Достигнут временный лимит генерации. Попробуй ещё раз позже.'
+  })
+});
+
+app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) => {
+  const origin = req.get('origin');
+  if (origin) {
+    try {
+      if (new URL(origin).host !== req.get('host')) {
+        return res.status(403).json({ error: 'Источник запроса не разрешён.' });
+      }
+    } catch {
+      return res.status(403).json({ error: 'Некорректный источник запроса.' });
+    }
+  }
+
+  const validated = validateSpeakingGenerationRequest(req.body);
+  if (!validated.ok) {
+    return res.status(400).json({ error: validated.error });
+  }
+
+  if (!isAiConfigured()) {
+    return res.status(503).json({
+      error: 'Генерация ИИ пока не подключена на этом тестовом сервисе. Нужны настройки Cloudflare Workers AI.'
+    });
+  }
+
+  const { level, topic, avoid } = validated.value;
+  const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' +
+    encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID) + '/ai/v1/chat/completions';
+  const variation = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+
+  let upstream;
+  try {
+    upstream = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + process.env.CLOUDFLARE_API_TOKEN,
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: 'You create original, age-appropriate English reading exercises. Follow the requested CEFR level and return only the required JSON object. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
+          },
+          {
+            role: 'user',
+            content: buildSpeakingGenerationPrompt({ level, topic, avoid }) +
+              '\nVariation identifier: ' + variation + '. Create a genuinely new scenario, not a synonym replacement.'
+          }
+        ],
+        stream: false,
+        max_tokens: 260,
+        temperature: 0.8,
+        chat_template_kwargs: { enable_thinking: false }
+      }),
+      signal: AbortSignal.timeout(45_000)
+    });
+  } catch (error) {
+    console.error('Speaking generation connection error:', error?.message || 'unknown error');
+    return res.status(503).json({ error: 'ИИ временно недоступен. Попробуй ещё раз позже.' });
+  }
+
+  if (!upstream.ok) {
+    const detail = await upstream.text().catch(() => '');
+    console.error('Speaking generation upstream status:', upstream.status, detail.slice(0, 300));
+    if (upstream.status === 429) {
+      return res.status(429).json({
+        error: 'Бесплатная дневная квота Cloudflare AI или лимит запросов исчерпаны. Попробуй после обновления квоты.'
+      });
+    }
+    if (upstream.status === 401 || upstream.status === 403) {
+      return res.status(503).json({
+        error: 'Cloudflare не разрешил генерацию. Проверь настройки и разрешения AI-токена в Render.'
+      });
+    }
+    return res.status(502).json({ error: 'Модель не смогла создать задание. Попробуй ещё раз.' });
+  }
+
+  let result;
+  try {
+    result = await upstream.json();
+  } catch {
+    return res.status(502).json({ error: 'Cloudflare вернул некорректный ответ.' });
+  }
+
+  const modelContent = result?.choices?.[0]?.message?.content ??
+    result?.result?.response ?? result?.response;
+
+  try {
+    const passage = parseGeneratedSpeakingPassage(modelContent, { level, topic });
+    return res.json({ passage, source: 'cloudflare-workers-ai' });
+  } catch (error) {
+    console.error('Speaking generation response validation failed:', error?.message || 'unknown error');
+    return res.status(502).json({
+      error: error?.message || 'ИИ вернул некорректное задание. Попробуй ещё раз.'
+    });
+  }
+});
 
 app.get('/api/health', (_req, res) => {
   res.json({
