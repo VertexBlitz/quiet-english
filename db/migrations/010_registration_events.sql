@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS registration_events (
   event_type TEXT NOT NULL CHECK (event_type IN ('account_created', 'email_verified')),
   age_band TEXT NOT NULL CHECK (age_band IN ('13_15', '16_17', '18_plus')),
   country_code CHAR(2) NOT NULL,
+  adult_attested BOOLEAN NOT NULL DEFAULT FALSE,
   preferred_language TEXT NOT NULL CHECK (preferred_language IN ('ru', 'en')),
   terms_version TEXT NOT NULL,
   privacy_version TEXT NOT NULL,
