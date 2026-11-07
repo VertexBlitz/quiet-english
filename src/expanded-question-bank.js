@@ -103,7 +103,11 @@ const RELATIVE_ITEMS = [
   ['The archive', 'place'], ['The invention', 'thing'], ['The engineer', 'person'], ['The institution', 'place'],
   ['The document', 'thing'], ['The professor', 'person']
 ];
-const RELATIVE_FRAMES = ['won the international award', 'we visited last week', 'was designed by the students', 'works at the university', 'contains the original records'];
+const RELATIVE_FRAMES = {
+  person: ['works at the university', 'presented the results', 'helped the team yesterday', 'won the annual award', 'is leading the study'],
+  place: ['we conducted the experiment', 'the museum held the exhibition', 'visitors can borrow books', 'the team met the guide', 'the archive stores historical maps'],
+  thing: ['was designed by students', 'the researchers tested yesterday', 'contains the original records', 'the team discussed earlier', 'uses very little energy']
+};
 const GERUND_ITEMS = [
   ['enjoy', 'reading'], ['avoid', 'wasting'], ['consider', 'changing'], ['finish', 'writing'], ['suggest', 'using'],
   ['decide', 'to investigate'], ['hope', 'to publish'], ['plan', 'to compare'], ['manage', 'to complete'], ['refuse', 'to accept']
@@ -188,16 +192,23 @@ const MODAL_EVIDENCE = [
   ['The evidence comes from several independent studies.', 'is likely to be reliable', ['cannot be examined', 'must be fictional', 'has to be incomplete']]
 ];
 const B2_LINKERS = [
-  ['The initial method was costly', 'it delivered highly accurate measurements', 'although'],
-  ['The results were incomplete', 'the team postponed publication', 'therefore'],
-  ['The proposal can proceed', 'all safety checks have been completed', 'provided that'],
-  ['The first model was simple', 'the second included additional variables', 'whereas'],
-  ['The device is compact', 'it is relatively expensive', 'nevertheless'],
-  ['The sample was small', 'the results were statistically useful', 'nevertheless'],
-  ['The team repeated the trial', 'the measurements remained inconsistent', 'although'],
-  ['The project will receive funding', 'the final report meets the criteria', 'provided that'],
-  ['The first approach was theoretical', 'the second relied on field observations', 'whereas'],
-  ['The data had been independently checked', 'the authors published the findings', 'therefore']
+  ['nevertheless', 'a contrast between two independent statements'],
+  ['whereas', 'a comparison between two contrasting facts'],
+  ['provided that', 'a condition meaning only if'],
+  ['therefore', 'a result or logical consequence'],
+  ['although', 'a concession within a subordinate clause'],
+  ['consequently', 'a consequence that follows from earlier information'],
+  ['insofar as', 'a limitation meaning to the extent that'],
+  ['notwithstanding', 'a concession meaning despite'],
+  ['hence', 'a result or conclusion drawn from previous information'],
+  ['alternatively', 'a different option or possibility']
+];
+const B2_LINKER_FRAMES = [
+  'Choose the connector that expresses {meaning}: ___',
+  'Which linking expression has this function: {meaning}? ___',
+  'Complete the academic writing note: a phrase for {meaning} is ___.',
+  'A writer needs to signal {meaning}. Which connector should be used? ___',
+  'Select the word or phrase used to introduce {meaning}: ___.'
 ];
 
 const C1_INVERSION = [
@@ -500,13 +511,17 @@ const EXTRA_VOCABULARY_ITEMS = {
     ['predicated on', 'the assumption that the source material is reliable', ['preoccupied for', 'presented by', 'preserved at'], 'Predicated on means based on a particular idea or assumption.']
   ]
 };
-const VOCAB_FRAMINGS = [
-  'Complete this everyday sentence: ',
-  'Choose the most natural word in this context: ',
-  'A learner writes the following sentence. Fill the gap: ',
-  'Select the expression that best fits the situation: ',
-  'Which word completes this statement? ',
-  'Choose the best vocabulary item for the blank: '
+const VOCAB_QUESTION_FRAMES = [
+  'Which word or phrase best matches this meaning: "{meaning}"? ___',
+  'Select the vocabulary item defined as "{meaning}": ___',
+  'A learner wants to express this idea: "{meaning}". Which option fits? ___',
+  'Complete the vocabulary note. "{meaning}" = ___',
+  'Choose the expression described here: "{meaning}" ___',
+  'Which item would be appropriate when you need to say "{meaning}"? ___',
+  'The dictionary gives this explanation: "{meaning}". Which headword matches it? ___',
+  'Identify the word or phrase whose meaning is "{meaning}": ___',
+  'A text uses an expression meaning "{meaning}". Choose it: ___',
+  'Which vocabulary item is described by the definition "{meaning}"? ___'
 ];
 
 function makeGrammarBank(level) {
@@ -598,17 +613,20 @@ function makeGrammarBank(level) {
       )));
     rows.push(...expandCross(ZERO_CONDITIONS, ZERO_OUTCOMES, (condition, scene) =>
       entry('Zero Conditional',
-        'If ' + condition[0] + ', ' + condition[1] + ' ___.',
+        scene + ': If ' + condition[0] + ', ' + condition[1] + ' ___.',
         condition[2], [condition[2] + 's', 'will ' + condition[2], 'would ' + condition[2]],
         'Use the Present Simple in both clauses for general truths and scientific facts.'
       )));
-    rows.push(...expandCross(RELATIVE_ITEMS, RELATIVE_FRAMES, (item, frame) =>
-      entry('Relative pronouns',
-        item[0] + ' ___ ' + frame + '.',
-        item[1] === 'person' ? 'who' : item[1] === 'place' ? 'where' : 'which',
-        item[1] === 'person' ? ['which', 'where', 'when'] : item[1] === 'place' ? ['who', 'whose', 'which'] : ['who', 'where', 'whose'],
-        'Use who for people, where for places and which for things.'
-      )));
+    rows.push(...RELATIVE_ITEMS.flatMap(item =>
+      expandCross([item], RELATIVE_FRAMES[item[1]], (target, frame) =>
+        entry('Relative pronouns',
+          target[0] + ' ___ ' + frame + '.',
+          target[1] === 'person' ? 'who' : target[1] === 'place' ? 'where' : 'which',
+          target[1] === 'person' ? ['which', 'where', 'whose'] : target[1] === 'place' ? ['who', 'which', 'whose'] : ['who', 'where', 'whose'],
+          'Use who for people, where for places and which for things.'
+        )
+      )
+    ));
     rows.push(...expandCross(GERUND_ITEMS, GERUND_CONTEXTS, (item, context) =>
       entry('Gerund or infinitive',
         'The team ' + item[0] + ' ___ ' + context + '.',
@@ -658,11 +676,11 @@ function makeGrammarBank(level) {
         item[1], item[2],
         'Choose the modal expression that best matches the strength of the available evidence.'
       )));
-    rows.push(...expandCross(B2_LINKERS, SCENES[level], (item, scene) =>
+    rows.push(...expandCross(B2_LINKERS, B2_LINKER_FRAMES, (item, frame) =>
       entry('Advanced linking expressions',
-        scene + ': ' + item[0] + '. ___, ' + item[1] + '. Choose the linker that best expresses the relationship.',
-        item[2], ['because', 'unless', 'whereas', 'however', 'therefore', 'although', 'provided that'].filter(value => value !== item[2]).slice(0, 3),
-        'Linking expressions signal contrast, condition or consequence between ideas.'
+        frame.replace('{meaning}', item[1]),
+        item[0], B2_LINKERS.filter(other => other[0] !== item[0]).slice(0, 3).map(other => other[0]),
+        'This expression signals ' + item[1] + '.'
       )));
   } else {
     rows.push(...expandCross(C1_INVERSION, SCENES[level], (item, scene) =>
@@ -708,21 +726,12 @@ function makeGrammarBank(level) {
 
 function makeVocabularyBank(level) {
   const items = [...VOCABULARY_ITEMS[level], ...EXTRA_VOCABULARY_ITEMS[level]];
-  const scenes = VOCAB_SCENES[level];
-  const output = [];
-  const points = [
-    'Everyday collocations', 'Contextual vocabulary', 'Word choice in context',
-    'Natural expressions', 'Meaning and usage', 'Vocabulary in sentences'
-  ];
-  for (let group = 0; group < 6; group++) {
-    const selected = items.slice(group * 5, group * 5 + 5);
-    output.push(...expandCross(selected, scenes, (item, scene) =>
-      entry(points[group],
-        VOCAB_FRAMINGS[group] + scene[0] + ' ___ ' + item[1] + ' ' + scene[1],
-        item[0], item[2], item[3]
-      )));
-  }
-  return output;
+  return expandCross(items, VOCAB_QUESTION_FRAMES, (item, frame, itemIndex, frameIndex) =>
+    entry('Vocabulary in context: ' + (itemIndex < 10 ? 'core' : 'extended'),
+      frame.replace('{meaning}', item[3]),
+      item[0], item[2], item[3]
+    )
+  );
 }
 
 export function buildExpandedQuestionBanks() {
