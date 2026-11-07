@@ -12,6 +12,9 @@ if (pronRoot) {
   const consent = pronRoot.querySelector('[data-pron-consent]');
   const promptList = pronRoot.querySelector('[data-pron-prompts]');
   const levelFilter = pronRoot.querySelector('[data-pron-level]');
+  const topicFilter = pronRoot.querySelector('[data-pron-topic]');
+  const generateButton = pronRoot.querySelector('[data-generate-passage]');
+  const aiGeneratorStatus = pronRoot.querySelector('[data-ai-generator-status]');
   const activeTaskNode = pronRoot.querySelector('[data-pron-active-task]');
   const retryPanel = pronRoot.querySelector('[data-pron-retry]');
   const retryTextNode = pronRoot.querySelector('[data-pron-retry-text]');
@@ -36,6 +39,8 @@ if (pronRoot) {
   let activeReviewText = '';
   let lastReviewWords = [];
   let recordingReferenceText = '';
+  let generatedPassages = [];
+  let recentHistoryTexts = [];
 
   const message = (text, error = false) => {
     statusNode.textContent = text;
@@ -44,7 +49,8 @@ if (pronRoot) {
   };
 
   const selectedPrompt = () => promptList.querySelector('input[name="pron-prompt"]:checked');
-  const selectedPassage = () => PASSAGES.find(item => item.id === selectedPrompt()?.dataset.passageId);
+  const allPassages = () => [...generatedPassages, ...PASSAGES];
+  const selectedPassage = () => allPassages().find(item => item.id === selectedPrompt()?.dataset.passageId);
   const selectedText = () => activeReviewText || selectedPrompt()?.value || PASSAGES[0].text;
 
   const formatTime = seconds => {
@@ -75,12 +81,13 @@ if (pronRoot) {
     window.speechSynthesis.speak(utterance);
   }
 
-  function renderPassages() {
+  function renderPassages(preferredId = '') {
     const level = levelFilter.value;
+    const library = allPassages();
     const visiblePassages = level === 'ALL'
-      ? PASSAGES
-      : PASSAGES.filter(item => item.level === level);
-    const currentId = selectedPrompt()?.dataset.passageId || PASSAGES[0].id;
+      ? library
+      : library.filter(item => item.level === level);
+    const currentId = preferredId || selectedPrompt()?.dataset.passageId || PASSAGES[0].id;
     const selectedId = visiblePassages.some(item => item.id === currentId)
       ? currentId
       : visiblePassages[0]?.id;
@@ -103,10 +110,17 @@ if (pronRoot) {
 
       const words = document.createElement('span');
       const meta = document.createElement('strong');
-      meta.textContent = item.level + ' · ' + item.topic;
+      meta.textContent = item.level + ' · ' + item.topic + (item.generated ? ' · AI' : '');
       const passage = document.createElement('span');
       passage.textContent = item.text;
-      words.append(meta, passage);
+      words.append(meta);
+      if (item.title) {
+        const title = document.createElement('em');
+        title.className = 'pron-prompt-title';
+        title.textContent = item.title;
+        words.append(title);
+      }
+      words.append(passage);
       label.append(radio, words);
 
       const listen = document.createElement('button');
@@ -126,8 +140,84 @@ if (pronRoot) {
     updateActiveTask();
   }
 
+  async function generateNewPassage() {
+    if (generateButton.disabled) return;
+
+    const level = levelFilter.value === 'ALL'
+      ? (selectedPassage()?.level || 'A1')
+      : levelFilter.value;
+    const topic = topicFilter.value;
+    generateButton.disabled = true;
+    generateButton.textContent = 'Создаём…';
+    aiGeneratorStatus.textContent = 'ИИ создаёт новый текст. Это может занять несколько секунд.';
+    aiGeneratorStatus.classList.remove('error-text');
+
+    const avoid = [
+      ...generatedPassages.map(item => item.text),
+      ...recentHistoryTexts
+    ].filter(Boolean).slice(0, 4);
+
+    try {
+      const response = await fetch('/api/speaking/generate', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ level, topic, avoid })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Не удалось создать новое задание.');
+      }
+
+      const result = data.passage;
+      if (!result || result.level !== level || typeof result.passage !== 'string' || !result.passage.trim()) {
+        throw new Error('ИИ вернул некорректное задание. Попробуй ещё раз.');
+      }
+
+      const generated = {
+        id: 'ai-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+        level: result.level,
+        topic: result.topic || topic,
+        title: result.title || 'New speaking task',
+        text: result.passage,
+        generated: true
+      };
+
+      generatedPassages = [generated, ...generatedPassages].slice(0, 6);
+      activeReviewText = '';
+      levelFilter.value = level;
+      retryPanel.hidden = true;
+      resultSection.hidden = true;
+      renderPassages(generated.id);
+      aiGeneratorStatus.textContent = 'Готово: создано новое задание ' + level + '. Оно добавлено в начало списка.';
+      message('Новое задание готово. Прочитай текст или включи пример произношения.');
+    } catch (error) {
+      aiGeneratorStatus.textContent = error?.message || 'Генерация временно недоступна.';
+      aiGeneratorStatus.classList.add('error-text');
+      message('Не удалось создать задание. Существующая библиотека по-прежнему доступна.', true);
+    } finally {
+      generateButton.disabled = false;
+      generateButton.textContent = 'Сгенерировать ↗';
+    }
+  }
+
+  async function checkAiGeneratorStatus() {
+    try {
+      const response = await fetch('/api/health', { credentials: 'same-origin' });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.configured) {
+        aiGeneratorStatus.textContent = 'ИИ подключён · новые задания генерируются по запросу.';
+      } else {
+        aiGeneratorStatus.textContent = 'Для генерации на Preview нужны настройки Cloudflare Workers AI в Render.';
+      }
+    } catch {
+      aiGeneratorStatus.textContent = 'Не удалось проверить подключение ИИ. Можно пользоваться готовой библиотекой.';
+    }
+  }
+
   consent.addEventListener('change', updateRecordAvailability);
   levelFilter.addEventListener('change', renderPassages);
+  generateButton.addEventListener('click', generateNewPassage);
 
   promptList.addEventListener('click', event => {
     if (!event.target.closest('.pron-prompt-choice')) return;
@@ -410,6 +500,10 @@ if (pronRoot) {
 
     const attempts = [...remoteAttempts, ...localAttempts]
       .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    recentHistoryTexts = attempts
+      .map(item => typeof item.reference_text === 'string' ? item.reference_text : '')
+      .filter(Boolean)
+      .slice(0, 4);
     renderHistory(attempts);
   }
 
@@ -563,7 +657,8 @@ if (pronRoot) {
 
   engineBadge.textContent = 'WHISPER · ON-DEVICE';
   renderPassages();
-  message('Выбери уровень и текст, подтверди локальную обработку и начни запись. В библиотеке есть 15 заданий A1–C1.');
+  checkAiGeneratorStatus();
+  message('Выбери уровень и текст, сгенерируй новый вариант или используй библиотеку A1–C1.');
   updateRecordAvailability();
   loadHistory();
 }
