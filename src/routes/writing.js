@@ -1,6 +1,7 @@
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { pool, requireDatabase, requireUser, recordActivity } from '../db.js';
+import { consumeMonthlyQuota } from '../subscription-access.js';
 
 const router = express.Router();
 router.use(requireDatabase, requireUser);
@@ -99,6 +100,10 @@ router.post('/writing/review',writingLimiter,async function(req,res,next) {
       return {label:clean(x.label,120),explanation_ru:clean(x.explanation_ru,300),example_wrong:clean(x.example_wrong,180),example_correct:clean(x.example_correct,180)};
     }).filter(function(x){return x.label;});
     const overall = Math.round((scores.grammar+scores.naturalness+scores.vocabulary+scores.structure)/4);
+    const quota = await consumeMonthlyQuota(req.user.id,'writing_review',3,30);
+    if (!quota.allowed) return res.status(429).json({
+      error:'Лимит проверок Writing Lab на этот месяц исчерпан ('+quota.used+'/'+quota.limit+'). Premium увеличивает лимит до 30 проверок в месяц.'
+    });
     const corrected = multiline(data.corrected_text);
     const natural = multiline(data.natural_version);
     const summary = clean(data.summary_ru,700);

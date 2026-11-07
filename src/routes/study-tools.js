@@ -1,6 +1,7 @@
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { pool, requireDatabase, requireUser, recordActivity } from '../db.js';
+import { consumeMonthlyQuota } from '../subscription-access.js';
 
 const router = express.Router();
 router.use(requireDatabase, requireUser);
@@ -76,6 +77,10 @@ router.post('/listening/prepare',listeningLimiter,async function(req,res,next) {
       return !q.question || q.options.length!==4 || q.options.some(function(x){return !x;}) ||
         !Number.isInteger(q.correct_option) || q.correct_option<0 || q.correct_option>3;
     })) throw new Error('AI_QUESTIONS');
+    const quota=await consumeMonthlyQuota(req.user.id,'listening_prepare',3,60);
+    if (!quota.allowed) return res.status(429).json({
+      error:'Лимит подготовки аудирования с ИИ на этот месяц исчерпан ('+quota.used+'/'+quota.limit+'). Premium увеличивает лимит до 60.'
+    });
     const inserted=await pool.query(
       "INSERT INTO listening_quiz_sessions (user_id,title,level,question_set,expires_at) VALUES ($1,$2,$3,$4::jsonb,NOW()+INTERVAL '90 minutes') RETURNING id",
       [req.user.id,title || 'Listening practice',level,JSON.stringify(questions)]
@@ -218,6 +223,10 @@ router.post('/coach/analyze',coachLimiter,async function(req,res,next) {
       const tasks=await pool.query("SELECT id,title,description,skill,topic,due_date,completed_at FROM learner_focus_tasks WHERE user_id=$1 AND report_id=$2 AND completed_at IS NULL ORDER BY due_date,id",[req.user.id,cached.rows[0].id]);
       return res.json({report:cached.rows[0],tasks:tasks.rows,cached:true});
     }
+    const quota=await consumeMonthlyQuota(req.user.id,'coach_analyze',2,30);
+    if (!quota.allowed) return res.status(429).json({
+      error:'Лимит AI-анализа прогресса на этот месяц исчерпан ('+quota.used+'/'+quota.limit+'). Premium увеличивает лимит до 30.'
+    });
     const snapshot=await learnerSnapshot(req.user.id);
     let summary='Анализ по сохранённым учебным результатам.';
     let recommendations=fallbackRecommendations(snapshot);

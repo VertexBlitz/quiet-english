@@ -14,6 +14,7 @@ import adminRoutes from './src/routes/admin.js';
 import pronunciationRoutes from './src/routes/pronunciation.js';
 import writingRoutes from './src/routes/writing.js';
 import studyToolsRoutes from './src/routes/study-tools.js';
+import billingRoutes from './src/routes/billing.js';
 import {
   buildSpeakingGenerationPrompt,
   parseGeneratedSpeakingPassage,
@@ -41,6 +42,8 @@ app.use('/api/', rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false
 }));
+
+app.use('/api/billing', billingRoutes);
 
 const sessionsConfigured = Boolean(pool && process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32);
 if (sessionsConfigured) {
