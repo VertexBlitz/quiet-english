@@ -153,18 +153,47 @@
             backgroundColor: '#ffffff',
             scrollX: 0,
             scrollY: 0,
-            windowWidth: 1000,
-            windowHeight: 1400,
+            // Use a fixed desktop-sized canvas so responsive grid rules cannot
+            // collapse the article to the width of its on-screen sidebar column.
+            windowWidth: 794,
+            windowHeight: 1123,
             onclone: clonedDocument => {
               const clonedArticle = clonedDocument.querySelector('.knowledge-article');
               if (!clonedArticle) return;
 
+              // Detach the article from .knowledge-layout and its two-column
+              // grid. html2pdf otherwise keeps the grid track width in its clone.
+              clonedDocument.body.appendChild(clonedArticle);
+
+              Object.assign(clonedDocument.documentElement.style, {
+                width: '794px',
+                minWidth: '794px',
+                maxWidth: '794px',
+                margin: '0',
+                padding: '0'
+              });
+              Object.assign(clonedDocument.body.style, {
+                display: 'block',
+                width: '794px',
+                minWidth: '794px',
+                maxWidth: '794px',
+                margin: '0',
+                padding: '0',
+                background: '#ffffff',
+                overflow: 'visible'
+              });
               Object.assign(clonedArticle.style, {
+                display: 'block',
                 position: 'static',
                 top: 'auto',
-                width: '180mm',
-                maxWidth: 'none',
-                minWidth: '0',
+                left: 'auto',
+                right: 'auto',
+                float: 'none',
+                transform: 'none',
+                boxSizing: 'border-box',
+                width: '680px',
+                maxWidth: '680px',
+                minWidth: '680px',
                 margin: '0',
                 padding: '0',
                 border: '0',
