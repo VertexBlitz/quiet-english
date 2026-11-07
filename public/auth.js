@@ -139,6 +139,7 @@ if (authForm?.dataset.authForm === 'register') {
         email: form.get('email'),
         password: form.get('password'),
         age_band: form.get('age_band'),
+        adult_confirmed: form.get('adult_confirmed') === 'on',
         country_code: String(form.get('country_code') || '').trim().toUpperCase(),
         preferred_language: form.get('preferred_language') || 'ru',
         terms_accepted: form.get('terms_accepted') === 'on',
