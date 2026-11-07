@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Конспекты и справочник английского языка от A1 до C2 — Quiet English.">
+<title>База знаний — Quiet English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/knowledge.js"></script>
+</head>
+<body>
+<header class="topbar wrap">
+<a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
+<nav aria-label="Main navigation">
+<a href="/plan.html" data-ru="План" data-en="Plan">План</a>
+<a href="/practice.html" data-ru="Практика" data-en="Practice">Практика</a>
+<a href="/knowledge.html" aria-current="page" data-ru="База знаний" data-en="Knowledge">База знаний</a>
+<a href="/review.html" data-ru="Повторение" data-en="Review">Повторение</a>
+<a href="/progress.html" data-ru="Прогресс" data-en="Progress">Прогресс</a>
+<a href="/tutor.html" data-ru="Чат" data-en="Tutor">Чат</a>
+</nav>
+<div class="language-switch" aria-label="Language">
+<button type="button" data-set-lang="ru">RU</button><button type="button" data-set-lang="en">EN</button>
+<a class="account-link" href="/login.html" data-ru="Аккаунт" data-en="Account">Аккаунт</a>
+</div>
+</header>
+<main class="wrap knowledge-page" data-knowledge-page>
+<section class="panel page-head knowledge-hero">
+<p class="eyebrow">QUIET ENGLISH / KNOWLEDGE BASE</p>
+<h1 data-ru="Английский — по полочкам." data-en="English, clearly organised.">Английский — по полочкам.</h1>
+<p class="lead" data-ru="Конспекты, правила и практические подсказки для каждого уровня — от первых фраз A1 до тонкостей C2." data-en="Notes, rules and practical guidance for every level — from your first A1 phrases to C2 nuance.">Конспекты, правила и практические подсказки для каждого уровня — от первых фраз A1 до тонкостей C2.</p>
+<div class="knowledge-hero-meta"><span>6 НАПРАВЛЕНИЙ</span><span>A1 — C2</span><span>ТЕОРИЯ + ПРИМЕРЫ</span></div>
+</section>
+<section class="panel knowledge-library">
+<div class="knowledge-intro-row"><div><p class="eyebrow">FIND YOUR NEXT TOPIC</p><h2 data-ru="Что изучаем сегодня?" data-en="What are we learning today?">Что изучаем сегодня?</h2><p class="knowledge-muted" data-ru="Ищи по названию, правилу или ключевому слову. Выбери уровень и направление." data-en="Search by title, rule or keyword. Choose a level and a learning area.">Ищи по названию, правилу или ключевому слову. Выбери уровень и направление.</p></div><span class="pill" data-kb-count>36 конспектов</span></div>
+<div class="knowledge-filters">
+<label class="knowledge-search"><span data-ru="Поиск по базе" data-en="Search the library">Поиск по базе</span><input type="search" data-kb-search placeholder="Например: Present Perfect, артикли, эссе" autocomplete="off"></label>
+<label class="knowledge-level"><span data-ru="Уровень" data-en="Level">Уровень</span><select data-kb-level>
+<option value="all" data-ru="Все уровни" data-en="All levels">Все уровни</option><option value="A1">A1 · Beginner</option><option value="A2">A2 · Elementary</option><option value="B1">B1 · Intermediate</option><option value="B2">B2 · Upper-intermediate</option><option value="C1">C1 · Advanced</option><option value="C2">C2 · Proficiency</option>
+</select></label>
+</div>
+<div class="knowledge-category-filters" aria-label="Learning areas">
+<button type="button" class="knowledge-filter-chip is-active" data-kb-category="all" aria-pressed="true" data-ru="Все направления" data-en="All areas">Все направления</button>
+<button type="button" class="knowledge-filter-chip" data-kb-category="grammar" aria-pressed="false" data-ru="Грамматика" data-en="Grammar">Грамматика</button>
+<button type="button" class="knowledge-filter-chip" data-kb-category="vocabulary" aria-pressed="false" data-ru="Лексика" data-en="Vocabulary">Лексика</button>
+<button type="button" class="knowledge-filter-chip" data-kb-category="reading" aria-pressed="false" data-ru="Чтение" data-en="Reading">Чтение</button>
+<button type="button" class="knowledge-filter-chip" data-kb-category="listening" aria-pressed="false" data-ru="Аудирование" data-en="Listening">Аудирование</button>
+<button type="button" class="knowledge-filter-chip" data-kb-category="speaking" aria-pressed="false" data-ru="Говорение" data-en="Speaking">Говорение</button>
+<button type="button" class="knowledge-filter-chip" data-kb-category="writing" aria-pressed="false" data-ru="Письмо" data-en="Writing">Письмо</button>
+</div>
+<div class="knowledge-results-heading"><div><p class="eyebrow">CURATED NOTES</p><h3 data-ru="Материалы и конспекты" data-en="Notes and materials">Материалы и конспекты</h3></div><button type="button" class="knowledge-reset" data-kb-reset data-ru="Сбросить фильтры" data-en="Clear filters">Сбросить фильтры</button></div>
+<div class="knowledge-layout"><div class="knowledge-grid" data-kb-grid aria-label="Knowledge articles"></div><article class="knowledge-article" data-kb-article aria-live="polite"></article></div>
+</section>
+<section class="panel knowledge-next-step"><div><p class="eyebrow">PUT KNOWLEDGE INTO PRACTICE</p><h2 data-ru="Правило лучше запоминается в деле." data-en="Rules stick when you use them.">Правило лучше запоминается в деле.</h2><p class="copy" data-ru="После конспекта закрепи тему упражнениями с проверкой и объяснениями." data-en="After reading a note, consolidate the topic with exercises, grading and explanations.">После конспекта закрепи тему упражнениями с проверкой и объяснениями.</p></div><a class="button" href="/practice.html" data-ru="Перейти к практике ↗" data-en="Go to practice ↗">Перейти к практике ↗</a></section>
+</main>
+<footer class="footer wrap"><span>QUIET ENGLISH</span><span>Learn at your own pace · © 2026</span></footer>
+</body></html>

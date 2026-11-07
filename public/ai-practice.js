@@ -118,11 +118,15 @@
 
     questionsNode.replaceChildren();
     exercise.questions.forEach((question, index) => {
-      const card = document.createElement('fieldset');
+      const card = document.createElement('article');
       card.className = 'ai-question-card';
-      const legend = document.createElement('legend');
-      legend.textContent = (index + 1) + '. ' + question.prompt;
-      card.append(legend);
+      card.setAttribute('role', 'group');
+      const heading = document.createElement('h3');
+      heading.className = 'ai-question-prompt';
+      heading.id = 'ai-question-' + index;
+      heading.textContent = (index + 1) + '. ' + question.prompt;
+      card.setAttribute('aria-labelledby', heading.id);
+      card.append(heading);
 
       const category = document.createElement('span');
       category.className = 'ai-question-category';
