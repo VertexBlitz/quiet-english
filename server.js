@@ -33,6 +33,20 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT) || 3000;
 const PgSession = connectPgSimple(session);
 
+async function cleanupExpiredGuardianConsentRequests() {
+  if (!pool) return;
+  try {
+    await pool.query('DELETE FROM guardian_consent_requests WHERE expires_at < NOW()');
+  } catch (error) {
+    console.error('Guardian consent request cleanup failed:', error?.message || 'unknown error');
+  }
+}
+void cleanupExpiredGuardianConsentRequests();
+if (pool) {
+  const guardianCleanupTimer = setInterval(cleanupExpiredGuardianConsentRequests, 6 * 60 * 60_000);
+  guardianCleanupTimer.unref();
+}
+
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(express.json({ limit: '24kb' }));
