@@ -38,12 +38,11 @@ Structured writing assessment, advanced CMS workflows and formal exam preparatio
 
 ## Important rollout and safety gates
 
-**Account registration is disabled by default.** Do not enable it until a persistent PostgreSQL database, email sender, final privacy notice, Terms and age/guardian workflow have been reviewed and configured.
+**Account registration is disabled by default.** Do not enable it until a persistent PostgreSQL database, verified email sender, final privacy notice and Terms have been reviewed and configured.
 
 - `REGISTRATION_ENABLED=false` by default.
-- `MINOR_SIGNUP_ENABLED=false` by default.
-- The parent/guardian link in this MVP is an email-based attestation prototype. It is not independent identity verification and is not a substitute for jurisdiction-specific legal review or a production-grade consent process.
-- The Terms and Privacy pages are drafts. They must be reviewed and completed by the service operator before public account registration.
+- The registration form accepts users aged 16 and over. Users aged 16–17 are restricted to Germany; users under 16 are rejected. This technical gate is not a substitute for checking all laws that apply where the service is offered.
+- The Terms and Privacy pages are drafts and must be completed and reviewed by the service operator before public registration.
 - The admin CMS is available only to users whose database role is `admin`. That role must be assigned manually to a trusted adult operator after their account is verified. Do not make a learner account an administrator.
 
 ## Required Render environment variables
@@ -56,7 +55,6 @@ Set these in Render → Environment. Never commit real values:
 - `RESEND_API_KEY` — email API key
 - `EMAIL_FROM` — sender address verified with the email provider
 - `REGISTRATION_ENABLED` — keep `false` until launch checks are complete
-- `MINOR_SIGNUP_ENABLED` — keep `false` until the minors/guardian process has been reviewed
 - `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` — existing AI integration
 - `NODE_ENV=production` — secure production cookies
 - `PGSSLMODE=require` if your PostgreSQL provider requires verified TLS; use `disable` only for a trusted local development database
