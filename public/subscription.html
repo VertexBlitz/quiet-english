@@ -6,8 +6,8 @@
 <title>Подписка — Quiet English</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css">
-<script defer src="/session.js"></script><script defer src="/subscription.js?v=20261107-2"></script>
+<link rel="stylesheet" href="/styles.css?v=20261107-3">
+<script defer src="/session.js"></script><script defer src="/subscription.js?v=20261107-3"></script>
 </head>
 <body>
 <header class="topbar wrap">
@@ -29,28 +29,31 @@
 </section>
 <section class="panel">
 <p class="eyebrow">CHOOSE YOUR PLAN</p><h2>Начни бесплатно.<br><em>Расширяй возможности.</em></h2>
+<div class="subscription-free-plan">
+<div><span class="eyebrow">FREE</span><h3>Free</h3></div>
+<p>Базовые упражнения, словарь, интервальное повторение, аудиопрактика и базовая статистика.</p>
+<div class="subscription-free-limits"><span>3 проверки Writing Lab / месяц</span><span>3 подготовки аудирования с ИИ / месяц</span></div>
+</div>
 <div class="subscription-plans">
-<article class="subscription-plan">
-<span class="eyebrow">FREE</span><h3>Free</h3><p class="subscription-price">0 ₽</p><p class="subscription-description">Чтобы заниматься регулярно и познакомиться с платформой.</p>
-<ul><li>Базовые упражнения и словарь</li><li>Интервальное повторение слов</li><li>Базовые материалы и аудиопрактика</li><li>3 проверки Writing Lab в месяц</li><li>3 подготовки аудирования с ИИ в месяц</li><li>Базовая статистика обучения</li></ul>
-</article>
 <article class="subscription-plan subscription-plan-premium">
 <span class="eyebrow">ONE MONTH</span><h3>Premium · 1 месяц</h3><p class="subscription-price">299 ₽ <small>/ 1 месяц</small></p><p class="subscription-description">Все возможности Premium на один месяц.</p>
 <ul><li>30 проверок письменных работ в месяц</li><li>60 подготовок аудирования с ИИ в месяц</li><li>30 AI-анализов учебного прогресса в месяц</li><li>Персональные рекомендации и разбор ошибок</li><li>Расширенная история и аналитика прогресса</li></ul>
+<button class="button subscription-plan-cta" type="button" data-subscription-buy="premium_monthly">Выбрать на месяц <span aria-hidden="true">↗</span></button>
 </article>
 <article class="subscription-plan subscription-plan-premium subscription-plan-featured">
-<span class="eyebrow">3 MONTHS · ВЫГОДНЕЕ</span><h3>Premium · 3 месяца</h3><p class="subscription-price">799 ₽ <small>/ 3 месяца</small></p><p class="subscription-description">≈266 ₽ в месяц. Экономия 98 ₽ по сравнению с тремя помесячными оплатами.</p>
+<span class="eyebrow">3 MONTHS · ВЫГОДНЕЕ</span><h3>Premium · 3 месяца</h3><p class="subscription-price">799 ₽ <small>/ 3 месяца</small></p><p class="subscription-description">≈266 ₽ в месяц. Экономия 98 ₽ по сравнению с помесячной оплатой.</p>
 <ul><li>30 проверок письменных работ в месяц</li><li>60 подготовок аудирования с ИИ в месяц</li><li>30 AI-анализов учебного прогресса в месяц</li><li>Персональные рекомендации и разбор ошибок</li><li>Расширенная история и аналитика прогресса</li></ul>
+<button class="button subscription-plan-cta" type="button" data-subscription-buy="premium_quarterly">Выбрать на 3 месяца <span aria-hidden="true">↗</span></button>
 </article>
 <article class="subscription-plan subscription-plan-premium">
 <span class="eyebrow">12 MONTHS</span><h3>Premium · 1 год</h3><p class="subscription-price">2 490 ₽ <small>/ 12 месяцев</small></p><p class="subscription-description">≈208 ₽ в месяц. Экономия 1 098 ₽ по сравнению с помесячной оплатой.</p>
 <ul><li>30 проверок письменных работ в месяц</li><li>60 подготовок аудирования с ИИ в месяц</li><li>30 AI-анализов учебного прогресса в месяц</li><li>Персональные рекомендации и разбор ошибок</li><li>Расширенная история и аналитика прогресса</li></ul>
+<button class="button subscription-plan-cta" type="button" data-subscription-buy="premium_yearly">Выбрать на год <span aria-hidden="true">↗</span></button>
 </article>
 </div>
 <div class="subscription-purchase">
 <label class="subscription-renew-option"><input type="checkbox" data-subscription-auto-renew> <span>Разрешаю автоматическое продление подписки на выбранный период. Повторное списание будет происходить на ту же сумму. Автопродление можно отключить в любой момент.</span></label>
-<div class="subscription-buy-buttons"><button class="button" type="button" data-subscription-buy="premium_monthly">Premium · 299 ₽ / 1 месяц ↗</button><button class="button secondary" type="button" data-subscription-buy="premium_quarterly">Premium · 799 ₽ / 3 месяца ↗</button><button class="button secondary" type="button" data-subscription-buy="premium_yearly">Premium · 2 490 ₽ / 1 год ↗</button></div>
-<p class="fine-print" data-subscription-checkout-note>Оплата пока отключена. Владелец магазина должен подключить ЮKassa и добавить настройки в Render.</p>
+<p class="fine-print" data-subscription-checkout-note>Оплата пока отключена. Владелец магазина должен заключить договор с ЮKassa и добавить настройки в Render.</p>
 </div>
 </section>
 <section class="panel">

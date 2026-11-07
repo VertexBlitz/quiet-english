@@ -21,9 +21,15 @@ function renderUsage(data){
   const limit=data.plan==='premium'?premium:free;
   const used=Number(data.usage?.[key]||0);
   const card=make('div','subscription-usage-row');
-  const top=make('div','subscription-usage-top');top.append(make('strong','',label),make('span','',used+' / '+limit));
-  const track=make('div','subscription-usage-track'),fill=make('span','subscription-usage-fill');fill.style.width=Math.min(100,used/limit*100)+'%';track.append(fill);
-  card.append(top,track);box.append(card);
+  const top=make('div','subscription-usage-top');
+  top.append(make('strong','',label),make('span','',used+' / '+limit));
+  const track=make('div','subscription-usage-track');
+  const fill=make('span','subscription-usage-fill');
+  fill.style.width=Math.min(100,used/limit*100)+'%';
+  track.append(fill);
+  const caption=make('small','subscription-usage-caption',data.plan==='premium'?'Лимит Premium':'Лимит Free');
+  card.append(top,track,caption);
+  box.append(card);
  });
 }
 function renderHistory(items){
