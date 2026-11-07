@@ -586,3 +586,28 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
   .ai-score-heading{gap:10px}
   .ai-history-row{align-items:flex-start}
 }
+
+/* Adaptive retry after an AI exercise check */
+.ai-retry-errors-wrap{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin-top:8px;
+  padding:18px 20px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--soft);
+}
+.ai-retry-errors-note{
+  margin:0;
+  max-width:480px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.6;
+}
+.ai-retry-errors-button{flex:0 0 auto;white-space:nowrap}
+@media(max-width:600px){
+  .ai-retry-errors-wrap{align-items:stretch;flex-direction:column;gap:12px;padding:15px}
+  .ai-retry-errors-button{width:100%;justify-content:center}
+}
