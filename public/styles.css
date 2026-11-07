@@ -845,3 +845,249 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
   .writing-submit-row .button{width:100%;justify-content:center}
   .writing-submit-row .fine-print{max-width:none}
 }
+
+
+/* Writing Lab — result cards and history */
+.writing-page [data-writing-result]{scroll-margin-top:24px}
+.writing-overall{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:88px;
+  padding:11px 15px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  font-size:22px;
+  line-height:1;
+  font-weight:400;
+  letter-spacing:-.04em;
+  white-space:nowrap;
+}
+.writing-score-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin:30px 0;
+}
+.writing-score{
+  min-width:0;
+  padding:17px 18px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:#fcfcfc;
+}
+.writing-score>span{
+  display:block;
+  min-height:32px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.45;
+}
+.writing-score>strong{
+  display:block;
+  margin:8px 0 13px;
+  font-size:24px;
+  font-weight:400;
+  letter-spacing:-.05em;
+}
+.writing-score-track{
+  height:5px;
+  overflow:hidden;
+  border-radius:99px;
+  background:#ededed;
+}
+.writing-score-fill{
+  display:block;
+  height:100%;
+  border-radius:99px;
+  background:#555;
+}
+.writing-columns{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  align-items:stretch;
+  margin:26px 0;
+}
+.writing-version{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  min-width:0;
+  padding:25px;
+  border:1px solid var(--line);
+  border-radius:17px;
+  background:#fcfcfc;
+}
+.writing-version .eyebrow{
+  margin:0 0 13px;
+  font-size:9px;
+}
+.writing-version h3{
+  margin:0 0 15px;
+  font-size:17px;
+  line-height:1.4;
+  font-weight:500;
+  letter-spacing:-.025em;
+}
+.writing-version>p:not(.fine-print){
+  width:100%;
+  min-height:96px;
+  margin:0 0 18px;
+  color:var(--ink);
+  font-size:13px;
+  line-height:1.8;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+.writing-version>p.is-fallback{color:var(--muted)}
+.writing-fallback-note{
+  display:block;
+  margin:-7px 0 17px;
+  color:var(--mid);
+  font-size:10px;
+  line-height:1.5;
+}
+.writing-version .text-link{
+  margin-top:auto;
+  padding:8px 0;
+  border:0;
+  border-bottom:1px solid var(--line);
+  background:transparent;
+  color:var(--ink);
+  font:400 11px Inter,Arial,sans-serif;
+  cursor:pointer;
+}
+.writing-version .text-link:hover{border-color:var(--ink)}
+.writing-section{
+  min-width:0;
+  margin:28px 0 0;
+  padding-top:25px;
+  border-top:1px solid var(--line);
+}
+.writing-section>h3{
+  margin:0 0 16px;
+  font-size:20px;
+  line-height:1.35;
+  font-weight:400;
+  letter-spacing:-.035em;
+}
+.writing-issues{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:11px;
+}
+.writing-issue,.writing-pattern{
+  min-width:0;
+  padding:17px 18px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fff;
+}
+.writing-issue-type{
+  display:inline-flex;
+  margin-bottom:10px;
+  color:var(--mid);
+  font-size:9px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.writing-issue p,.writing-pattern p{
+  margin:7px 0 0;
+  font-size:12px;
+  line-height:1.65;
+  overflow-wrap:anywhere;
+}
+.writing-issue-original{color:var(--muted);text-decoration:line-through}
+.writing-issue-correction{font-weight:500}
+.writing-issue-explanation,.writing-pattern p{color:var(--muted)}
+.writing-section ul{
+  display:grid;
+  gap:9px;
+  margin:0;
+  padding-left:20px;
+}
+.writing-section li{
+  padding-left:3px;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.7;
+}
+.writing-section li::marker{color:#999}
+.writing-pattern strong{font-size:13px;font-weight:500}
+.writing-section>[data-writing-patterns]{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:11px;
+}
+.writing-history{
+  display:grid;
+  gap:10px;
+  margin-top:27px;
+}
+.writing-history-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(145px,.55fr) auto;
+  align-items:center;
+  gap:18px;
+  width:100%;
+  min-width:0;
+  padding:19px 21px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fff;
+  color:var(--ink);
+  text-align:left;
+  font-family:Inter,Arial,sans-serif;
+  cursor:pointer;
+  transition:border-color .18s,background .18s,transform .18s;
+}
+.writing-history-row:hover{
+  border-color:#aaa;
+  background:#fcfcfc;
+  transform:translateY(-1px);
+}
+.writing-history-title{
+  min-width:0;
+  font-size:14px;
+  font-weight:500;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+.writing-history-meta{
+  color:var(--mid);
+  font-size:10px;
+  line-height:1.5;
+}
+.writing-history-score{
+  justify-self:end;
+  padding:8px 11px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  font-size:12px;
+  font-weight:500;
+  white-space:nowrap;
+}
+.writing-page [data-writing-result]>.writing-submit-row{
+  justify-content:flex-start;
+  padding-top:20px;
+  border-top:1px solid var(--line);
+}
+.writing-page [data-writing-result]>.writing-submit-row .fine-print{max-width:none}
+@media(max-width:900px){
+  .writing-score-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .writing-columns,.writing-issues,.writing-section>[data-writing-patterns]{grid-template-columns:1fr}
+  .writing-version{padding:20px}
+  .writing-history-row{grid-template-columns:minmax(0,1fr) auto;gap:7px 12px;padding:15px}
+  .writing-history-title{grid-column:1}
+  .writing-history-meta{grid-column:1;grid-row:2}
+  .writing-history-score{grid-column:2;grid-row:1/3}
+  .writing-overall{min-width:74px;font-size:18px}
+}
+@media(max-width:480px){
+  .writing-score{padding:14px}
+  .writing-score>span{font-size:10px}
+  .writing-score>strong{font-size:21px}
+}
