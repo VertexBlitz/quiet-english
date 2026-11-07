@@ -2,6 +2,14 @@ import express from 'express';
 import argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
 import { pool, requireDatabase, requireUser } from '../db.js';
+import {
+  isAdultRegistration,
+  normalizeCountryCode,
+  isValidCountryCode,
+  verifyTurnstileToken,
+  TERMS_POLICY_VERSION,
+  PRIVACY_POLICY_VERSION
+} from '../registration-security.js';
 
 const router = express.Router();
 router.use(requireDatabase);
@@ -82,21 +90,25 @@ router.post('/register', async (req, res, next) => {
   } = req.body || {};
 
   if (process.env.REGISTRATION_ENABLED !== 'true' || process.env.REGISTRATION_LEGAL_APPROVED !== 'true') {
-    return res.status(503).json({ error: 'Публичная регистрация пока закрыта: оператор должен завершить юридическую проверку документов и включить регистрацию.' });
+    return res.status(503).json({ error: 'Регистрация временно закрыта. Попробуй позже.' });
+  }
+  if (process.env.REGISTRATION_DATABASE_ISOLATED !== 'true') {
+    return res.status(503).json({ error: 'Регистрация временно недоступна: база Preview ещё не отделена от основной базы.' });
+  }
+  if (!process.env.TURNSTILE_SITE_KEY || !process.env.TURNSTILE_SECRET_KEY) {
+    return res.status(503).json({ error: 'Проверка безопасности регистрации пока не настроена.' });
   }
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
   if (!validEmail(normalizedEmail)) return res.status(400).json({ error: 'Укажи корректный email.' });
   if (typeof password !== 'string' || password.length < 12 || password.length > 200) {
     return res.status(400).json({ error: 'Пароль должен содержать от 12 до 200 символов.' });
   }
-  if (!['16_17', '18_plus'].includes(age_band)) {
-    return res.status(403).json({ error: 'Регистрация доступна с 16 лет. Пользователи младше 16 лет не могут создавать аккаунт.' });
+  if (!isAdultRegistration(age_band)) {
+    return res.status(403).json({ error: 'Публичная регистрация доступна только совершеннолетним пользователям (18+).' });
   }
-  if (!/^[A-Z]{2}$/.test(String(country_code || '').toUpperCase())) {
-    return res.status(400).json({ error: 'Выбери страну проживания.' });
-  }
-  if (age_band === '16_17' && String(country_code).toUpperCase() !== 'DE') {
-    return res.status(403).json({ error: 'Регистрация пользователей 16–17 лет пока доступна только для Германии.' });
+  const normalizedCountryCode = normalizeCountryCode(country_code);
+  if (!isValidCountryCode(normalizedCountryCode)) {
+    return res.status(400).json({ error: 'Укажи двухбуквенный код страны, например DE или US.' });
   }
   if (!['ru', 'en'].includes(preferred_language)) {
     return res.status(400).json({ error: 'Выбери язык интерфейса.' });
@@ -106,6 +118,24 @@ router.post('/register', async (req, res, next) => {
   }
   if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !appUrl()) {
     return res.status(503).json({ error: 'Регистрация временно не настроена: администратору нужно подключить сервис подтверждения email.' });
+  }
+
+  let expectedHostname;
+  try {
+    expectedHostname = new URL(appUrl()).hostname;
+  } catch {
+    return res.status(503).json({ error: 'Проверка адреса сайта для CAPTCHA не настроена.' });
+  }
+  const captchaResult = await verifyTurnstileToken(req.body?.turnstile_token, {
+    secretKey: process.env.TURNSTILE_SECRET_KEY,
+    expectedHostname
+  });
+  if (!captchaResult.ok) {
+    if (captchaResult.reason === 'provider_unavailable' || captchaResult.reason === 'not_configured') {
+      console.error('Registration CAPTCHA verification unavailable:', captchaResult.reason);
+      return res.status(503).json({ error: 'Проверка безопасности временно недоступна. Попробуй позже.' });
+    }
+    return res.status(400).json({ error: 'Пройди проверку безопасности ещё раз.' });
   }
 
   const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
@@ -123,7 +153,7 @@ router.post('/register', async (req, res, next) => {
     const result = await client.query(
       `INSERT INTO users (email, password_hash, age_band, country_code)
        VALUES ($1,$2,$3,$4) RETURNING id`,
-      [normalizedEmail, passwordHash, age_band, String(country_code).toUpperCase()]
+      [normalizedEmail, passwordHash, age_band, normalizedCountryCode]
     );
     userId = result.rows[0].id;
     await client.query(
@@ -132,8 +162,18 @@ router.post('/register', async (req, res, next) => {
     );
     await client.query(
       `INSERT INTO consent_records (user_id, consent_type, policy_version, metadata)
-       VALUES ($1,'terms','2026-11-06',$2::jsonb),($1,'privacy','2026-11-06',$2::jsonb)`,
-      [userId, JSON.stringify({ source: 'registration', language: preferred_language })]
+       VALUES ($1,'terms',$2,$3::jsonb),($1,'privacy',$4,$3::jsonb)`,
+      [
+        userId,
+        TERMS_POLICY_VERSION,
+        JSON.stringify({ source: 'registration', language: preferred_language }),
+        PRIVACY_POLICY_VERSION
+      ]
+    );
+    await client.query(
+      `INSERT INTO registration_events (user_id, event_type, age_band, country_code)
+       VALUES ($1,'account_created','18_plus',$2)`,
+      [userId, normalizedCountryCode]
     );
     verifyToken = await createToken(client, userId, 'email_verify', 24);
     await client.query('COMMIT');
@@ -192,6 +232,11 @@ router.post('/verify-email', async (req, res, next) => {
     await client.query('UPDATE email_tokens SET consumed_at=NOW() WHERE id=$1', [item.id]);
     const status = 'active';
     await client.query('UPDATE users SET email_verified_at=NOW(), account_status=$2, updated_at=NOW() WHERE id=$1', [item.user_id, status]);
+    await client.query(
+      `INSERT INTO registration_events (user_id, event_type, age_band, country_code)
+       VALUES ($1,'email_verified',$2,$3)`,
+      [item.user_id, item.age_band, item.country_code]
+    );
     await client.query('COMMIT');
     res.json({ ok: true, status, message: 'Email подтверждён. Теперь можно войти.' });
   } catch (error) {
