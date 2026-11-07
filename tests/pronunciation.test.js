@@ -456,3 +456,36 @@ test('instant practice keeps grammar and vocabulary topics available for targete
   });
   assert.ok(vocabulary.questions.every(question => question.category === 'vocabulary'));
 });
+
+import { buildExpandedQuestionBanks, getExpandedQuestionBankStats } from '../src/expanded-question-bank.js';
+
+test('provides more than three thousand distinct grammar and vocabulary questions across A1-C1', () => {
+  const stats = getExpandedQuestionBankStats();
+  assert.equal(stats.grammarCount, 1600);
+  assert.equal(stats.vocabularyCount, 1500);
+  assert.equal(stats.total, 3100);
+  assert.equal(stats.uniquePrompts, stats.total);
+  assert.deepEqual(stats.byLevel, {
+    A1: { grammar: 300, vocabulary: 300 },
+    A2: { grammar: 400, vocabulary: 300 },
+    B1: { grammar: 300, vocabulary: 300 },
+    B2: { grammar: 300, vocabulary: 300 },
+    C1: { grammar: 300, vocabulary: 300 }
+  });
+});
+
+test('every expanded bank question has four distinct options and one valid correct answer', () => {
+  const banks = buildExpandedQuestionBanks();
+  for (const level of ['A1', 'A2', 'B1', 'B2', 'C1']) {
+    for (const skill of ['grammar', 'vocabulary']) {
+      for (const question of banks[skill][level]) {
+        assert.equal(question[2].length, 4, level + ' ' + skill + ': ' + question[1]);
+        assert.equal(new Set(question[2]).size, 4, level + ' ' + skill + ': ' + question[1]);
+        assert.ok(Number.isInteger(question[3]));
+        assert.ok(question[3] >= 0 && question[3] < 4);
+        assert.ok(question[0].length > 0);
+        assert.ok(question[4].length > 0);
+      }
+    }
+  }
+});
