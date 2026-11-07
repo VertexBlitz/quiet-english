@@ -31,7 +31,8 @@ function renderHistory(items){
  if(!items?.length){box.append(make('p','fine-print','Платежей пока нет.'));return;}
  items.forEach(item=>{
   const row=make('div','subscription-history-row');
-  const label=make('strong','',item.plan_code==='premium_yearly'?'Premium · год':'Premium · месяц');
+  const planLabels={premium_monthly:'Premium · 1 месяц',premium_quarterly:'Premium · 3 месяца',premium_yearly:'Premium · 1 год'};
+  const label=make('strong','',planLabels[item.plan_code]||'Premium');
   const meta=make('small','',new Date(item.created_at).toLocaleDateString('ru-RU')+' · '+({succeeded:'Оплачено',pending:'Ожидает оплаты',canceled:'Отменён',failed:'Не выполнен',creating:'Создаётся'}[item.status]||item.status));
   const amount=make('b','',Number(item.amount).toLocaleString('ru-RU')+' ₽');
   row.append(label,meta,amount);box.append(row);
@@ -39,7 +40,8 @@ function renderHistory(items){
 }
 function render(data){
  const sub=data.subscription;
- $('[data-subscription-current]').textContent=sub?'Quiet English Premium':'Quiet English Free';
+ const currentPlanLabels={premium_monthly:'Quiet English Premium · 1 месяц',premium_quarterly:'Quiet English Premium · 3 месяца',premium_yearly:'Quiet English Premium · 1 год'};
+ $('[data-subscription-current]').textContent=sub?(currentPlanLabels[sub.plan_code]||'Quiet English Premium'):'Quiet English Free';
  $('[data-subscription-status]').textContent=sub?(sub.cancel_at_period_end?'До конца периода':'Активна'):'Бесплатный тариф';
  $('[data-subscription-period]').textContent=sub
   ?'Доступ до '+new Date(sub.current_period_end).toLocaleString('ru-RU',{dateStyle:'long',timeStyle:'short'})+'.'

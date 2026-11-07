@@ -14,7 +14,7 @@ $('[data-guardian-confirm]').addEventListener('change',updateButton);
 api('/guardian/quote?token='+encodeURIComponent(token)).then(data=>{
  const plan=data.plan;
  $('[data-guardian-plan]').textContent=plan.name;
- $('[data-guardian-summary]').textContent='Стоимость: '+plan.amount.toLocaleString('ru-RU')+' ₽. Период: '+(plan.months===12?'12 месяцев':'1 месяц')+'. Продление будет включено только при отдельном согласии ниже и после успешного сохранения способа оплаты платёжной системой.';
+ $('[data-guardian-summary]').textContent='Стоимость: '+plan.amount.toLocaleString('ru-RU')+' ₽. Период: '+(plan.periodLabel||String(plan.months)+' месяцев')+'. Продление будет включено только при отдельном согласии ниже и после успешного сохранения способа оплаты платёжной системой.';
 }).catch(e=>{
  $('[data-guardian-plan]').textContent='Запрос недействителен';
  status.textContent=e.message;status.classList.add('error-text');

@@ -4,8 +4,9 @@ import { pool, requireDatabase, requireUser } from '../db.js';
 
 const router = express.Router();
 const PLANS = {
-  premium_monthly:{code:'premium_monthly',name:'Premium · месяц',amount:299,months:1,label:'299 ₽ / месяц'},
-  premium_yearly:{code:'premium_yearly',name:'Premium · год',amount:2490,months:12,label:'2 490 ₽ / год'}
+  premium_monthly:{code:'premium_monthly',name:'Premium · 1 месяц',amount:299,months:1,periodLabel:'1 месяц',label:'299 ₽ / 1 месяц'},
+  premium_quarterly:{code:'premium_quarterly',name:'Premium · 3 месяца',amount:799,months:3,periodLabel:'3 месяца',label:'799 ₽ / 3 месяца'},
+  premium_yearly:{code:'premium_yearly',name:'Premium · 1 год',amount:2490,months:12,periodLabel:'1 год',label:'2 490 ₽ / год'}
 };
 const tokenHash = value => createHash('sha256').update(value).digest('hex');
 const appUrl = () => (process.env.APP_BASE_URL || '').replace(/\/$/,'');
@@ -94,7 +95,7 @@ async function createCheckoutOrder(options) {
       amount:{value:plan.amount.toFixed(2),currency:'RUB'},
       capture:true,
       confirmation:{type:'redirect',return_url:returnUrl},
-      description:'Quiet English Premium — '+(plan.months===12?'год':'месяц'),
+      description:'Quiet English Premium — '+plan.periodLabel,
       ...(autoRenew ? {save_payment_method:true} : {}),
       metadata:{order_id:orderId,user_id:userId,plan_code:planCode}
     },orderId);
