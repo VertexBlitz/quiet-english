@@ -342,3 +342,67 @@ test('uses the requested exercise skill when an AI category is not recognised', 
   });
   assert.equal(exercise.questions[0].category, 'grammar');
 });
+
+test('validates and keeps a bounded list of adaptive review focus points', () => {
+  const result = validatePracticeGenerationRequest({
+    level: 'B1',
+    skill: 'grammar',
+    topic: 'Science',
+    focus: [
+      {
+        area: 'Zero Conditional',
+        prompt: 'If we ___ enough water, plants cannot grow.',
+        selectedAnswer: "didn't give",
+        correctAnswer: "don't give",
+        explanation: 'Use present simple in both clauses for general truths.'
+      },
+      { area: 'Comparative adjectives', prompt: 'The lab is ___ than the classroom.' },
+      { area: 'Phrasal verbs', prompt: 'Take off means remove equipment.' },
+      { area: 'Past Simple', prompt: 'They ___ the sample last year.' },
+      { area: 'Cause and effect', prompt: 'Choose the correct conjunction.' },
+      { area: 'Ignored extra', prompt: 'This sixth topic must be dropped.' }
+    ]
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.value.focus.length, 5);
+  assert.equal(result.value.focus[0].area, 'Zero Conditional');
+  assert.equal(result.value.focus[0].correctAnswer, "don't give");
+});
+
+test('builds a focused remedial prompt from the learner mistakes without repeating old questions', () => {
+  const request = validatePracticeGenerationRequest({
+    level: 'B1',
+    skill: 'grammar',
+    topic: 'Science',
+    focus: [{
+      area: 'Zero Conditional',
+      prompt: 'If we ___ enough water, plants cannot grow.',
+      selectedAnswer: "didn't give",
+      correctAnswer: "don't give",
+      explanation: 'Use present simple in both clauses for general truths.'
+    }]
+  }).value;
+  const prompt = buildPracticeGenerationPrompt(request);
+  assert.match(prompt, /ADAPTIVE REVIEW/u);
+  assert.match(prompt, /Zero Conditional/u);
+  assert.match(prompt, /didn't give/u);
+  assert.match(prompt, /don't give/u);
+  assert.match(prompt, /fresh sentences and new options/u);
+});
+
+test('preserves the exact learning point through grading for future adaptive review', () => {
+  const payload = samplePracticePayload();
+  payload.questions[0].learning_point = 'Past Simple';
+  const exercise = parseGeneratedPracticeExercise(JSON.stringify(payload), {
+    level: 'B1', skill: 'grammar', topic: 'Science'
+  });
+  assert.equal(exercise.questions[0].learning_point, 'Past Simple');
+
+  const answers = exercise.questions.map(question => ({
+    question_id: question.id,
+    option_id: question.id === 'q1' ? 'a' : 'b'
+  }));
+  const result = gradeGeneratedPracticeExercise(exercise, answers);
+  assert.equal(result.results[0].is_correct, false);
+  assert.equal(result.results[0].learning_point, 'Past Simple');
+});
