@@ -1,4 +1,4 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Practice — Quiet English</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet"><link rel="stylesheet" href="/styles.css"><script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/learning.js"></script></head><body><header class="topbar wrap">
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Practice — Quiet English</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet"><link rel="stylesheet" href="/styles.css"><script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/learning.js"></script><script defer src="/ai-practice.js"></script></head><body><header class="topbar wrap">
   <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
   <nav aria-label="Main navigation">
     <a href="/plan.html" data-i18n="nav_plan" data-ru="План" data-en="Plan">План</a>
@@ -16,5 +16,70 @@
 <section class="panel practice-tools">
   <article><p class="eyebrow">SPEAKING LAB</p><h2 data-ru="Потренируй устную речь." data-en="Practise speaking.">Потренируй устную речь.</h2><p class="copy" data-ru="Whisper распознаёт речь на устройстве; ты увидишь совпавшие, пропущенные и лишние слова." data-en="Local Whisper transcription, matched and missed words, and estimated speaking pace.">Whisper распознаёт речь на устройстве; ты увидишь совпавшие, пропущенные и лишние слова.</p><a class="button" href="/pronunciation.html" data-ru="Начать ↗" data-en="Start ↗">Начать ↗</a></article>
   <article><p class="eyebrow">LISTENING LIBRARY</p><h2 data-ru="Слушай больше." data-en="Listen to more.">Слушай больше.</h2><p class="copy" data-ru="15 подборок и уроков от A1 до C1 с аудио и упражнениями." data-en="15 curated collections and lessons from A1 to C1, with audio and activities.">15 подборок и уроков от A1 до C1 с аудио и упражнениями.</p><a class="button" href="/listening.html" data-ru="Открыть библиотеку ↗" data-en="Open library ↗">Открыть библиотеку ↗</a></article>
+</section>
+<section class="panel ai-practice-panel" data-ai-practice>
+  <div class="section-heading">
+    <div><p class="eyebrow">AI PRACTICE STUDIO</p><h2 data-ru="Новые упражнения с ИИ." data-en="Fresh AI exercises.">Новые упражнения с ИИ.</h2></div>
+    <span class="pill">CLOUDFLARE AI</span>
+  </div>
+  <p class="copy" data-ru="Создавай новые задания по грамматике, лексике, чтению и аудированию. Выбирай уровень и тему — ИИ подготовит вопросы, а сайт проверит ответы и объяснит ошибки." data-en="Generate new grammar, vocabulary, reading and listening exercises. Choose a level and topic; AI creates the questions and checks your answers with explanations.">Создавай новые задания по грамматике, лексике, чтению и аудированию. Выбирай уровень и тему — ИИ подготовит вопросы, а сайт проверит ответы и объяснит ошибки.</p>
+  <div class="ai-practice-controls">
+    <label><span data-ru="Уровень" data-en="Level">Уровень</span>
+      <select data-ai-level>
+        <option value="A1">A1 · Beginner</option>
+        <option value="A2">A2 · Elementary</option>
+        <option value="B1" selected>B1 · Intermediate</option>
+        <option value="B2">B2 · Upper-intermediate</option>
+        <option value="C1">C1 · Advanced</option>
+      </select>
+    </label>
+    <label><span data-ru="Тип задания" data-en="Exercise type">Тип задания</span>
+      <select data-ai-skill>
+        <option value="grammar" data-ru="Грамматика" data-en="Grammar">Грамматика</option>
+        <option value="vocabulary" data-ru="Лексика" data-en="Vocabulary">Лексика</option>
+        <option value="reading" data-ru="Чтение" data-en="Reading">Чтение</option>
+        <option value="listening" data-ru="Аудирование" data-en="Listening">Аудирование</option>
+        <option value="mixed" data-ru="Смешанная практика" data-en="Mixed practice">Смешанная практика</option>
+      </select>
+    </label>
+    <label><span data-ru="Тема" data-en="Topic">Тема</span>
+      <select data-ai-topic>
+        <option value="Any topic" data-ru="Любая тема" data-en="Any topic">Любая тема</option>
+        <option value="Everyday life">Everyday life</option>
+        <option value="Travel">Travel</option>
+        <option value="Science">Science</option>
+        <option value="History and culture">History and culture</option>
+        <option value="Technology">Technology</option>
+        <option value="Environment">Environment</option>
+        <option value="Education">Education</option>
+        <option value="Books and media">Books and media</option>
+      </select>
+    </label>
+    <button class="button ai-generate-button" type="button" data-ai-generate data-ru="Создать задание ↗" data-en="Generate exercise ↗">Создать задание ↗</button>
+  </div>
+  <p class="form-status" data-ai-status role="status" aria-live="polite">Выбери тип задания и нажми «Создать задание».</p>
+  <div class="ai-practice-workspace" data-ai-workspace hidden>
+    <div class="ai-practice-title">
+      <p class="eyebrow" data-ai-meta></p>
+      <h3 data-ai-title></h3>
+      <p data-ai-instructions></p>
+    </div>
+    <div class="ai-practice-passage-wrap" data-ai-passage-wrap hidden>
+      <div class="ai-passage-toolbar">
+        <strong data-ru="Текст задания" data-en="Exercise text">Текст задания</strong>
+        <button class="text-link ai-listen-button" type="button" data-ai-listen hidden data-ru="Прослушать ↗" data-en="Listen ↗">Прослушать ↗</button>
+      </div>
+      <blockquote class="reading-passage" data-ai-passage></blockquote>
+    </div>
+    <form class="ai-question-form" data-ai-form>
+      <div class="ai-question-list" data-ai-questions></div>
+      <button class="button" type="submit" data-ai-check data-ru="Проверить ответы" data-en="Check answers">Проверить ответы</button>
+    </form>
+    <div class="ai-practice-result" data-ai-result hidden aria-live="polite"></div>
+  </div>
+  <section class="ai-practice-history" data-ai-history-section hidden>
+    <div class="section-heading"><div><p class="eyebrow">RECENT AI PRACTICE</p><h3 data-ru="Последние результаты." data-en="Recent results.">Последние результаты.</h3></div></div>
+    <div data-ai-history></div>
+  </section>
 </section>
 <section class="panel"><div class="exercise-grid" data-exercise-list><p>Загружаем упражнения…</p></div></section></main></body></html>
