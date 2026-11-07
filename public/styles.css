@@ -321,3 +321,45 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
   .pron-listen{justify-self:end}
   .consent-line{font-size:13px}
 }
+
+/* Compact word-by-word comparison */
+.pron-word-list{
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:7px;
+}
+.pron-word{
+  display:flex;
+  align-items:center;
+  min-height:44px;
+  padding:9px 11px;
+  border-radius:10px;
+}
+.pron-word-head{
+  width:100%;
+  min-width:0;
+  gap:7px;
+}
+.pron-word-head strong{
+  min-width:0;
+  font-size:13px;
+  line-height:1.25;
+}
+.pron-word-head span{
+  min-width:0;
+  font-size:10px;
+  line-height:1.2;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  text-align:right;
+}
+.pron-word-match .pron-word-head span{color:var(--mid)}
+.pron-word-different .pron-word-head span,
+.pron-word-missing .pron-word-head span,
+.pron-word-extra .pron-word-head span{color:#8b3333}
+@media(max-width:760px){
+  .pron-word-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .pron-word{min-height:42px;padding:8px 9px}
+  .pron-word-head{gap:5px}
+  .pron-word-head strong{font-size:12px}
+  .pron-word-head span{font-size:10px}
+}
