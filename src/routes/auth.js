@@ -289,7 +289,7 @@ router.get('/export', requireUser, async (req, res, next) => {
       pool.query('SELECT error_type, incorrect_form, correction, explanation, occurrences, resolved_at, created_at FROM error_journal WHERE user_id=$1 ORDER BY created_at',[userId]),
       pool.query('SELECT activity_date, minutes, completed_tasks FROM daily_activity WHERE user_id=$1 ORDER BY activity_date',[userId]),
       pool.query('SELECT consent_type, policy_version, accepted_at FROM consent_records WHERE user_id=$1 ORDER BY accepted_at',[userId]),
-      pool.query('SELECT reference_text, recognized_text, pron_score, accuracy_score, fluency_score, completeness_score, prosody_score, word_results, created_at FROM pronunciation_attempts WHERE user_id=$1 ORDER BY created_at',[userId])
+      pool.query('SELECT reference_text, recognized_text, word_match_score, word_results, created_at FROM pronunciation_attempts WHERE user_id=$1 ORDER BY created_at',[userId])
     ]);
     res.json({
       exported_at: new Date().toISOString(),
