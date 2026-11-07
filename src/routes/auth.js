@@ -92,8 +92,8 @@ router.post('/register', async (req, res, next) => {
   if (process.env.REGISTRATION_ENABLED !== 'true' || process.env.REGISTRATION_LEGAL_APPROVED !== 'true') {
     return res.status(503).json({ error: 'Регистрация временно закрыта. Попробуй позже.' });
   }
-  if (process.env.REGISTRATION_DATABASE_ISOLATED !== 'true') {
-    return res.status(503).json({ error: 'Регистрация временно недоступна: база Preview ещё не отделена от основной базы.' });
+  if (process.env.REGISTRATION_DATABASE_ISOLATED !== 'true' || process.env.DB_SCHEMA !== 'quiet_english_preview') {
+    return res.status(503).json({ error: 'Регистрация временно недоступна: схема базы Preview не изолирована.' });
   }
   if (!process.env.TURNSTILE_SITE_KEY || !process.env.TURNSTILE_SECRET_KEY) {
     return res.status(503).json({ error: 'Проверка безопасности регистрации пока не настроена.' });
