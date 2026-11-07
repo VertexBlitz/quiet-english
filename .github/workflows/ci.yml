@@ -1,7 +1,7 @@
 name: Quiet English 2.0 checks
 on:
   push:
-    branches: [quiet-english-2-mvp, main, feat/pronunciation-and-listening-library]
+    branches: [quiet-english-2-mvp, main, feat/pronunciation-and-listening-library, feat/adult-signup-turnstile-audit]
   pull_request:
     branches: [quiet-english-2-mvp, main]
 jobs:

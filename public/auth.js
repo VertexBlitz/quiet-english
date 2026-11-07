@@ -23,7 +23,48 @@ function showAuthMessage(message, isError = false) {
 if (authForm?.dataset.authForm === 'register') {
   const registerButton = authForm.querySelector('button[type="submit"]');
   const resendButton = authForm.querySelector('[data-resend-verification]');
+  const captchaContainer = authForm.querySelector('[data-turnstile-captcha]');
   let pendingVerificationEmail = '';
+  let registrationAvailable = false;
+  let captchaToken = '';
+  let captchaWidgetId = null;
+
+  function updateRegisterButton() {
+    if (registerButton) {
+      registerButton.disabled = !registrationAvailable || !captchaToken;
+    }
+  }
+
+  function resetCaptcha() {
+    captchaToken = '';
+    if (window.turnstile && captchaWidgetId !== null) {
+      window.turnstile.reset(captchaWidgetId);
+    }
+    updateRegisterButton();
+  }
+
+  function loadTurnstileScript() {
+    if (window.turnstile) return Promise.resolve();
+
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-turnstile-api]');
+      if (existing) {
+        existing.addEventListener('load', resolve, { once: true });
+        existing.addEventListener('error', reject, { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      script.dataset.turnstileApi = 'true';
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Не удалось загрузить проверку безопасности.'));
+      document.head.append(script);
+    });
+  }
+
   resendButton?.addEventListener('click', async () => {
     if (!pendingVerificationEmail) return;
     resendButton.disabled = true;
@@ -36,37 +77,74 @@ if (authForm?.dataset.authForm === 'register') {
       resendButton.disabled = false;
     }
   });
+
   if (registerButton) registerButton.disabled = true;
+
   fetch('/api/registration-status', { cache: 'no-store' })
     .then(async response => {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Не удалось проверить регистрацию.');
       return data;
     })
-    .then(data => {
-      if (data.available) {
-        if (registerButton) registerButton.disabled = false;
-        showAuthMessage(data.message || 'Регистрация доступна.');
-      } else {
-        showAuthMessage(data.message || 'Публичная регистрация пока закрыта.', true);
+    .then(async data => {
+      if (!data.available) {
+        showAuthMessage(data.message || 'Регистрация пока недоступна.', true);
+        return;
       }
+      if (!data.captchaSiteKey) {
+        showAuthMessage('Проверка безопасности не настроена. Регистрация пока недоступна.', true);
+        return;
+      }
+
+      await loadTurnstileScript();
+      if (!window.turnstile || !captchaContainer) {
+        throw new Error('Не удалось инициализировать проверку безопасности.');
+      }
+
+      registrationAvailable = true;
+      captchaWidgetId = window.turnstile.render(captchaContainer, {
+        sitekey: data.captchaSiteKey,
+        action: 'qe_registration',
+        theme: 'light',
+        callback(token) {
+          captchaToken = token;
+          updateRegisterButton();
+          showAuthMessage('Проверка безопасности пройдена.');
+        },
+        'expired-callback'() {
+          captchaToken = '';
+          updateRegisterButton();
+          showAuthMessage('Проверка безопасности истекла. Пройди её ещё раз.', true);
+        },
+        'error-callback'() {
+          captchaToken = '';
+          updateRegisterButton();
+          showAuthMessage('Не удалось пройти проверку безопасности. Попробуй ещё раз.', true);
+        }
+      });
     })
     .catch(error => showAuthMessage(error.message, true));
 
   authForm.addEventListener('submit', async event => {
     event.preventDefault();
+    if (!captchaToken) {
+      showAuthMessage('Сначала пройди проверку безопасности.', true);
+      return;
+    }
+
     const form = new FormData(authForm);
-    const button = authForm.querySelector('button[type="submit"]');
-    button.disabled = true;
+    if (registerButton) registerButton.disabled = true;
     try {
       const data = await authRequest('/register', {
         email: form.get('email'),
         password: form.get('password'),
         age_band: form.get('age_band'),
+        adult_confirmed: form.get('adult_confirmed') === 'on',
         country_code: String(form.get('country_code') || '').trim().toUpperCase(),
         preferred_language: form.get('preferred_language') || 'ru',
         terms_accepted: form.get('terms_accepted') === 'on',
-        privacy_accepted: form.get('privacy_accepted') === 'on'
+        privacy_accepted: form.get('privacy_accepted') === 'on',
+        turnstile_token: captchaToken
       });
       pendingVerificationEmail = String(form.get('email') || '').trim().toLowerCase();
       if (resendButton) resendButton.hidden = !data.emailPending;
@@ -75,11 +153,10 @@ if (authForm?.dataset.authForm === 'register') {
     } catch (error) {
       showAuthMessage(error.message, true);
     } finally {
-      button.disabled = false;
+      resetCaptcha();
     }
   });
 }
-
 if (authForm?.dataset.authForm === 'login') {
   authForm.addEventListener('submit', async event => {
     event.preventDefault();

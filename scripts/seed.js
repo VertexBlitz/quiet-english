@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
+import { getDatabaseSchema, getPostgresSchemaOptions, ensureDatabaseSchema } from '../src/db-schema.js';
 
 const { Pool } = pg;
 if (!process.env.DATABASE_URL) {
@@ -11,9 +12,32 @@ if (!process.env.DATABASE_URL) {
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const exercises = JSON.parse(await fs.readFile(path.join(root, '../content/seed-exercises.json'), 'utf8'));
+const dbSchema = getDatabaseSchema();
+const ssl = process.env.PGSSLMODE === 'disable'
+  ? false
+  : process.env.PGSSLMODE === 'require'
+    ? { rejectUnauthorized: true }
+    : undefined;
+
+const bootstrapPool = dbSchema ? new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl,
+  max: 1
+}) : null;
+
+if (bootstrapPool) {
+  try {
+    await ensureDatabaseSchema(bootstrapPool, dbSchema);
+  } finally {
+    await bootstrapPool.end();
+  }
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.PGSSLMODE === 'disable' ? false : process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: true } : undefined
+  ssl,
+  options: getPostgresSchemaOptions(dbSchema),
+  max: 4
 });
 
 try {

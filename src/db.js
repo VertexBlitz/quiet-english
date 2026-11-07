@@ -1,10 +1,14 @@
 import pg from 'pg';
+import { getDatabaseSchema, getPostgresSchemaOptions } from './db-schema.js';
 
 const { Pool } = pg;
+const dbSchema = getDatabaseSchema();
+
 export const pool = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.PGSSLMODE === 'disable' ? false : process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: true } : undefined,
+      options: getPostgresSchemaOptions(dbSchema),
       max: 8,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000

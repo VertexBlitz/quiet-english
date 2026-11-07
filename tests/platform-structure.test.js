@@ -36,19 +36,28 @@ test('shared navigation and learner dashboard assets exist', () => {
   assert.ok(read('public/learning.js').includes('dashboardSummary'));
 });
 
-test('registration stays closed until the operator approves legal and privacy documents', () => {
+test('adult registration requires explicit operator approval, an isolated database and Turnstile', () => {
   const auth = read('src/routes/auth.js');
   const privacy = read('public/privacy.html');
   const terms = read('public/terms.html');
+  const server = read('server.js');
   assert.ok(auth.includes("REGISTRATION_ENABLED !== 'true'"));
   assert.ok(auth.includes("REGISTRATION_LEGAL_APPROVED !== 'true'"));
-  const server = read('server.js');
+  assert.ok(auth.includes("REGISTRATION_DATABASE_ISOLATED !== 'true'"));
+  assert.ok(auth.includes("process.env.DB_SCHEMA !== 'quiet_english_preview'"));
+  assert.ok(server.includes("process.env.DB_SCHEMA !== 'quiet_english_preview'"));
+  assert.ok(auth.includes("isAdultRegistration(age_band, adult_confirmed)"));
+  assert.ok(auth.includes('verifyTurnstileToken'));
   assert.ok(server.includes("app.get('/api/registration-status'"));
   assert.ok(server.includes("REGISTRATION_LEGAL_APPROVED !== 'true'"));
+  assert.ok(server.includes("REGISTRATION_DATABASE_ISOLATED !== 'true'"));
+  assert.ok(server.includes('TURNSTILE_SITE_KEY'));
   assert.ok(server.includes("app.use('/api/auth/password/forgot', passwordRecoveryLimiter);"));
   assert.ok(server.includes("app.post('/api/chat', chatLimiter"));
-  assert.ok(privacy.includes('рабочим черновиком'));
-  assert.ok(terms.includes('Проект документа'));
+  assert.ok(!privacy.includes('рабочим черновиком'));
+  assert.ok(!terms.includes('Проект документа'));
+  assert.ok(privacy.includes('Редакция 1.0'));
+  assert.ok(terms.includes('Редакция 1.0'));
 });
 
 test('offline storage and service-worker cache are present after release updates', () => {
@@ -62,13 +71,19 @@ test('offline storage and service-worker cache are present after release updates
   assert.equal(dictionary.split('/offline-client.js').length - 1, 1);
 });
 
-test('registration UI checks server readiness and cannot submit before the check succeeds', () => {
+test('registration UI is adult-only and cannot submit before readiness and Turnstile succeed', () => {
   const authJs = read('public/auth.js');
   const registerHtml = read('public/register.html');
   assert.ok(authJs.includes('/api/registration-status'));
-  assert.ok(!authJs.includes('updateGuardianFields'));
+  assert.ok(authJs.includes('turnstile.render'));
+  assert.ok(authJs.includes('turnstile_token: captchaToken'));
   assert.ok(registerHtml.includes('type="submit" disabled'));
-  assert.ok(registerHtml.includes('selected disabled'));
+  assert.ok(registerHtml.includes('name="age_band" value="18_plus"'));
+  assert.ok(registerHtml.includes('name="adult_confirmed" required'));
+  assert.ok(authJs.includes("adult_confirmed: form.get('adult_confirmed') === 'on'"));
+  assert.ok(registerHtml.includes('data-turnstile-captcha'));
+  assert.ok(!registerHtml.includes('<select id="age-band"'));
+  assert.ok(!registerHtml.includes('value="16_17"'));
 });
 
 test('password recovery and public AI chat have dedicated rate limits', () => {
