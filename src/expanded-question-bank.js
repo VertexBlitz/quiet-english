@@ -1,5 +1,8 @@
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
+function randomItem(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
 const SCENES = {
   A1: ['before breakfast', 'after school', 'at the weekend', 'on school days', 'before going to bed'],
   A2: ['yesterday afternoon', 'during the school trip', 'last weekend', 'at the end of the lesson', 'earlier this month'],
