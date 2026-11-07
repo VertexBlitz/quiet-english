@@ -10,10 +10,12 @@ import {
 } from '../src/registration-security.js';
 
 test('public signup accepts adults only', () => {
-  assert.equal(isAdultRegistration('18_plus'), true);
-  assert.equal(isAdultRegistration('16_17'), false);
-  assert.equal(isAdultRegistration('13_15'), false);
-  assert.equal(isAdultRegistration(undefined), false);
+  assert.equal(isAdultRegistration('18_plus', true), true);
+  assert.equal(isAdultRegistration('18_plus', false), false);
+  assert.equal(isAdultRegistration('18_plus', undefined), false);
+  assert.equal(isAdultRegistration('16_17', true), false);
+  assert.equal(isAdultRegistration('13_15', true), false);
+  assert.equal(isAdultRegistration(undefined, true), false);
 });
 
 test('country codes are normalized and validated without limiting adult countries', () => {
