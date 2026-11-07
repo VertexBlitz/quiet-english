@@ -242,8 +242,8 @@ router.post('/guardian-consent-request', async (req, res, next) => {
     ? req.body.guardian_email.trim().toLowerCase()
     : '';
 
-  if (!requiresGuardianConsent(ageBand) || !isSupportedAgeBand(ageBand)) {
-    return res.status(400).json({ error: 'Выбери возрастную группу 13–15 или 16–17 для родительского подтверждения.' });
+  if (!requiresGuardianConsent(ageBand) || !isSupportedAgeBand(ageBand) || req.body?.age_confirmed !== true) {
+    return res.status(400).json({ error: 'Подтверди, что тебе исполнилось 13 лет, и выбери возрастную группу 13–15 или 16–17.' });
   }
   if (!isValidCountryCode(countryCode)) {
     return res.status(400).json({ error: 'Укажи двухбуквенный код страны, например RU или DE.' });
