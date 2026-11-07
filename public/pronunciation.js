@@ -109,9 +109,12 @@ if (pronRoot) {
       radio.checked = item.id === selectedId;
 
       const words = document.createElement('span');
+      words.className = 'pron-prompt-content';
       const meta = document.createElement('strong');
+      meta.className = 'pron-prompt-meta';
       meta.textContent = item.level + ' · ' + item.topic + (item.generated ? ' · AI' : '');
       const passage = document.createElement('span');
+      passage.className = 'pron-prompt-body';
       passage.textContent = item.text;
       words.append(meta);
       if (item.title) {
