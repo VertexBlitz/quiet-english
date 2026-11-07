@@ -25,6 +25,7 @@
 
   let currentExercise = null;
   let checked = false;
+  let lastMistakes = [];
 
   const t = (ru, en) => document.documentElement.lang === 'en' ? en : ru;
   const setStatus = (text, error = false) => {
@@ -94,6 +95,7 @@
   function renderExercise(exercise) {
     currentExercise = exercise;
     checked = false;
+    lastMistakes = [];
     resultNode.hidden = true;
     resultNode.replaceChildren();
     workspace.hidden = false;
@@ -140,12 +142,19 @@
     workspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  async function generateExercise() {
+  async function generateExercise({ focus = [] } = {}) {
     if (generateButton.disabled) return;
+    const remedial = Array.isArray(focus) && focus.length > 0;
+    const requestLevel = remedial ? currentExercise.level : level.value;
+    const requestSkill = remedial ? currentExercise.skill : skill.value;
+    const requestTopic = remedial ? currentExercise.topic : topic.value;
+
     generateButton.disabled = true;
     generateButton.textContent = t('Создаём…', 'Generating…');
     workspace.hidden = true;
-    setStatus(t('ИИ готовит новое упражнение. Это может занять несколько секунд.', 'AI is creating a new exercise. This may take a few seconds.'));
+    setStatus(remedial
+      ? t('ИИ готовит короткое упражнение по твоим ошибкам…', 'AI is preparing a focused review of your mistakes…')
+      : t('ИИ готовит новое упражнение. Короткий формат ускоряет генерацию.', 'AI is creating a new exercise. The compact format makes generation faster.'));
 
     const recent = readHistory().slice(0, 4).map(item => item.avoidText || item.title).filter(Boolean);
     try {
@@ -154,10 +163,11 @@
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          level: level.value,
-          skill: skill.value,
-          topic: topic.value,
-          avoid: recent
+          level: requestLevel,
+          skill: requestSkill,
+          topic: requestTopic,
+          avoid: recent,
+          focus: remedial ? focus : []
         })
       });
       const data = await response.json().catch(() => ({}));
@@ -167,8 +177,11 @@
       }
       currentExercise = Object.assign({}, data.exercise, { id: data.exercise_id });
       renderExercise(currentExercise);
-      setStatus(t('Новое упражнение готово. Ответь на вопросы и проверь результат.', 'Your new exercise is ready. Answer the questions and check your result.'));
+      setStatus(remedial
+        ? t('Упражнение по твоим ошибкам готово. Попробуй ещё раз.', 'Your targeted review exercise is ready. Try again.')
+        : t('Новое упражнение готово. Ответь на вопросы и проверь результат.', 'Your new exercise is ready. Answer the questions and check your result.'));
     } catch (error) {
+      workspace.hidden = false;
       setStatus(error.message || t('Генерация временно недоступна.', 'Generation is temporarily unavailable.'), true);
     } finally {
       generateButton.disabled = false;
@@ -204,7 +217,7 @@
       top.append(question, marker);
 
       const answer = document.createElement('p');
-      answer.textContent = (item.is_correct ? t('Твой ответ: ', 'Your answer: ') : t('Твой ответ: ', 'Your answer: ')) +
+      answer.textContent = t('Твой ответ: ', 'Your answer: ') +
         item.selected_answer + (item.is_correct ? '' : '. ' + t('Правильно: ', 'Correct: ') + item.correct_answer);
       const explain = document.createElement('p');
       explain.className = 'ai-explanation';
@@ -212,6 +225,34 @@
       card.append(top, answer, explain);
       resultNode.append(card);
     });
+
+    lastMistakes = result.results
+      .filter(item => !item.is_correct)
+      .map(item => ({
+        area: item.learning_point || item.category || currentExercise.skill,
+        prompt: item.prompt,
+        selectedAnswer: item.selected_answer,
+        correctAnswer: item.correct_answer,
+        explanation: item.explanation
+      }));
+
+    if (lastMistakes.length) {
+      const retryWrap = document.createElement('div');
+      retryWrap.className = 'ai-retry-errors-wrap';
+      const note = document.createElement('p');
+      note.className = 'ai-retry-errors-note';
+      note.textContent = t(
+        'Новое упражнение будет сосредоточено на правилах, в которых были ошибки.',
+        'The next exercise will focus on the rules you missed.'
+      );
+      const retryButton = document.createElement('button');
+      retryButton.type = 'button';
+      retryButton.className = 'button ai-retry-errors-button';
+      retryButton.textContent = t('Повторить ошибки ↗', 'Retry mistakes ↗');
+      retryButton.addEventListener('click', () => generateExercise({ focus: lastMistakes }));
+      retryWrap.append(note, retryButton);
+      resultNode.append(retryWrap);
+    }
 
     saveHistory({
       title: currentExercise.title,
