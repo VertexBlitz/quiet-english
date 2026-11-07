@@ -217,7 +217,7 @@ test('builds distinct level and skill instructions for AI practice', () => {
   const prompt = buildPracticeGenerationPrompt(request);
   assert.match(prompt, /CEFR B1/u);
   assert.match(prompt, /reading passage/u);
-  assert.match(prompt, /exactly four questions/u);
+  assert.match(prompt, /exactly four for reading/u);
 });
 
 test('parses a valid grammar quiz and retains answers only in the server exercise object', () => {
