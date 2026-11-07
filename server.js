@@ -473,8 +473,15 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
           }
         ],
         stream: false,
-        max_tokens: request.skill === 'reading' || request.skill === 'listening' ? 1450 : 1050,
-        temperature: 0.85,
+        max_tokens: ({
+          grammar: 850,
+          vocabulary: 850,
+          mixed: 900,
+          reading: 1300,
+          listening: 1250
+        })[request.skill] || 850,
+        temperature: 0.65,
+        top_p: 0.85,
         chat_template_kwargs: { enable_thinking: false }
       }),
       signal: AbortSignal.timeout(60_000)
