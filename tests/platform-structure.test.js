@@ -78,8 +78,8 @@ test('registration UI is adult-only and cannot submit before readiness and Turns
   assert.ok(registerHtml.includes('type="submit" disabled'));
   assert.ok(registerHtml.includes('name="age_band" value="18_plus"'));
   assert.ok(registerHtml.includes('data-turnstile-captcha'));
-  assert.ok(!registerHtml.includes('name="age_band"'));
-  assert.ok(!registerHtml.includes('16_17'));
+  assert.ok(!registerHtml.includes('<select id="age-band"'));
+  assert.ok(!registerHtml.includes('value="16_17"'));
 });
 
 test('password recovery and public AI chat have dedicated rate limits', () => {
