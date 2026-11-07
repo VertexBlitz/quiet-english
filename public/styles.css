@@ -611,3 +611,24 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
   .ai-retry-errors-wrap{align-items:stretch;flex-direction:column;gap:12px;padding:15px}
   .ai-retry-errors-button{width:100%;justify-content:center}
 }
+
+/* Instant exercise first, unique AI variant in the background */
+.ai-variant-ready{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:15px 18px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--soft);
+}
+.ai-variant-ready[hidden]{display:none}
+.ai-variant-ready>div{min-width:0}
+.ai-variant-ready strong{display:block;font-size:13px;font-weight:500}
+.ai-variant-ready p{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
+.ai-variant-open{flex:0 0 auto;white-space:nowrap}
+@media(max-width:600px){
+  .ai-variant-ready{align-items:stretch;flex-direction:column;gap:12px;padding:14px}
+  .ai-variant-open{width:100%;justify-content:center}
+}
