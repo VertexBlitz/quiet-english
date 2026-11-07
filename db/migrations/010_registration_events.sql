@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS registration_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   event_type TEXT NOT NULL CHECK (event_type IN ('account_created', 'email_verified')),
-  age_band TEXT NOT NULL CHECK (age_band = '18_plus'),
+  age_band TEXT NOT NULL CHECK (age_band IN ('13_15', '16_17', '18_plus')),
   country_code CHAR(2) NOT NULL,
   preferred_language TEXT NOT NULL CHECK (preferred_language IN ('ru', 'en')),
   terms_version TEXT NOT NULL,
