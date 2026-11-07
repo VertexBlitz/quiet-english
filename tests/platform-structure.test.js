@@ -77,6 +77,8 @@ test('registration UI is adult-only and cannot submit before readiness and Turns
   assert.ok(authJs.includes('turnstile_token: captchaToken'));
   assert.ok(registerHtml.includes('type="submit" disabled'));
   assert.ok(registerHtml.includes('name="age_band" value="18_plus"'));
+  assert.ok(registerHtml.includes('name="adult_confirmed" required'));
+  assert.ok(authJs.includes("adult_confirmed: form.get('adult_confirmed') === 'on'"));
   assert.ok(registerHtml.includes('data-turnstile-captcha'));
   assert.ok(!registerHtml.includes('<select id="age-band"'));
   assert.ok(!registerHtml.includes('value="16_17"'));
