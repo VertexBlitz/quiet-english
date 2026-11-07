@@ -158,30 +158,31 @@
             windowWidth: 794,
             windowHeight: 1123,
             onclone: clonedDocument => {
-              const clonedArticle = clonedDocument.querySelector('.knowledge-article');
+              // html2pdf renders its own copy inside .html2pdf__container.
+              // Do not select the live page article or move the copy outside
+              // that container: html2canvas captures the container itself.
+              const pdfContainer = clonedDocument.querySelector('.html2pdf__container');
+              const clonedArticle = pdfContainer?.querySelector('.knowledge-article')
+                || Array.from(clonedDocument.querySelectorAll('.knowledge-article')).at(-1);
               if (!clonedArticle) return;
 
-              // Detach the article from .knowledge-layout and its two-column
-              // grid. html2pdf otherwise keeps the grid track width in its clone.
-              clonedDocument.body.appendChild(clonedArticle);
+              if (pdfContainer) {
+                Object.assign(pdfContainer.style, {
+                  display: 'block',
+                  position: 'relative',
+                  width: '680px',
+                  minWidth: '680px',
+                  maxWidth: '680px',
+                  height: 'auto',
+                  minHeight: '0',
+                  maxHeight: 'none',
+                  margin: '0',
+                  padding: '0',
+                  overflow: 'visible',
+                  background: '#ffffff'
+                });
+              }
 
-              Object.assign(clonedDocument.documentElement.style, {
-                width: '794px',
-                minWidth: '794px',
-                maxWidth: '794px',
-                margin: '0',
-                padding: '0'
-              });
-              Object.assign(clonedDocument.body.style, {
-                display: 'block',
-                width: '794px',
-                minWidth: '794px',
-                maxWidth: '794px',
-                margin: '0',
-                padding: '0',
-                background: '#ffffff',
-                overflow: 'visible'
-              });
               Object.assign(clonedArticle.style, {
                 display: 'block',
                 position: 'static',
@@ -202,6 +203,9 @@
                 background: '#ffffff',
                 overflow: 'visible'
               });
+              clonedArticle.style.setProperty('width', '680px', 'important');
+              clonedArticle.style.setProperty('max-width', '680px', 'important');
+              clonedArticle.style.setProperty('min-width', '680px', 'important');
 
               const actions = clonedArticle.querySelector('.knowledge-article-actions');
               if (actions) actions.remove();
