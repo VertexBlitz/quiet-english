@@ -23,6 +23,7 @@ A bilingual (Russian/English) personal English-learning platform built on the ex
 - 20 curated vocabulary, grammar and reading exercises
 - Listening library with 15 curated British Council and ELLLO collections/lessons across CEFR A1–C1
 - Browser-local scripted speech transcription with Whisper tiny.en, 15 curated speaking passages across CEFR A1–C1, on-demand AI-generated passages through the existing Cloudflare Workers AI integration, expected-vs-recognized word matching, targeted retry practice for missed/substituted words and an 8-attempt progress chart; recordings are not uploaded
+- AI Practice Studio adds adaptive retry rounds: after grading, the learner can generate a focused exercise from missed learning points, with the original level, skill and topic preserved; concise question prompts and lower output-token budgets reduce generation time
 - On-demand AI-generated grammar, vocabulary, reading, listening and mixed exercises across CEFR A1–C1, with server-side answer checking and local attempt history
 - Server-side answer checking
 - Spaced repetition queue
