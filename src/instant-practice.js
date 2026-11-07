@@ -1,3 +1,7 @@
+import { buildExpandedQuestionBanks } from './expanded-question-bank.js';
+
+const EXPANDED_BANKS = buildExpandedQuestionBanks();
+
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
 const GRAMMAR = {
@@ -193,8 +197,8 @@ export function buildInstantPracticeExercise({ level, skill, topic, focus = [] }
       item[0], item[1], item[2], item[3]
     ], index, skill));
   } else {
-    const grammar = GRAMMAR[level];
-    const vocabulary = VOCABULARY[level];
+    const grammar = [...GRAMMAR[level], ...EXPANDED_BANKS.grammar[level]];
+    const vocabulary = [...VOCABULARY[level], ...EXPANDED_BANKS.vocabulary[level]];
     let entries = [];
     if (skill === 'grammar') {
       entries = grammar.map(entry => ({ entry, category: 'grammar' }));
