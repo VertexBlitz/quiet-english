@@ -6,7 +6,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
-  <script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/pronunciation.js"></script>
+  <script defer src="/i18n.js"></script><script defer src="/session.js"></script><script type="module" src="/pronunciation.js"></script>
 </head>
 <body>
 <header class="topbar wrap">
@@ -26,9 +26,9 @@
 
 <main class="wrap" data-pronunciation-page>
   <section class="panel page-head">
-    <p class="eyebrow">SPEAKING LAB · EN-US</p>
-    <h1 data-ru="Произношение — по деталям." data-en="Pronunciation, in detail.">Произношение — по деталям.</h1>
-    <p class="lead" data-ru="Прочитай короткий отрывок вслух. Получишь общую оценку, разбор слов и фонем, а также обратную связь по беглости, полноте и интонации." data-en="Read a short passage aloud. Get an overall score, word and phoneme feedback, plus fluency, completeness and prosody scores.">Прочитай короткий отрывок вслух. Получишь общую оценку, разбор слов и фонем, а также обратную связь по беглости, полноте и интонации.</p>
+    <p class="eyebrow">SPEAKING LAB · WHISPER</p>
+    <h1 data-ru="Произнеси фразу. Сверь результат." data-en="Say the passage. Check the transcript.">Произнеси фразу. Сверь результат.</h1>
+    <p class="lead" data-ru="Whisper распознаёт английскую речь прямо в браузере. Сайт сравнит распознанные слова с заданным текстом и покажет примерный темп. Аудиозапись не отправляется на сервер." data-en="Whisper transcribes English speech in your browser. The site compares the transcript with the passage and estimates speaking pace. Your recording is not uploaded to the server.">Whisper распознаёт английскую речь прямо в браузере. Сайт сравнит распознанные слова с заданным текстом и покажет примерный темп. Аудиозапись не отправляется на сервер.</p>
   </section>
 
   <p class="form-status" data-pron-status role="status" aria-live="polite"></p>
@@ -36,7 +36,7 @@
   <section class="panel pronunciation-workspace">
     <div class="section-heading">
       <div><p class="eyebrow">01 · READING TASK</p><h2 data-ru="Выбери фразу." data-en="Choose a passage.">Выбери фразу.</h2></div>
-      <span class="pill" data-engine-status data-ru="Проверяем сервис…" data-en="Checking service…">Проверяем сервис…</span>
+      <span class="pill" data-engine-status>WHISPER · ON-DEVICE</span>
     </div>
 
     <div class="pron-prompt-list" data-pron-prompts>
@@ -59,13 +59,13 @@
 
     <div class="pron-record-box">
       <label class="consent-line"><input type="checkbox" data-pron-consent>
-        <span data-ru="Я согласен отправить эту короткую запись в Microsoft Azure Speech для оценки произношения. Сайт Quiet English не сохраняет исходный аудиофайл; учебные баллы и текст задания сохраняются в моём аккаунте." data-en="I agree to send this short recording to Microsoft Azure Speech for pronunciation assessment. Quiet English does not store the original audio file; learning scores and the passage are saved to my account.">Я согласен отправить эту короткую запись в Microsoft Azure Speech для оценки произношения. Сайт Quiet English не сохраняет исходный аудиофайл; учебные баллы и текст задания сохраняются в моём аккаунте.</span>
+        <span data-ru="Я понимаю: запись обрабатывается локально в браузере с помощью Whisper и не отправляется на сервер. При первом запуске браузер загружает файлы модели. Для истории Quiet English сохраняет задание, распознанный текст и результат сверки слов." data-en="I understand that Whisper processes this recording locally in my browser and that the audio is not uploaded to the server. Model files are downloaded on first use. Quiet English stores the passage, transcript and word-comparison result in my account history.">Я согласен отправить эту короткую запись в Microsoft Azure Speech для оценки произношения. Сайт Quiet English не сохраняет исходный аудиофайл; учебные баллы и текст задания сохраняются в моём аккаунте.</span>
     </label>
       <div class="record-actions">
         <button type="button" class="button" data-record disabled><span data-record-label data-ru="Начать запись" data-en="Start recording">Начать запись</span><span>●</span></button>
         <span class="record-timer" data-record-timer>00:00 / 00:28</span>
       </div>
-      <p class="fine-print" data-ru="Микрофон включается только после нажатия кнопки. Максимум 28 секунд. Запись обрабатывается в памяти браузера и отправляется для оценки; не сохраняй в ней личные сведения." data-en="The microphone starts only after you press the button. Maximum 28 seconds. Audio is processed in browser memory and sent for assessment; do not include personal information.">Микрофон включается только после нажатия кнопки. Максимум 28 секунд. Запись обрабатывается в памяти браузера и отправляется для оценки; не сохраняй в ней личные сведения.</p>
+      <p class="fine-print" data-ru="Микрофон включается только после нажатия кнопки. Максимум 28 секунд. Аудио остаётся в памяти браузера и не отправляется на сервер. Для загрузки модели нужен интернет; браузер может сохранить её для следующих занятий. Не произноси личные сведения." data-en="The microphone starts only after you press the button. Maximum 28 seconds. Audio stays in browser memory and is not uploaded to the server. Internet is needed to download the model; your browser may cache it for later sessions. Do not include personal information.">Микрофон включается только после нажатия кнопки. Максимум 28 секунд. Аудио остаётся в памяти браузера и не отправляется на сервер. Для загрузки модели нужен интернет; браузер может сохранить её для следующих занятий. Не произноси личные сведения.</p>
     </div>
   </section>
 
@@ -73,12 +73,12 @@
     <p class="eyebrow">02 · YOUR RESULT</p>
     <div class="section-heading pron-result-head">
       <div><h2 data-ru="Результат попытки." data-en="Your result.">Результат попытки.</h2><p class="copy" data-pron-transcript></p></div>
-      <div class="pron-overall"><strong data-pron-overall>—</strong><span data-ru="из 100 · общий балл" data-en="out of 100 · overall">из 100 · общий балл</span></div>
+      <div class="pron-overall"><strong data-pron-overall>—</strong><span data-ru="совпадение текста" data-en="word match">совпадение текста</span></div>
     </div>
     <div class="pron-metrics" data-pron-metrics></div>
-    <h3 class="pron-subheading" data-ru="Слова и звуки" data-en="Words and sounds">Слова и звуки</h3>
+    <h3 class="pron-subheading" data-ru="Сверка слов" data-en="Word comparison">Сверка слов</h3>
     <div class="pron-word-list" data-pron-words></div>
-    <p class="fine-print" data-ru="Оценка автоматическая и ориентировочная: акцент сам по себе не является ошибкой. Сервис может неточно оценивать отдельные звуки, поэтому используй разбор как подсказку для практики." data-en="This is an automated estimate: having an accent is not itself a mistake. Individual sounds may be scored imperfectly, so use the feedback as a practice aid.">Оценка автоматическая и ориентировочная: акцент сам по себе не является ошибкой. Сервис может неточно оценивать отдельные звуки, поэтому используй разбор как подсказку для практики.</p>
+    <p class="fine-print" data-ru="Это сверка текста, а не фонетическая оценка: Whisper может ошибаться при распознавании. Процент показывает совпадение слов с заданием, а темп не измеряет интонацию или качество отдельных звуков." data-en="This is transcript matching, not a phonetic assessment: Whisper can make recognition errors. The percentage shows how many words matched the passage; speaking pace does not measure intonation or individual sound quality.">Это сверка текста, а не фонетическая оценка: Whisper может ошибаться при распознавании. Процент показывает совпадение слов с заданием, а темп не измеряет интонацию или качество отдельных звуков.</p>
   </section>
 
   <section class="panel">
