@@ -16,21 +16,21 @@ export function validatePracticeGenerationRequest(body) {
 
   const avoid = Array.isArray(body?.avoid)
     ? body.avoid.filter(item => typeof item === 'string')
-      .slice(0, 4).map(item => item.replace(/\\s+/gu, ' ').trim().slice(0, 260)).filter(Boolean)
+      .slice(0, 4).map(item => item.replace(/\s+/gu, ' ').trim().slice(0, 260)).filter(Boolean)
     : [];
   const focus = Array.isArray(body?.focus)
     ? body.focus.slice(0, 5).map(item => ({
-        area: typeof item?.area === 'string' ? item.area.replace(/\\s+/gu, ' ').trim().slice(0, 90) : '',
-        prompt: typeof item?.prompt === 'string' ? item.prompt.replace(/\\s+/gu, ' ').trim().slice(0, 180) : '',
-        selectedAnswer: typeof item?.selectedAnswer === 'string' ? item.selectedAnswer.replace(/\\s+/gu, ' ').trim().slice(0, 100) : '',
-        correctAnswer: typeof item?.correctAnswer === 'string' ? item.correctAnswer.replace(/\\s+/gu, ' ').trim().slice(0, 100) : '',
-        explanation: typeof item?.explanation === 'string' ? item.explanation.replace(/\\s+/gu, ' ').trim().slice(0, 200) : ''
+        area: typeof item?.area === 'string' ? item.area.replace(/\s+/gu, ' ').trim().slice(0, 90) : '',
+        prompt: typeof item?.prompt === 'string' ? item.prompt.replace(/\s+/gu, ' ').trim().slice(0, 180) : '',
+        selectedAnswer: typeof item?.selectedAnswer === 'string' ? item.selectedAnswer.replace(/\s+/gu, ' ').trim().slice(0, 100) : '',
+        correctAnswer: typeof item?.correctAnswer === 'string' ? item.correctAnswer.replace(/\s+/gu, ' ').trim().slice(0, 100) : '',
+        explanation: typeof item?.explanation === 'string' ? item.explanation.replace(/\s+/gu, ' ').trim().slice(0, 200) : ''
       })).filter(item => item.area || item.prompt)
     : [];
   return { ok: true, value: { level, skill, topic, avoid, focus } };
 }
 
-export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [] }) {
+export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [], focus = [] }) {
   const levelGuide = {
     A1: 'beginner: very common words, present simple, basic questions, short sentences',
     A2: 'elementary: everyday vocabulary, past and future basics, simple comparisons and requests',
