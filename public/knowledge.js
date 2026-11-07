@@ -119,10 +119,93 @@
     const footer = make('div','knowledge-article-footer');
     footer.append(make('span','',language()?'QUIET ENGLISH · KNOWLEDGE BASE':'QUIET ENGLISH · БАЗА ЗНАНИЙ'));
     const actions = make('div','knowledge-article-actions');
-    const printButton = make('button','knowledge-print-button',language()?'Save as PDF ↓':'Сохранить PDF ↓');
+    const printButton = make('button','knowledge-print-button',language()?'Download PDF ↓':'Скачать PDF ↓');
     printButton.type = 'button';
-    printButton.setAttribute('aria-label',language()?'Save this note as PDF':'Сохранить этот конспект в PDF');
-    printButton.addEventListener('click',() => window.print());
+    printButton.setAttribute('aria-label',language()?'Download this note as a PDF file':'Скачать этот конспект PDF-файлом');
+    printButton.addEventListener('click', async () => {
+      if (typeof window.html2pdf !== 'function') {
+        window.alert(language()
+          ? 'The PDF download module did not load. Check your internet connection and reload the page.'
+          : 'Модуль создания PDF не загрузился. Проверь подключение к интернету и обнови страницу.');
+        return;
+      }
+
+      const previousLabel = printButton.textContent;
+      printButton.disabled = true;
+      printButton.textContent = language() ? 'Creating PDF…' : 'Создаём PDF…';
+
+      try {
+        if (document.fonts?.ready) await document.fonts.ready;
+        const safeTitle = tr(item.title)
+          .normalize('NFKD')
+          .replace(/[^a-z0-9\u0400-\u04FF]+/gi, '-')
+          .replace(/^-+|-+$/g, '')
+          .slice(0, 60) || 'English-note';
+        const filename = item.level + '_' + safeTitle + '_Quiet-English.pdf';
+
+        const options = {
+          margin: [14, 14, 16, 14],
+          filename,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 1000,
+            windowHeight: 1400,
+            onclone: clonedDocument => {
+              const clonedArticle = clonedDocument.querySelector('.knowledge-article');
+              if (!clonedArticle) return;
+
+              Object.assign(clonedArticle.style, {
+                position: 'static',
+                top: 'auto',
+                width: '180mm',
+                maxWidth: 'none',
+                minWidth: '0',
+                margin: '0',
+                padding: '0',
+                border: '0',
+                borderRadius: '0',
+                boxShadow: 'none',
+                background: '#ffffff',
+                overflow: 'visible'
+              });
+
+              const actions = clonedArticle.querySelector('.knowledge-article-actions');
+              if (actions) actions.remove();
+
+              const brand = clonedDocument.createElement('p');
+              brand.textContent = 'QUIET ENGLISH · KNOWLEDGE BASE';
+              Object.assign(brand.style, {
+                margin: '0 0 18px',
+                padding: '0 0 10px',
+                borderBottom: '1px solid #e5e5e5',
+                color: '#777777',
+                fontSize: '9px',
+                letterSpacing: '2px',
+                fontFamily: 'Inter, Arial, sans-serif'
+              });
+              clonedArticle.insertBefore(brand, clonedArticle.firstChild);
+            }
+          },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'], avoid: ['.knowledge-callout', '.knowledge-article-section', '.knowledge-example', '.knowledge-tip'] }
+        };
+
+        await window.html2pdf().set(options).from(article).save();
+      } catch (error) {
+        console.error('PDF download failed:', error);
+        window.alert(language()
+          ? 'The PDF could not be created. Please try again.'
+          : 'Не удалось создать PDF. Попробуй ещё раз.');
+      } finally {
+        printButton.disabled = false;
+        printButton.textContent = previousLabel;
+      }
+    });
     const practice = make('a','button knowledge-practice-link',language()?'Practise this topic ↗':'Закрепить тему ↗');
     practice.href='/practice.html';
     actions.append(printButton,practice);
