@@ -39,23 +39,22 @@
       <span class="pill" data-engine-status>WHISPER · ON-DEVICE</span>
     </div>
 
-    <div class="pron-prompt-list" data-pron-prompts>
-      <div class="pron-prompt selected"><label class="pron-prompt-choice">
-        <input type="radio" name="pron-prompt" value="The weather is lovely today. I think I will go for a walk after lunch.">
-        <span><strong>A1 · Everyday</strong><span>The weather is lovely today. I think I will go for a walk after lunch.</span></span></label>
-        <button class="pron-listen" type="button" data-speak="The weather is lovely today. I think I will go for a walk after lunch." aria-label="Listen to sample">▶</button>
-      </div>
-      <div class="pron-prompt"><label class="pron-prompt-choice">
-        <input type="radio" name="pron-prompt" value="I usually take the train to school, but today I am travelling by bus because there is a problem with the railway.">
-        <span><strong>A2 · Daily routine</strong><span>I usually take the train to school, but today I am travelling by bus because there is a problem with the railway.</span></span></label>
-        <button class="pron-listen" type="button" data-speak="I usually take the train to school, but today I am travelling by bus because there is a problem with the railway." aria-label="Listen to sample">▶</button>
-      </div>
-      <div class="pron-prompt"><label class="pron-prompt-choice">
-        <input type="radio" name="pron-prompt" value="Although technology makes communication easier, it is important to spend time talking to people face to face.">
-        <span><strong>B1 · Opinions</strong><span>Although technology makes communication easier, it is important to spend time talking to people face to face.</span></span></label>
-        <button class="pron-listen" type="button" data-speak="Although technology makes communication easier, it is important to spend time talking to people face to face." aria-label="Listen to sample">▶</button>
-      </div>
+    <div class="pron-library-controls">
+      <label class="pron-level-filter">
+        <span data-ru="Уровень" data-en="Level">Уровень</span>
+        <select data-pron-level aria-label="Filter speaking passages by CEFR level">
+          <option value="ALL">A1–C1 · Все уровни</option>
+          <option value="A1">A1 · Beginner</option>
+          <option value="A2">A2 · Elementary</option>
+          <option value="B1">B1 · Intermediate</option>
+          <option value="B2">B2 · Upper-intermediate</option>
+          <option value="C1">C1 · Advanced</option>
+        </select>
+      </label>
+      <span class="pron-passage-count" data-pron-count>15 заданий</span>
     </div>
+    <div class="pron-prompt-list" data-pron-prompts></div>
+    <p class="pron-active-task" data-pron-active-task aria-live="polite">Выбери текст для чтения.</p>
 
     <div class="pron-record-box">
       <label class="consent-line"><input type="checkbox" data-pron-consent>
@@ -79,10 +78,29 @@
     <h3 class="pron-subheading" data-ru="Сверка слов" data-en="Word comparison">Сверка слов</h3>
     <div class="pron-word-list" data-pron-words></div>
     <p class="fine-print" data-ru="Это сверка текста, а не фонетическая оценка: Whisper может ошибаться при распознавании. Процент показывает совпадение слов с заданием, а темп не измеряет интонацию или качество отдельных звуков." data-en="This is transcript matching, not a phonetic assessment: Whisper can make recognition errors. The percentage shows how many words matched the passage; speaking pace does not measure intonation or individual sound quality.">Это сверка текста, а не фонетическая оценка: Whisper может ошибаться при распознавании. Процент показывает совпадение слов с заданием, а темп не измеряет интонацию или качество отдельных звуков.</p>
+    <div class="pron-retry" data-pron-retry hidden>
+      <div>
+        <p class="eyebrow" data-ru="ПОВТОРЕНИЕ ОШИБОК" data-en="ERROR PRACTICE">ПОВТОРЕНИЕ ОШИБОК</p>
+        <h3 data-ru="Потренируй сложные слова." data-en="Practise the difficult words.">Потренируй сложные слова.</h3>
+        <p class="copy" data-pron-retry-text></p>
+      </div>
+      <button class="button" type="button" data-repeat-errors data-ru="Повторить слова" data-en="Practise these words">Повторить слова</button>
+    </div>
+  </section>
+
+  <section class="panel pron-progress-panel">
+    <div class="section-heading">
+      <div><p class="eyebrow">03 · PROGRESS</p><h2 data-ru="Динамика результатов." data-en="Progress over time.">Динамика результатов.</h2></div>
+      <span class="pill" data-pron-progress-count>0 попыток</span>
+    </div>
+    <p class="copy" data-ru="Последние 8 попыток по совпадению слов. Новые результаты появляются справа." data-en="Your last 8 word-match results. New attempts appear on the right.">Последние 8 попыток по совпадению слов. Новые результаты появляются справа.</p>
+    <div class="pron-chart-empty" data-pron-chart-empty>График появится после первой попытки.</div>
+    <svg class="pron-progress-chart" data-pron-chart viewBox="0 0 340 190" role="img" aria-label="Speaking practice progress chart" hidden></svg>
+    <div class="pron-chart-legend"><span>0%</span><span>50%</span><span>100%</span></div>
   </section>
 
   <section class="panel">
-    <div class="section-heading"><div><p class="eyebrow">03 · RECENT PRACTICE</p><h2 data-ru="Последние попытки." data-en="Recent attempts.">Последние попытки.</h2></div></div>
+    <div class="section-heading"><div><p class="eyebrow">04 · RECENT PRACTICE</p><h2 data-ru="Последние попытки." data-en="Recent attempts.">Последние попытки.</h2></div></div>
     <div class="pron-history" data-pron-history><p data-ru="История появится после первой оценки." data-en="Your history will appear after your first assessment.">История появится после первой оценки.</p></div>
   </section>
 </main>
