@@ -237,16 +237,12 @@ router.post('/guardian-consent-request', async (req, res, next) => {
   if (blocker) return res.status(503).json({ error: blocker });
 
   const ageBand = req.body?.age_band;
-  const countryCode = normalizeCountryCode(req.body?.country_code);
   const guardianEmail = typeof req.body?.guardian_email === 'string'
     ? req.body.guardian_email.trim().toLowerCase()
     : '';
 
   if (!requiresGuardianConsent(ageBand) || !isSupportedAgeBand(ageBand) || req.body?.age_confirmed !== true) {
     return res.status(400).json({ error: 'Подтверди, что тебе исполнилось 13 лет, и выбери возрастную группу 13–15 или 16–17.' });
-  }
-  if (!isValidCountryCode(countryCode)) {
-    return res.status(400).json({ error: 'Укажи двухбуквенный код страны, например RU или DE.' });
   }
   if (!validEmail(guardianEmail)) {
     return res.status(400).json({ error: 'Укажи корректный email родителя или законного представителя.' });
@@ -263,23 +259,20 @@ router.post('/guardian-consent-request', async (req, res, next) => {
   const rawToken = randomBytes(32).toString('base64url');
   const tokenHash = hashToken(rawToken);
   try {
-    await pool.query(
-      'DELETE FROM guardian_consent_requests WHERE expires_at < NOW()',
-      []
-    );
+    await pool.query('DELETE FROM guardian_consent_requests WHERE expires_at < NOW()');
     await pool.query(
       `INSERT INTO guardian_consent_requests
-         (request_type, token_hash, guardian_email, age_band, country_code, expires_at)
-       VALUES ('signup',$1,$2,$3,$4,NOW() + INTERVAL '24 hours')`,
-      [tokenHash, guardianEmail, ageBand, countryCode]
+         (request_type, token_hash, guardian_email, age_band, expires_at)
+       VALUES ('signup',$1,$2,$3,NOW() + INTERVAL '24 hours')`,
+      [tokenHash, guardianEmail, ageBand]
     );
     try {
       await sendMail({
         to: guardianEmail,
         subject: 'Запрос родительского подтверждения — Quiet English',
-        html: `<p>На Quiet English поступил запрос на создание учебного аккаунта для пользователя младше 18 лет.</p>
-          <p>Аккаунт ещё не создан. Email и пароль будущего пользователя не собирались.</p>
-          <p>Проверь информацию и подтверди запрос, только если ты действительно родитель или законный представитель:</p>
+        html: `<p>Поступил запрос на создание учебного аккаунта Quiet English для возрастной группы ${ageBand === '13_15' ? '13–15' : '16–17'}.</p>
+          <p>Аккаунт ещё не создан. Email пользователя, код страны и пароль пока не собирались.</p>
+          <p>Открой ссылку, ознакомься с документами и подтверди запрос только в том случае, если ты являешься родителем или законным представителем:</p>
           <p><a href="${messagePageUrl('guardian-consent.html', rawToken)}">Проверить запрос и дать согласие</a></p>
           <p>Ссылка действует 24 часа. Если ты не ожидаешь этот запрос, проигнорируй письмо.</p>`
       });
@@ -304,7 +297,7 @@ router.get('/guardian-consent-info', async (req, res, next) => {
   }
   try {
     const { rows } = await pool.query(
-      `SELECT request_type, age_band, country_code
+      `SELECT request_type, age_band
        FROM guardian_consent_requests
        WHERE token_hash=$1 AND consumed_at IS NULL AND expires_at > NOW()`,
       [hashToken(token)]
@@ -314,8 +307,7 @@ router.get('/guardian-consent-info', async (req, res, next) => {
     res.json({
       available: true,
       requestType: rows[0].request_type,
-      ageBand: rows[0].age_band,
-      countryCode: rows[0].country_code
+      ageBand: rows[0].age_band
     });
   } catch (error) {
     next(error);
@@ -324,23 +316,29 @@ router.get('/guardian-consent-info', async (req, res, next) => {
 
 router.post('/guardian-consent-complete', async (req, res, next) => {
   const {
-    token, email, password, preferred_language = 'ru',
+    token, email, password, country_code, preferred_language = 'ru',
     guardian_confirmed, minimum_age_confirmed, terms_accepted, privacy_accepted, personal_data_accepted
   } = req.body || {};
+
   if (typeof token !== 'string' || token.length < 30 || token.length > 200) {
     return res.status(400).json({ error: 'Ссылка подтверждения некорректна.' });
   }
+  if (guardian_confirmed !== true || minimum_age_confirmed !== true ||
+      terms_accepted !== true || privacy_accepted !== true || personal_data_accepted !== true) {
+    return res.status(400).json({ error: 'Подтверди полномочия родителя/опекуна, возраст пользователя не менее 13 лет, принятие условий и отдельное согласие на обработку данных.' });
+  }
+
   const childEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  const normalizedCountryCode = normalizeCountryCode(country_code);
   if (!validEmail(childEmail)) return res.status(400).json({ error: 'Укажи корректный email пользователя.' });
+  if (!isValidCountryCode(normalizedCountryCode)) {
+    return res.status(400).json({ error: 'Укажи двухбуквенный код страны пользователя, например RU или DE.' });
+  }
   if (typeof password !== 'string' || password.length < 12 || password.length > 200) {
     return res.status(400).json({ error: 'Пароль должен содержать от 12 до 200 символов.' });
   }
   if (!['ru', 'en'].includes(preferred_language)) {
     return res.status(400).json({ error: 'Выбери язык интерфейса.' });
-  }
-  if (guardian_confirmed !== true || minimum_age_confirmed !== true ||
-      terms_accepted !== true || privacy_accepted !== true || personal_data_accepted !== true) {
-    return res.status(400).json({ error: 'Подтверди полномочия родителя/опекуна, возраст пользователя не менее 13 лет, принятие условий и отдельное согласие на обработку данных.' });
   }
 
   const blocker = registrationBlocker();
@@ -353,7 +351,7 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
   try {
     await client.query('BEGIN');
     const request = await client.query(
-      `SELECT id, guardian_email, age_band, country_code
+      `SELECT id, guardian_email, age_band
        FROM guardian_consent_requests
        WHERE token_hash=$1 AND request_type='signup'
          AND consumed_at IS NULL AND expires_at > NOW()
@@ -365,6 +363,10 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
       return res.status(410).json({ error: 'Ссылка недействительна или срок её действия истёк.' });
     }
     const consentRequest = request.rows[0];
+    if (!requiresGuardianConsent(consentRequest.age_band)) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'Возрастная группа не требует этого родительского запроса.' });
+    }
     guardianEmail = consentRequest.guardian_email;
     if (childEmail === guardianEmail.toLowerCase()) {
       await client.query('ROLLBACK');
@@ -381,7 +383,7 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
       `INSERT INTO users
          (email, password_hash, age_band, country_code, guardian_email, guardian_consented_at)
        VALUES ($1,$2,$3,$4,$5,NOW()) RETURNING id`,
-      [childEmail, passwordHash, consentRequest.age_band, consentRequest.country_code, guardianEmail]
+      [childEmail, passwordHash, consentRequest.age_band, normalizedCountryCode, guardianEmail]
     );
     userId = created.rows[0].id;
     await client.query(
@@ -393,7 +395,7 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
       source: 'guardian-consent',
       guardian_authority_confirmed: true,
       age_band: consentRequest.age_band,
-      country_code: consentRequest.country_code,
+      country_code: normalizedCountryCode,
       language: preferred_language
     });
     await client.query(
@@ -412,7 +414,7 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
          ($1,'guardian_consented',$2,$3,FALSE,$4,$5,$6,$7),
          ($1,'account_created',$2,$3,FALSE,$4,$5,$6,$7)`,
       [
-        userId, consentRequest.age_band, consentRequest.country_code, preferred_language,
+        userId, consentRequest.age_band, normalizedCountryCode, preferred_language,
         TERMS_POLICY_VERSION, PRIVACY_POLICY_VERSION, PERSONAL_DATA_CONSENT_VERSION
       ]
     );
@@ -426,7 +428,7 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
       event: 'registration.guardian_consented',
       user_id: userId,
       age_band: consentRequest.age_band,
-      country_code: consentRequest.country_code,
+      country_code: normalizedCountryCode,
       occurred_at: new Date().toISOString()
     }));
   } catch (error) {
