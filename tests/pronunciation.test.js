@@ -60,3 +60,43 @@ test('returns an empty local history when browser storage is unavailable or corr
     setItem: () => { throw new Error('storage full'); }
   }, { reference_text: 'Example' }), false);
 });
+
+import { PASSAGES, buildProgressSeries, getReviewWords } from '../public/pronunciation-content.js';
+
+test('provides three speaking passages for every CEFR level from A1 to C1', () => {
+  const levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
+  assert.equal(PASSAGES.length, 15);
+  for (const level of levels) {
+    const passages = PASSAGES.filter(item => item.level === level);
+    assert.equal(passages.length, 3);
+    assert.ok(passages.every(item => item.text.split(/\\s+/u).length <= 55));
+  }
+});
+
+test('builds an error-practice list from unique missing and substituted words only', () => {
+  const words = [
+    { reference: 'will', recognized: "we'll", status: 'different' },
+    { reference: 'after', recognized: '', status: 'missing' },
+    { reference: 'will', recognized: '', status: 'missing' },
+    { reference: 'today', recognized: 'today', status: 'match' },
+    { reference: '', recognized: 'yesterday', status: 'extra' }
+  ];
+  assert.deepEqual(getReviewWords(words), ['will', 'after']);
+});
+
+test('builds a chronological progress series and keeps only the latest eight valid scores', () => {
+  const attempts = Array.from({ length: 10 }, (_, index) => ({
+    word_match_score: index * 10,
+    created_at: new Date(Date.UTC(2026, 0, index + 1)).toISOString()
+  }));
+  attempts.push({ word_match_score: 140, created_at: '2026-02-01T00:00:00Z' });
+  const series = buildProgressSeries(attempts);
+  assert.equal(series.length, 8);
+  assert.equal(series[0].score, 20);
+  assert.equal(series.at(-1).score, 90);
+  assert.ok(series[0].dateLabel);
+});
+
+test('returns an empty progress series when no score history exists', () => {
+  assert.deepEqual(buildProgressSeries([]), []);
+});
