@@ -748,3 +748,100 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
 .listening-word-item .listening-word-chip{border:0;border-radius:0}
 .listening-word-add{border:0;border-left:1px solid var(--line,#ddd);background:transparent;color:inherit;padding:4px 9px;cursor:pointer;font-weight:600}
 .listening-word-add.is-saved{color:#34734d}
+
+
+/* Writing Lab — spacious, responsive editor */
+.writing-page{gap:24px}
+.writing-editor-panel{padding:52px}
+.writing-controls{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(130px,.72fr) minmax(240px,1.55fr);
+  gap:18px;
+  align-items:end;
+  margin-bottom:30px;
+}
+.writing-controls label{
+  display:grid;
+  gap:9px;
+  min-width:0;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:400;
+  line-height:1.4;
+}
+.writing-controls select,
+.writing-controls input{
+  display:block;
+  width:100%;
+  min-width:0;
+  height:46px;
+  padding:0 14px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+  color:var(--ink);
+  font:400 13px Inter,Arial,sans-serif;
+  transition:border-color .18s,box-shadow .18s;
+}
+.writing-controls input::placeholder{color:#aaa}
+.writing-text-label{
+  display:grid;
+  gap:12px;
+  color:var(--ink);
+  font-size:14px;
+  font-weight:400;
+}
+.writing-text-label textarea{
+  display:block;
+  width:100%;
+  min-height:320px;
+  padding:20px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  outline:none;
+  resize:vertical;
+  background:#fcfcfc;
+  color:var(--ink);
+  font:400 14px/1.8 Inter,Arial,sans-serif;
+  transition:border-color .18s,box-shadow .18s,background .18s;
+}
+.writing-text-label textarea::placeholder{color:#aaa}
+.writing-controls select:focus,
+.writing-controls input:focus,
+.writing-text-label textarea:focus{
+  border-color:#999;
+  box-shadow:0 0 0 3px rgba(0,0,0,.045);
+  outline:none;
+}
+.writing-text-label textarea:focus{background:#fff}
+.writing-submit-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:16px;
+  margin-top:20px;
+}
+.writing-submit-row .fine-print{
+  margin:0;
+  max-width:620px;
+  font-size:11px;
+  line-height:1.6;
+}
+.writing-submit-row .button{flex:0 0 auto;cursor:pointer}
+.writing-editor-panel .form-status{margin:12px 0 0}
+@media(max-width:900px){
+  .writing-editor-panel{padding:38px}
+  .writing-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .writing-controls label:last-child{grid-column:1/-1}
+}
+@media(max-width:600px){
+  .writing-editor-panel{padding:24px}
+  .writing-controls{grid-template-columns:1fr;gap:14px;margin-bottom:24px}
+  .writing-controls label:last-child{grid-column:auto}
+  .writing-controls select,.writing-controls input{height:48px}
+  .writing-text-label textarea{min-height:260px;padding:16px;font-size:13px}
+  .writing-submit-row{align-items:stretch;flex-direction:column}
+  .writing-submit-row .button{width:100%;justify-content:center}
+  .writing-submit-row .fine-print{max-width:none}
+}
