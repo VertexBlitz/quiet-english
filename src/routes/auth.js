@@ -338,10 +338,13 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
   if (!['ru', 'en'].includes(preferred_language)) {
     return res.status(400).json({ error: 'Выбери язык интерфейса.' });
   }
-  if (guardian_confirmed !== true || terms_accepted !== true ||
-      privacy_accepted !== true || personal_data_accepted !== true) {
-    return res.status(400).json({ error: 'Подтверди полномочия родителя/опекуна, принятие условий и отдельное согласие на обработку данных.' });
+  if (guardian_confirmed !== true || minimum_age_confirmed !== true ||
+      terms_accepted !== true || privacy_accepted !== true || personal_data_accepted !== true) {
+    return res.status(400).json({ error: 'Подтверди полномочия родителя/опекуна, возраст пользователя не менее 13 лет, принятие условий и отдельное согласие на обработку данных.' });
   }
+
+  const blocker = registrationBlocker();
+  if (blocker) return res.status(503).json({ error: blocker });
 
   const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
   const client = await pool.connect();
