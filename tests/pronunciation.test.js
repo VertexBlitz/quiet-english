@@ -100,3 +100,70 @@ test('builds a chronological progress series and keeps only the latest eight val
 test('returns an empty progress series when no score history exists', () => {
   assert.deepEqual(buildProgressSeries([]), []);
 });
+
+import {
+  buildSpeakingGenerationPrompt,
+  parseGeneratedSpeakingPassage,
+  validateSpeakingGenerationRequest
+} from '../src/speaking.js';
+
+test('validates CEFR level and topic before requesting a generated passage', () => {
+  assert.equal(validateSpeakingGenerationRequest({
+    level: 'b2', topic: 'Science'
+  }).ok, true);
+  assert.equal(validateSpeakingGenerationRequest({
+    level: 'C2', topic: 'Science'
+  }).ok, false);
+  assert.equal(validateSpeakingGenerationRequest({
+    level: 'A2', topic: 'Unlisted topic'
+  }).ok, false);
+});
+
+test('limits recent examples sent to the model and builds a level-specific prompt', () => {
+  const validated = validateSpeakingGenerationRequest({
+    level: 'C1',
+    topic: 'History and culture',
+    avoid: [' first   passage ', 'second', 'third', 'fourth', 'fifth']
+  });
+  assert.equal(validated.ok, true);
+  assert.equal(validated.value.avoid.length, 4);
+
+  const prompt = buildSpeakingGenerationPrompt(validated.value);
+  assert.match(prompt, /CEFR C1/u);
+  assert.match(prompt, /History and culture/u);
+  assert.match(prompt, /Do not repeat/u);
+  assert.match(prompt, /first passage/u);
+});
+
+test('parses a valid generated English passage and returns its validated metadata', () => {
+  const passage = parseGeneratedSpeakingPassage(JSON.stringify({
+    title: 'A visit to the library',
+    passage: 'Mia visits the city library after school. She chooses a book about space and learns how scientists study distant planets. Before going home, she writes three new words in her notebook.'
+  }), { level: 'A2', topic: 'Books and media' });
+
+  assert.equal(passage.level, 'A2');
+  assert.equal(passage.topic, 'Books and media');
+  assert.equal(passage.title, 'A visit to the library');
+  assert.ok(passage.wordCount >= 15 && passage.wordCount <= 65);
+});
+
+test('rejects malformed, too-short and non-English AI responses', () => {
+  assert.throws(
+    () => parseGeneratedSpeakingPassage('not json', { level: 'A1', topic: 'Travel' }),
+    /непонятном формате/u
+  );
+  assert.throws(
+    () => parseGeneratedSpeakingPassage(JSON.stringify({
+      title: 'Short',
+      passage: 'Too few words.'
+    }), { level: 'A1', topic: 'Travel' }),
+    /неподходящей длины/u
+  );
+  assert.throws(
+    () => parseGeneratedSpeakingPassage(JSON.stringify({
+      title: 'Не английский',
+      passage: 'Это короткий текст на русском языке для проверки формата и языка.'
+    }), { level: 'A1', topic: 'Travel' }),
+    /неподходящей длины/u
+  );
+});
