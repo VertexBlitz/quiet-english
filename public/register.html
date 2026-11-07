@@ -37,10 +37,6 @@
 
     <form data-auth-form="register" data-auth-status-id="auth-status" novalidate>
       <div class="form-grid">
-        <label data-ru="Код страны (две буквы)" data-en="Country code (two letters)">
-          Код страны (две буквы)
-          <input name="country_code" autocomplete="country" placeholder="RU" minlength="2" maxlength="2" pattern="[A-Za-z]{2}" required>
-        </label>
         <label data-ru="Возрастная группа" data-en="Age group">
           Возрастная группа
           <select name="age_band" required>
@@ -57,6 +53,10 @@
       </p>
 
       <div data-adult-fields hidden>
+        <label data-ru="Код страны (две буквы)" data-en="Country code (two letters)">
+          Код страны (две буквы)
+          <input name="country_code" autocomplete="country" placeholder="RU" minlength="2" maxlength="2" pattern="[A-Za-z]{2}" data-required="true">
+        </label>
         <label>Email
           <input type="email" name="email" autocomplete="email" maxlength="254" data-required="true">
         </label>
