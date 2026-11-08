@@ -132,6 +132,11 @@ test('registration UI is adult-only and cannot submit before readiness and Turns
   assert.ok(!registerHtml.includes('data-minor-fields'));
   assert.ok(!authJs.includes("authRequest('/guardian-consent-request'"));
   assert.ok(authRoutes.includes('isMinorRegistrationEnabled'));
+  assert.ok(registerHtml.includes('name="country_code"'));
+  assert.ok(registerHtml.includes('value="DE"'));
+  assert.ok(registerHtml.includes('value="IT"'));
+  assert.ok(authJs.includes("country_code: countryField?.value"));
+  assert.ok(authRoutes.includes('isPilotCountryCode(country_code)'));
 });
 
 test('password recovery and public AI chat have dedicated rate limits', () => {
