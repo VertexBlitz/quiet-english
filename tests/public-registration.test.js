@@ -17,10 +17,15 @@ test('international pilot public registration is adult-only and does not ask for
   assert.doesNotMatch(registerHtml, /name="(date_of_birth|birth_date|dob)"/i);
 });
 
-test('country code is not collected and legacy columns remain nullable', () => {
-  assert.doesNotMatch(registerHtml, /name="country_code"/);
+test('pilot signup records only a self-declared Germany or Italy residence', () => {
+  assert.match(registerHtml, /name="country_code"/);
+  assert.match(registerHtml, /value="DE"/);
+  assert.match(registerHtml, /value="IT"/);
+  assert.match(registerHtml, /Country of residence/);
   assert.doesNotMatch(guardianHtml, /name="country_code"/);
-  assert.doesNotMatch(authRoutes, /country_code|normalizeCountryCode|isValidCountryCode/);
+  assert.match(authRoutes, /isPilotCountryCode\(country_code\)/);
+  assert.match(authRoutes, /INSERT INTO users \(email, password_hash, age_band, country_code\)/);
+  assert.match(authRoutes, /preferred_language, country_code/);
   assert.match(optionalCountryMigration, /ALTER TABLE users ALTER COLUMN country_code DROP NOT NULL/);
   assert.match(optionalCountryMigration, /ALTER TABLE registration_events ALTER COLUMN country_code DROP NOT NULL/);
   assert.doesNotMatch(optionalCountryMigration, /DROP COLUMN/i);
