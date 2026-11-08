@@ -73,6 +73,16 @@ test('Russian deployment secrets are excluded from Git and container build conte
   assert.ok(dockerignore.includes('!.env.ru.example'));
 });
 
+test('all public pages use local font fallbacks instead of third-party Google Fonts', () => {
+  const pages = fs.readdirSync(path.join(process.cwd(), 'public')).filter(file => file.endsWith('.html'));
+  assert.ok(pages.length > 0);
+  for (const page of pages) {
+    const html = read('public/' + page);
+    assert.ok(!html.includes('fonts.googleapis.com'), page + ' still loads Google Fonts');
+    assert.ok(!html.includes('fonts.gstatic.com'), page + ' still contacts Google Fonts assets');
+  }
+});
+
 test('Russian deployments block registration and external personal-data processors until approved', () => {
   const regional = read('src/region-config.js');
   const auth = read('src/routes/auth.js');
@@ -80,12 +90,14 @@ test('Russian deployments block registration and external personal-data processo
   const writing = read('src/routes/writing.js');
   const studyTools = read('src/routes/study-tools.js');
   const billing = read('src/routes/billing.js');
+  const knowledge = read('src/routes/knowledge.js');
   assert.ok(regional.includes("env.REGION_EXTERNAL_PROCESSORS_APPROVED === 'true'"));
   assert.ok(auth.includes('isExternalPersonalDataProcessingAllowed()'));
   assert.ok(server.includes('isExternalPersonalDataProcessingAllowed()'));
   assert.ok(writing.includes('isExternalPersonalDataProcessingAllowed()'));
   assert.ok(studyTools.includes('isExternalPersonalDataProcessingAllowed()'));
   assert.ok(billing.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(knowledge.includes('isExternalPersonalDataProcessingAllowed()'));
   assert.ok(auth.includes("REGISTRATION_REGION_SERVICES_APPROVED !== 'true'"));
   assert.ok(server.includes("REGISTRATION_REGION_SERVICES_APPROVED !== 'true'"));
 });
