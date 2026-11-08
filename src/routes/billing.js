@@ -1,6 +1,7 @@
 import express from 'express';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { pool, requireDatabase, requireUser } from '../db.js';
+import { isExternalPersonalDataProcessingAllowed } from '../region-config.js';
 
 const router = express.Router();
 const PLANS = {
@@ -32,7 +33,7 @@ function escapeHtml(value) {
   })[ch]);
 }
 async function sendGuardianEmail(to,plan,token) {
-  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !appUrl()) {
+  if (!isExternalPersonalDataProcessingAllowed() || !process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !appUrl()) {
     throw new Error('EMAIL_NOT_CONFIGURED');
   }
   const link=appUrl()+'/guardian-approval.html?token='+encodeURIComponent(token);
