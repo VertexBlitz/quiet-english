@@ -220,6 +220,7 @@ function getRegistrationReadiness() {
   if (getAppRegion() === 'unknown') blockers.push('APP_REGION должен быть preview, eu или ru.');
   if (!isRegistrationDatabaseIsolated()) blockers.push('Не подтверждена отдельная база данных и ожидаемая схема для выбранного региона.');
   if (getAppRegion() === 'ru' && process.env.REGISTRATION_REGION_SERVICES_APPROVED !== 'true') blockers.push('Не утверждены CAPTCHA, почта и другие сервисы обработки данных для российского контура.');
+  if (getAppRegion() === 'ru' && !isExternalPersonalDataProcessingAllowed()) blockers.push('Не утверждена обработка персональных данных внешними сервисами для российского контура.');
   if (process.env.REGISTRATION_DATA_LOCALIZATION_APPROVED !== 'true') blockers.push('Не подтверждена локализация персональных данных для целевой аудитории.');
   if (process.env.REGISTRATION_OPERATOR_DETAILS_APPROVED !== 'true') blockers.push('Не заполнены и не подтверждены сведения об операторе и контакты для обращений.');
   return {
