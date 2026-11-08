@@ -78,10 +78,8 @@ parentSignupForm?.addEventListener('submit', async event => {
       terms_accepted: form.get('terms_accepted') === 'on',
       privacy_accepted: form.get('privacy_accepted') === 'on',
       personal_data_accepted: form.get('personal_data_accepted') === 'on',
-      country_code: String(form.get('country_code') || '').trim().toUpperCase(),
       email: form.get('email'),
-      password: form.get('password'),
-      preferred_language: form.get('preferred_language') || 'ru'
+      password: form.get('password')
     });
     parentSignupForm.hidden = true;
     showGuardianMessage(data.message || 'Родительское согласие сохранено.');
