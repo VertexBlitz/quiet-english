@@ -59,10 +59,11 @@ test('public registration requires legal, operator, localization and isolated da
   assert.ok(server.includes("app.post('/api/chat', chatLimiter"));
   assert.ok(!privacy.includes('рабочим черновиком'));
   assert.ok(!terms.includes('Проект документа'));
-  assert.ok(privacy.includes('Редакция 1.1'));
-  assert.ok(terms.includes('Редакция 1.1'));
-  assert.ok(privacy.includes('до родительского подтверждения'));
-  assert.ok(terms.includes('13 лет'));
+  assert.ok(privacy.includes('Редакция 1.2'));
+  assert.ok(terms.includes('Редакция 1.2'));
+  assert.ok(privacy.includes('Создание новых аккаунтов несовершеннолетних отключено'));
+  assert.ok(terms.includes('только совершеннолетние пользователи (18+)'));
+  assert.ok(terms.includes('Германия или Италия'));
 });
 
 test('Russian deployment secrets are excluded from Git and container build context', () => {
