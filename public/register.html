@@ -7,7 +7,7 @@
   
   <script defer src="/i18n.js"></script>
   <script defer src="/session.js?v=20261108-public-signup-3"></script>
-  <script defer src="/auth.js?v=20261108-international-18plus-1"></script>
+  <script defer src="/auth.js?v=20261108-germany-italy-1"></script>
 </head>
 <body>
 <header class="topbar wrap">
@@ -40,6 +40,17 @@
       </p>
 
       <div data-adult-fields>
+        <label data-ru="Страна проживания" data-en="Country of residence">
+          Страна проживания
+          <select name="country_code" required>
+            <option value="" data-ru="Выбери страну" data-en="Choose your country">Выбери страну</option>
+            <option value="DE" data-ru="Германия" data-en="Germany">Германия</option>
+            <option value="IT" data-ru="Италия" data-en="Italy">Италия</option>
+          </select>
+        </label>
+        <p class="fine-print" data-ru="Указывай страну своего текущего проживания. Это заявление для пилотного доступа; сервис не проверяет гражданство или фактическое местонахождение." data-en="Select your current country of residence. This is a pilot eligibility declaration; the service does not verify citizenship or physical location.">
+          Указывай страну своего текущего проживания. Это заявление для пилотного доступа; сервис не проверяет гражданство или фактическое местонахождение.
+        </p>
         <label>Email
           <input type="email" name="email" autocomplete="email" maxlength="254" data-required="true">
         </label>

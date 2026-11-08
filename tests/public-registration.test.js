@@ -17,10 +17,15 @@ test('international pilot public registration is adult-only and does not ask for
   assert.doesNotMatch(registerHtml, /name="(date_of_birth|birth_date|dob)"/i);
 });
 
-test('country code is not collected and legacy columns remain nullable', () => {
-  assert.doesNotMatch(registerHtml, /name="country_code"/);
+test('pilot signup records only a self-declared Germany or Italy residence', () => {
+  assert.match(registerHtml, /name="country_code"/);
+  assert.match(registerHtml, /value="DE"/);
+  assert.match(registerHtml, /value="IT"/);
+  assert.match(registerHtml, /Country of residence/);
   assert.doesNotMatch(guardianHtml, /name="country_code"/);
-  assert.doesNotMatch(authRoutes, /country_code|normalizeCountryCode|isValidCountryCode/);
+  assert.match(authRoutes, /isPilotCountryCode\(country_code\)/);
+  assert.match(authRoutes, /INSERT INTO users \(email, password_hash, age_band, country_code\)/);
+  assert.match(authRoutes, /preferred_language, country_code/);
   assert.match(optionalCountryMigration, /ALTER TABLE users ALTER COLUMN country_code DROP NOT NULL/);
   assert.match(optionalCountryMigration, /ALTER TABLE registration_events ALTER COLUMN country_code DROP NOT NULL/);
   assert.doesNotMatch(optionalCountryMigration, /DROP COLUMN/i);
@@ -40,7 +45,7 @@ test('the adult-only pilot hides minor signup and requires an explicit backend g
   assert.match(completeRoute, /isMinorRegistrationEnabled/);
   assert.doesNotMatch(guardianHtml, /name="country_code"/);
   assert.doesNotMatch(guardianJs, /country_code/);
-  assert.doesNotMatch(authRoutes, /country_code|normalizeCountryCode|isValidCountryCode/);
+  assert.doesNotMatch(requestRoute, /country_code|normalizeCountryCode|isValidCountryCode/);
 });
 
 test('parent page separately captures authority, Terms, Privacy and data consent', () => {
@@ -50,7 +55,6 @@ test('parent page separately captures authority, Terms, Privacy and data consent
   assert.match(guardianHtml, /name="personal_data_accepted"/);
   assert.match(guardianHtml, /name="minimum_age_confirmed"/);
   assert.doesNotMatch(guardianHtml, /name="country_code"/);
-  assert.doesNotMatch(registerHtml, /name="country_code"/);
   assert.doesNotMatch(registerHtml, /name="preferred_language"/);
   assert.doesNotMatch(guardianHtml, /name="preferred_language"/);
   assert.match(guardianHtml, /guardian-consent.js/);

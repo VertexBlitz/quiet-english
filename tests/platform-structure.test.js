@@ -59,10 +59,11 @@ test('public registration requires legal, operator, localization and isolated da
   assert.ok(server.includes("app.post('/api/chat', chatLimiter"));
   assert.ok(!privacy.includes('рабочим черновиком'));
   assert.ok(!terms.includes('Проект документа'));
-  assert.ok(privacy.includes('Редакция 1.1'));
-  assert.ok(terms.includes('Редакция 1.1'));
-  assert.ok(privacy.includes('до родительского подтверждения'));
-  assert.ok(terms.includes('13 лет'));
+  assert.ok(privacy.includes('Редакция 1.2'));
+  assert.ok(terms.includes('Редакция 1.2'));
+  assert.ok(privacy.includes('Создание новых аккаунтов несовершеннолетних отключено'));
+  assert.ok(terms.includes('только совершеннолетние пользователи (18+)'));
+  assert.ok(terms.includes('Германия или Италия'));
 });
 
 test('Russian deployment secrets are excluded from Git and container build context', () => {
@@ -132,6 +133,14 @@ test('registration UI is adult-only and cannot submit before readiness and Turns
   assert.ok(!registerHtml.includes('data-minor-fields'));
   assert.ok(!authJs.includes("authRequest('/guardian-consent-request'"));
   assert.ok(authRoutes.includes('isMinorRegistrationEnabled'));
+  assert.ok(registerHtml.includes('name="country_code"'));
+  assert.ok(registerHtml.includes('value="DE"'));
+  assert.ok(registerHtml.includes('value="IT"'));
+  assert.ok(authJs.includes("country_code: countryField?.value"));
+  assert.ok(authRoutes.includes('isPilotCountryCode(country_code)'));
+  const server = read('server.js');
+  assert.ok(server.includes('minimumAge: 18'));
+  assert.ok(server.includes("pilotCountries: ['DE', 'IT']"));
 });
 
 test('password recovery and public AI chat have dedicated rate limits', () => {
