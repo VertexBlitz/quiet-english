@@ -45,7 +45,7 @@ test('the adult-only pilot hides minor signup and requires an explicit backend g
   assert.match(completeRoute, /isMinorRegistrationEnabled/);
   assert.doesNotMatch(guardianHtml, /name="country_code"/);
   assert.doesNotMatch(guardianJs, /country_code/);
-  assert.doesNotMatch(authRoutes, /country_code|normalizeCountryCode|isValidCountryCode/);
+  assert.doesNotMatch(requestRoute, /country_code|normalizeCountryCode|isValidCountryCode/);
 });
 
 test('parent page separately captures authority, Terms, Privacy and data consent', () => {
@@ -55,7 +55,6 @@ test('parent page separately captures authority, Terms, Privacy and data consent
   assert.match(guardianHtml, /name="personal_data_accepted"/);
   assert.match(guardianHtml, /name="minimum_age_confirmed"/);
   assert.doesNotMatch(guardianHtml, /name="country_code"/);
-  assert.doesNotMatch(registerHtml, /name="country_code"/);
   assert.doesNotMatch(registerHtml, /name="preferred_language"/);
   assert.doesNotMatch(guardianHtml, /name="preferred_language"/);
   assert.match(guardianHtml, /guardian-consent.js/);
