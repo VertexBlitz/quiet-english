@@ -7,6 +7,7 @@ const guardianHtml = await readFile(new URL('../public/guardian-consent.html', i
 const guardianJs = await readFile(new URL('../public/guardian-consent.js', import.meta.url), 'utf8');
 const authRoutes = await readFile(new URL('../src/routes/auth.js', import.meta.url), 'utf8');
 const serverConfig = await readFile(new URL('../server.js', import.meta.url), 'utf8');
+const regionConfig = await readFile(new URL('../src/region-config.js', import.meta.url), 'utf8');
 const optionalCountryMigration = await readFile(new URL('../db/migrations/012_optional_country_code.sql', import.meta.url), 'utf8');
 
 test('registration asks for an age band, not a date of birth', () => {
@@ -82,7 +83,9 @@ test('public registration requires all operational and legal launch gates', () =
   for (const name of [
     'REGISTRATION_ENABLED',
     'REGISTRATION_LEGAL_APPROVED',
-    'REGISTRATION_DATABASE_ISOLATED',
+    'isRegistrationDatabaseIsolated',
+    'REGISTRATION_REGION_SERVICES_APPROVED',
+    'REGION_EXTERNAL_PROCESSORS_APPROVED',
     'REGISTRATION_DATA_LOCALIZATION_APPROVED',
     'REGISTRATION_OPERATOR_DETAILS_APPROVED',
     'TURNSTILE_SECRET_KEY',
@@ -90,6 +93,7 @@ test('public registration requires all operational and legal launch gates', () =
   ]) {
     assert.match(readiness, new RegExp(name));
   }
+  assert.match(regionConfig, /REGION_EXTERNAL_PROCESSORS_APPROVED/);
 });
 
 test('guardian approval token is not placed in page query strings', () => {

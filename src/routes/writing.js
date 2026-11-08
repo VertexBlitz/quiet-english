@@ -1,6 +1,7 @@
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { pool, requireDatabase, requireUser, recordActivity } from '../db.js';
+import { isExternalPersonalDataProcessingAllowed } from '../region-config.js';
 import { consumeMonthlyQuota } from '../subscription-access.js';
 
 const router = express.Router();
@@ -24,7 +25,7 @@ function parseJson(raw) {
   return JSON.parse(value.slice(first, last + 1));
 }
 async function callAi(system, user) {
-  if (!process.env.CLOUDFLARE_ACCOUNT_ID || !process.env.CLOUDFLARE_API_TOKEN) throw new Error('AI_NOT_CONFIGURED');
+  if (!isExternalPersonalDataProcessingAllowed() || !process.env.CLOUDFLARE_ACCOUNT_ID || !process.env.CLOUDFLARE_API_TOKEN) throw new Error('AI_NOT_CONFIGURED');
   const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' +
     encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID) + '/ai/v1/chat/completions';
   const response = await fetch(endpoint, {

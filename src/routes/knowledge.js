@@ -1,5 +1,6 @@
 import express from 'express';
 import { pool, requireDatabase, requireUser } from '../db.js';
+import { isExternalPersonalDataProcessingAllowed } from '../region-config.js';
 import { rateLimit } from 'express-rate-limit';
 
 const router = express.Router();
@@ -369,7 +370,7 @@ router.post('/dictionary-enrich/:word', dictionaryEnrichLimiter, async (req, res
   const definitions = Array.isArray(req.body?.definitions)
     ? req.body.definitions.slice(0, 3).map(value => cleanText(value, 220)).filter(Boolean)
     : [];
-  if (!process.env.CLOUDFLARE_ACCOUNT_ID || !process.env.CLOUDFLARE_API_TOKEN) {
+  if (!isExternalPersonalDataProcessingAllowed() || !process.env.CLOUDFLARE_ACCOUNT_ID || !process.env.CLOUDFLARE_API_TOKEN) {
     return res.status(503).json({ error: 'AI enrichment is not configured on this preview service.' });
   }
   const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' +

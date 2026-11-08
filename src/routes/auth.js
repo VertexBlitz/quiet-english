@@ -2,6 +2,7 @@ import express from 'express';
 import argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
 import { pool, requireDatabase, requireUser } from '../db.js';
+import { getAppRegion, isRegistrationDatabaseIsolated, isExternalPersonalDataProcessingAllowed } from '../region-config.js';
 import {
   isAdultRegistration,
   isSupportedAgeBand,
@@ -21,7 +22,7 @@ const validEmail = value => typeof value === 'string' && value.length <= 254 && 
 const appUrl = () => (process.env.APP_BASE_URL || '').replace(/\/$/, '');
 
 async function sendMail({ to, subject, html }) {
-  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !appUrl()) {
+  if (!isExternalPersonalDataProcessingAllowed() || !process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !appUrl()) {
     throw new Error('Email verification is not configured.');
   }
   const response = await fetch('https://api.resend.com/emails', {
@@ -59,8 +60,15 @@ function guardianConsentPageUrl(token) {
 function registrationBlocker() {
   if (process.env.REGISTRATION_ENABLED !== 'true') return 'Публичная регистрация пока закрыта.';
   if (process.env.REGISTRATION_LEGAL_APPROVED !== 'true') return 'Новые условия, политика и отдельное согласие на обработку данных ещё не утверждены.';
-  if (process.env.REGISTRATION_DATABASE_ISOLATED !== 'true' || process.env.DB_SCHEMA !== 'quiet_english_preview') {
-    return 'Не настроена изолированная схема PostgreSQL для Preview.';
+  if (getAppRegion() === 'unknown') return 'APP_REGION должен быть preview, eu или ru.';
+  if (!isRegistrationDatabaseIsolated()) {
+    return 'Не подтверждена отдельная база данных и ожидаемая схема для выбранного региона.';
+  }
+  if (getAppRegion() === 'ru' && process.env.REGISTRATION_REGION_SERVICES_APPROVED !== 'true') {
+    return 'Не утверждены CAPTCHA, почта и другие сервисы обработки данных для российского контура.';
+  }
+  if (getAppRegion() === 'ru' && !isExternalPersonalDataProcessingAllowed()) {
+    return 'Не утверждена обработка персональных данных внешними сервисами для российского контура.';
   }
   if (process.env.REGISTRATION_DATA_LOCALIZATION_APPROVED !== 'true') {
     return 'Не подтверждено соответствие требованиям локализации данных для целевой аудитории.';
@@ -71,7 +79,7 @@ function registrationBlocker() {
   if (!process.env.TURNSTILE_SITE_KEY || !process.env.TURNSTILE_SECRET_KEY) {
     return 'Проверка безопасности регистрации не настроена.';
   }
-  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !appUrl()) {
+  if (!isExternalPersonalDataProcessingAllowed() || !process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !appUrl()) {
     return 'Не настроена отправка писем.';
   }
   return null;
@@ -84,6 +92,7 @@ async function verifyRegistrationCaptcha(token) {
   } catch {
     return { ok: false, reason: 'not_configured' };
   }
+  if (!isExternalPersonalDataProcessingAllowed()) return { ok: false, reason: 'not_approved' };
   return verifyTurnstileToken(token, {
     secretKey: process.env.TURNSTILE_SECRET_KEY,
     expectedHostname

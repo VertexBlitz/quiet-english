@@ -43,14 +43,15 @@ test('public registration requires legal, operator, localization and isolated da
   const server = read('server.js');
   assert.ok(auth.includes("REGISTRATION_ENABLED !== 'true'"));
   assert.ok(auth.includes("REGISTRATION_LEGAL_APPROVED !== 'true'"));
-  assert.ok(auth.includes("REGISTRATION_DATABASE_ISOLATED !== 'true'"));
-  assert.ok(auth.includes("process.env.DB_SCHEMA !== 'quiet_english_preview'"));
-  assert.ok(server.includes("process.env.DB_SCHEMA !== 'quiet_english_preview'"));
+  assert.ok(auth.includes('isRegistrationDatabaseIsolated()'));
+  assert.ok(server.includes('isRegistrationDatabaseIsolated()'));
+  assert.ok(auth.includes("REGISTRATION_REGION_SERVICES_APPROVED !== 'true'"));
+  assert.ok(server.includes("REGISTRATION_REGION_SERVICES_APPROVED !== 'true'"));
   assert.ok(auth.includes("isAdultRegistration(age_band, adult_confirmed)"));
   assert.ok(auth.includes('verifyTurnstileToken'));
   assert.ok(server.includes("app.get('/api/registration-status'"));
   assert.ok(server.includes("REGISTRATION_LEGAL_APPROVED !== 'true'"));
-  assert.ok(server.includes("REGISTRATION_DATABASE_ISOLATED !== 'true'"));
+  assert.ok(server.includes('isRegistrationDatabaseIsolated()'));
   assert.ok(server.includes("REGISTRATION_DATA_LOCALIZATION_APPROVED !== 'true'"));
   assert.ok(server.includes("REGISTRATION_OPERATOR_DETAILS_APPROVED !== 'true'"));
   assert.ok(server.includes('TURNSTILE_SITE_KEY'));
@@ -62,6 +63,43 @@ test('public registration requires legal, operator, localization and isolated da
   assert.ok(terms.includes('Редакция 1.1'));
   assert.ok(privacy.includes('до родительского подтверждения'));
   assert.ok(terms.includes('13 лет'));
+});
+
+test('Russian deployment secrets are excluded from Git and container build context', () => {
+  const gitignore = read('.gitignore');
+  const dockerignore = read('.dockerignore');
+  assert.ok(gitignore.split(String.fromCharCode(10)).includes('.env.ru'));
+  assert.ok(dockerignore.includes('.env.*'));
+  assert.ok(dockerignore.includes('!.env.ru.example'));
+});
+
+test('all public pages use local font fallbacks instead of third-party Google Fonts', () => {
+  const pages = fs.readdirSync(path.join(process.cwd(), 'public')).filter(file => file.endsWith('.html'));
+  assert.ok(pages.length > 0);
+  for (const page of pages) {
+    const html = read('public/' + page);
+    assert.ok(!html.includes('fonts.googleapis.com'), page + ' still loads Google Fonts');
+    assert.ok(!html.includes('fonts.gstatic.com'), page + ' still contacts Google Fonts assets');
+  }
+});
+
+test('Russian deployments block registration and external personal-data processors until approved', () => {
+  const regional = read('src/region-config.js');
+  const auth = read('src/routes/auth.js');
+  const server = read('server.js');
+  const writing = read('src/routes/writing.js');
+  const studyTools = read('src/routes/study-tools.js');
+  const billing = read('src/routes/billing.js');
+  const knowledge = read('src/routes/knowledge.js');
+  assert.ok(regional.includes("env.REGION_EXTERNAL_PROCESSORS_APPROVED === 'true'"));
+  assert.ok(auth.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(server.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(writing.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(studyTools.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(billing.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(knowledge.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(auth.includes("REGISTRATION_REGION_SERVICES_APPROVED !== 'true'"));
+  assert.ok(server.includes("REGISTRATION_REGION_SERVICES_APPROVED !== 'true'"));
 });
 
 test('offline storage and service-worker cache are present after release updates', () => {
