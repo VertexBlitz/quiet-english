@@ -73,6 +73,15 @@ A PostgreSQL move alone does not localise data sent to these services. The publi
 
 Before enabling registration, the operator must select and test appropriate service providers, update the integration code where needed, review contracts and processing locations, and complete the applicable legal review. Do not set approval flags merely to make the health/readiness check green.
 
+The browser still has separate third-party dependencies that require a regional decision before calling the Russian experience fully self-contained:
+
+- `dictionaryapi.dev` receives dictionary lookup requests from the learner's browser;
+- `jsdelivr.net` serves the Transformers.js runtime, and its model assets may be fetched from remote model repositories;
+- audio references in the listening library point to external publishers (including British Council and ELLLO), and dictionary pronunciation audio can be served by a dictionary provider;
+- the Cloudflare Turnstile browser script is loaded when a site key is configured.
+
+The public pages no longer load Google Fonts. Before enabling the Russian user account flow, decide which of the remaining client-side resources can be self-hosted in the Russian region, which can be replaced by an approved regional service, and which should be disabled for Russian visitors. The current PR does not claim these browser dependencies have been localised.
+
 ## Registration gates
 
 Russian registration remains blocked until all of the following are genuinely complete:
