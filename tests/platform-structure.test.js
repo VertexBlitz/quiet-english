@@ -65,6 +65,23 @@ test('public registration requires legal, operator, localization and isolated da
   assert.ok(terms.includes('13 лет'));
 });
 
+test('Russian deployments block registration and external personal-data processors until approved', () => {
+  const regional = read('src/region-config.js');
+  const auth = read('src/routes/auth.js');
+  const server = read('server.js');
+  const writing = read('src/routes/writing.js');
+  const studyTools = read('src/routes/study-tools.js');
+  const billing = read('src/routes/billing.js');
+  assert.ok(regional.includes("env.REGION_EXTERNAL_PROCESSORS_APPROVED === 'true'"));
+  assert.ok(auth.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(server.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(writing.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(studyTools.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(billing.includes('isExternalPersonalDataProcessingAllowed()'));
+  assert.ok(auth.includes("REGISTRATION_REGION_SERVICES_APPROVED !== 'true'"));
+  assert.ok(server.includes("REGISTRATION_REGION_SERVICES_APPROVED !== 'true'"));
+});
+
 test('offline storage and service-worker cache are present after release updates', () => {
   const offlineClient = read('public/offline-client.js');
   const serviceWorker = read('public/sw.js');
