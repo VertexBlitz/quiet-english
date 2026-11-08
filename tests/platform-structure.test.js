@@ -137,6 +137,9 @@ test('registration UI is adult-only and cannot submit before readiness and Turns
   assert.ok(registerHtml.includes('value="IT"'));
   assert.ok(authJs.includes("country_code: countryField?.value"));
   assert.ok(authRoutes.includes('isPilotCountryCode(country_code)'));
+  const server = read('server.js');
+  assert.ok(server.includes('minimumAge: 18'));
+  assert.ok(server.includes("pilotCountries: ['DE', 'IT']"));
 });
 
 test('password recovery and public AI chat have dedicated rate limits', () => {
