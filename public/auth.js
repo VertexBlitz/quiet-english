@@ -1,5 +1,6 @@
 const authForm = document.querySelector('[data-auth-form]');
 const authStatus = document.querySelector('[data-auth-status]');
+const registrationBlockers = document.querySelector('[data-registration-blockers]');
 
 async function authRequest(path, body) {
   const response = await fetch('/api/auth' + path, {
@@ -14,10 +15,40 @@ async function authRequest(path, body) {
 }
 
 function showAuthMessage(message, isError = false) {
-  if (!authStatus) return;
-  authStatus.textContent = message;
-  authStatus.classList.toggle('error-text', isError);
-  authStatus.classList.toggle('success-text', !isError);
+  if (authStatus) {
+    authStatus.textContent = message;
+    authStatus.classList.toggle('error-text', isError);
+    authStatus.classList.toggle('success-text', !isError);
+  }
+
+  if (registrationBlockers) {
+    registrationBlockers.replaceChildren();
+    registrationBlockers.hidden = true;
+  }
+}
+
+function showRegistrationUnavailable(data) {
+  const blockers = Array.isArray(data?.blockers)
+    ? data.blockers.filter(item => typeof item === 'string' && item.trim())
+    : [];
+
+  if (!blockers.length || !registrationBlockers) {
+    showAuthMessage(
+      data?.message || 'Регистрация пока недоступна. Попробуй обновить страницу позже.',
+      true
+    );
+    return;
+  }
+
+  showAuthMessage('Регистрация пока недоступна. Причины:', true);
+
+  blockers.forEach(message => {
+    const item = document.createElement('li');
+    item.textContent = message;
+    registrationBlockers.append(item);
+  });
+
+  registrationBlockers.hidden = false;
 }
 
 if (authForm?.dataset.authForm === 'register') {
@@ -106,11 +137,11 @@ if (authForm?.dataset.authForm === 'register') {
       return data;
     })
     .then(async data => {
-      if (!data.available) {
-        showAuthMessage(data.message || 'Регистрация пока недоступна.', true);
+      if (data.available !== true) {
+        showRegistrationUnavailable(data);
         return;
       }
-      if (!data.captchaSiteKey) {
+      if (typeof data.captchaSiteKey !== 'string' || !data.captchaSiteKey.trim()) {
         showAuthMessage('Проверка безопасности не настроена. Регистрация пока недоступна.', true);
         return;
       }
@@ -120,8 +151,7 @@ if (authForm?.dataset.authForm === 'register') {
         throw new Error('Не удалось инициализировать проверку безопасности.');
       }
 
-      registrationAvailable = true;
-      captchaWidgetId = window.turnstile.render(captchaContainer, {
+      const widgetId = window.turnstile.render(captchaContainer, {
         sitekey: data.captchaSiteKey,
         action: 'qe_registration',
         theme: 'light',
@@ -141,6 +171,13 @@ if (authForm?.dataset.authForm === 'register') {
           showAuthMessage('Не удалось пройти проверку безопасности. Попробуй ещё раз.', true);
         }
       });
+
+      if (widgetId === null || widgetId === undefined) {
+        throw new Error('Не удалось инициализировать проверку безопасности.');
+      }
+
+      captchaWidgetId = widgetId;
+      registrationAvailable = true;
       updateRegisterButton();
     })
     .catch(error => showAuthMessage(error.message, true));
