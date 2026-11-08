@@ -8,6 +8,7 @@ import {
   isSupportedAgeBand,
   requiresGuardianConsent,
   isMinorRegistrationEnabled,
+  isPilotCountryCode,
   verifyTurnstileToken,
   TERMS_POLICY_VERSION,
   PRIVACY_POLICY_VERSION,
@@ -134,8 +135,8 @@ router.post('/resend-verification', async (req, res, next) => {
 
 router.post('/register', async (req, res, next) => {
   const {
-    email, password, age_band,
-    preferred_language = 'ru',
+    email, password, age_band, country_code,
+    preferred_language = 'en',
     terms_accepted, privacy_accepted, personal_data_accepted, adult_confirmed
   } = req.body || {};
 
@@ -152,6 +153,9 @@ router.post('/register', async (req, res, next) => {
   }
   if (!isSupportedAgeBand(age_band)) {
     return res.status(400).json({ error: 'Выбери возрастную группу.' });
+  }
+  if (!isPilotCountryCode(country_code)) {
+    return res.status(403).json({ error: 'На первом этапе Quiet English доступен для пользователей, проживающих в Германии или Италии. Выбери страну проживания.' });
   }
   if (!['ru', 'en'].includes(preferred_language)) {
     return res.status(400).json({ error: 'Выбери язык интерфейса.' });
@@ -182,16 +186,16 @@ router.post('/register', async (req, res, next) => {
     }
 
     const result = await client.query(
-      `INSERT INTO users (email, password_hash, age_band)
-       VALUES ($1,$2,$3) RETURNING id`,
-      [normalizedEmail, passwordHash, age_band]
+      `INSERT INTO users (email, password_hash, age_band, country_code)
+       VALUES ($1,$2,$3,$4) RETURNING id`,
+      [normalizedEmail, passwordHash, age_band, country_code]
     );
     userId = result.rows[0].id;
     await client.query(
       'INSERT INTO learner_profiles (user_id, preferred_language) VALUES ($1,$2)',
       [userId, preferred_language]
     );
-    const metadata = JSON.stringify({ source: 'registration', language: preferred_language });
+    const metadata = JSON.stringify({ source: 'registration', language: preferred_language, country_code });
     await client.query(
       `INSERT INTO consent_records (user_id, consent_type, policy_version, metadata)
        VALUES
@@ -202,11 +206,11 @@ router.post('/register', async (req, res, next) => {
     );
     await client.query(
       `INSERT INTO registration_events
-         (user_id, event_type, age_band, adult_attested, preferred_language,
+         (user_id, event_type, age_band, adult_attested, preferred_language, country_code,
           terms_version, privacy_version, personal_data_consent_version)
-       VALUES ($1,'account_created',$2,TRUE,$3,$4,$5,$6)`,
+       VALUES ($1,'account_created',$2,TRUE,$3,$4,$5,$6,$7)`,
       [
-        userId, age_band, preferred_language,
+        userId, age_band, preferred_language, country_code,
         TERMS_POLICY_VERSION, PRIVACY_POLICY_VERSION, PERSONAL_DATA_CONSENT_VERSION
       ]
     );
