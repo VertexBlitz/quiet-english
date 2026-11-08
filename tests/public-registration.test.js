@@ -31,8 +31,9 @@ test('the minor signup step only requests guardian contact and age attestation',
   const requestRoute = authRoutes.slice(requestStart, requestEnd);
   assert.ok(requestStart >= 0 && requestEnd > requestStart);
   assert.doesNotMatch(requestRoute, /country_code|childEmail|password/);
-  assert.match(guardianHtml, /name="country_code"/);
-  assert.match(guardianJs, /country_code: String\(form\.get\('country_code'\)/);
+  assert.doesNotMatch(guardianHtml, /name="country_code"/);
+  assert.doesNotMatch(guardianJs, /country_code/);
+  assert.doesNotMatch(authRoutes, /country_code|normalizeCountryCode|isValidCountryCode/);
 });
 
 test('parent page separately captures authority, Terms, Privacy and data consent', () => {
@@ -41,7 +42,10 @@ test('parent page separately captures authority, Terms, Privacy and data consent
   assert.match(guardianHtml, /name="privacy_accepted"/);
   assert.match(guardianHtml, /name="personal_data_accepted"/);
   assert.match(guardianHtml, /name="minimum_age_confirmed"/);
-  assert.match(guardianHtml, /name="country_code"/);
+  assert.doesNotMatch(guardianHtml, /name="country_code"/);
+  assert.doesNotMatch(registerHtml, /name="country_code"/);
+  assert.doesNotMatch(registerHtml, /name="preferred_language"/);
+  assert.doesNotMatch(guardianHtml, /name="preferred_language"/);
   assert.match(guardianHtml, /guardian-consent.js/);
 });
 
