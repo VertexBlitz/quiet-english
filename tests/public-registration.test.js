@@ -7,6 +7,7 @@ const guardianHtml = await readFile(new URL('../public/guardian-consent.html', i
 const guardianJs = await readFile(new URL('../public/guardian-consent.js', import.meta.url), 'utf8');
 const authRoutes = await readFile(new URL('../src/routes/auth.js', import.meta.url), 'utf8');
 const serverConfig = await readFile(new URL('../server.js', import.meta.url), 'utf8');
+const optionalCountryMigration = await readFile(new URL('../db/migrations/012_optional_country_code.sql', import.meta.url), 'utf8');
 
 test('registration asks for an age band, not a date of birth', () => {
   assert.match(registerHtml, /name="age_band"/);
@@ -14,6 +15,15 @@ test('registration asks for an age band, not a date of birth', () => {
   assert.match(registerHtml, /value="16_17"/);
   assert.match(registerHtml, /value="18_plus"/);
   assert.doesNotMatch(registerHtml, /name="(date_of_birth|birth_date|dob)"/i);
+});
+
+test('country code is not collected and legacy columns remain nullable', () => {
+  assert.doesNotMatch(registerHtml, /name="country_code"/);
+  assert.doesNotMatch(guardianHtml, /name="country_code"/);
+  assert.doesNotMatch(authRoutes, /country_code|normalizeCountryCode|isValidCountryCode/);
+  assert.match(optionalCountryMigration, /ALTER TABLE users ALTER COLUMN country_code DROP NOT NULL/);
+  assert.match(optionalCountryMigration, /ALTER TABLE registration_events ALTER COLUMN country_code DROP NOT NULL/);
+  assert.doesNotMatch(optionalCountryMigration, /DROP COLUMN/i);
 });
 
 test('the minor signup step only requests guardian contact and age attestation', () => {
@@ -30,7 +40,7 @@ test('the minor signup step only requests guardian contact and age attestation',
   const requestEnd = authRoutes.indexOf("router.post('/guardian-consent-info'", requestStart);
   const requestRoute = authRoutes.slice(requestStart, requestEnd);
   assert.ok(requestStart >= 0 && requestEnd > requestStart);
-  assert.doesNotMatch(requestRoute, /country_code|childEmail|password/);
+  assert.doesNotMatch(requestRoute, /country_code|childEmail/);
   assert.doesNotMatch(guardianHtml, /name="country_code"/);
   assert.doesNotMatch(guardianJs, /country_code/);
   assert.doesNotMatch(authRoutes, /country_code|normalizeCountryCode|isValidCountryCode/);
