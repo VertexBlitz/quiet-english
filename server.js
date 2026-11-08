@@ -958,6 +958,16 @@ app.use((error, _req, res, _next) => {
   res.status(500).json({ error: 'Внутренняя ошибка сервера. Попробуй ещё раз.' });
 });
 
+if (getAppRegion() === 'preview') {
+  const readiness = getRegistrationReadiness();
+  console.info(JSON.stringify({
+    event: 'registration.readiness',
+    available: readiness.available,
+    region: readiness.region,
+    blockers: readiness.blockers
+  }));
+}
+
 app.listen(port, '0.0.0.0', () => {
   console.log('Quiet English 2.0 listening on ' + port);
 });

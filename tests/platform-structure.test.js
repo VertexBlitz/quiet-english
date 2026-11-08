@@ -169,3 +169,13 @@ test('email verification can be resent safely after a temporary delivery failure
   assert.ok(registerPage.includes('data-resend-verification'));
   assert.ok(server.includes("app.use('/api/auth/resend-verification', emailResendLimiter);"));
 });
+
+test('preview startup logs registration readiness without exposing secrets', () => {
+  const server = read('server.js');
+  assert.ok(server.includes("if (getAppRegion() === 'preview')"));
+  assert.ok(server.includes("event: 'registration.readiness'"));
+  assert.ok(server.includes('available: readiness.available'));
+  assert.ok(server.includes('blockers: readiness.blockers'));
+  assert.ok(!server.includes('TURNSTILE_SECRET_KEY:'));
+  assert.ok(!server.includes('RESEND_API_KEY:'));
+});
