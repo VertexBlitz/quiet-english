@@ -65,6 +65,14 @@ test('public registration requires legal, operator, localization and isolated da
   assert.ok(terms.includes('13 лет'));
 });
 
+test('Russian deployment secrets are excluded from Git and container build context', () => {
+  const gitignore = read('.gitignore');
+  const dockerignore = read('.dockerignore');
+  assert.ok(gitignore.split(/\\r?\\n/).includes('.env.ru'));
+  assert.ok(dockerignore.includes('.env.*'));
+  assert.ok(dockerignore.includes('!.env.ru.example'));
+});
+
 test('Russian deployments block registration and external personal-data processors until approved', () => {
   const regional = read('src/region-config.js');
   const auth = read('src/routes/auth.js');
