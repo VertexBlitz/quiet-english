@@ -104,6 +104,19 @@ Do not copy production data to Preview. For a future Russian launch, use an empt
 
 The first international pilot uses the European deployment in Frankfurt as its only application and database region. Public account creation is limited to adults aged 18 or older. Minor sign-up endpoints are denied unless both `REGISTRATION_MINORS_ENABLED=true` and `REGISTRATION_MINORS_LEGAL_APPROVED=true` are explicitly set after a separate country-specific review. These flags are intentionally absent/false by default. Enabling them is not a substitute for consent flows, age-appropriate notices, country-specific review, and operational verification.
 
-The initial country allowlist is not yet configured. Do not open public registration until the adult operator has selected the pilot countries and reviewed the legal requirements, privacy notices, processors, and data flows for each. Any geographic restriction must be enforced using a trusted server-side source; a country value supplied only by browser JavaScript is not an access control. An IP-based location check identifies a likely access location, not citizenship, and must not be represented as proof of nationality.
+The initial pilot allowlist is Germany (`DE`) and Italy (`IT`). During signup, the user must declare their current country of residence; the server accepts only these two ISO country codes and records the selection in the existing `users.country_code` and `registration_events.country_code` fields. This is a market eligibility declaration, not proof of physical location, residence, or citizenship. It does not prevent a person outside these countries from falsely selecting one of them. Do not describe it as geoblocking or as a nationality check. A stronger geographic restriction would require a trusted server-side geolocation signal (for example, an appropriately configured edge proxy); client-provided headers and form values alone are not trusted location evidence. Do not collect identity documents or citizenship data merely to strengthen this pilot gate without a separate necessity and privacy assessment.
 
 The adult-only interface and API guard cover new account creation. They do not delete historical accounts or remove guardian withdrawal/deletion routes that may be needed to honor earlier commitments. Public registration remains blocked by the existing readiness flags until all required launch checks have been completed.
+
+
+### Germany and Italy launch review
+
+Before registration is enabled, the adult operator and a qualified EU privacy adviser should complete a market-specific review:
+
+- GDPR territorial scope applies to services offered to people in the EU by a controller outside the EU. Assess and document the Article 27 requirement for an EU representative; do not assume the occasional-processing exception applies to an ongoing account and learning-history service.
+- Review every processor and subprocessor, data location, support/admin access, retention, deletion, and the legal mechanism for any transfer outside the EEA. Frankfurt hosting alone does not resolve every transfer question.
+- For Germany, confirm whether the service falls within the DDG provider-information / legal-notice rules and any additional media-state requirements that apply to the actual service model.
+- For Germany and Italy, audit browser storage, cookies, analytics, fingerprinting, and third-party scripts. Keep non-essential tracking disabled until valid consent is obtained where required. Italy's Garante has issued specific cookie and tracking guidance; Germany's TDDDG §25 governs storage/access on end-user devices.
+- Provide final, reviewed notices and contractual terms appropriate for these countries. Current policy pages remain drafts and must not be treated as launch approval.
+
+The current country selector is self-declared and the UI is currently available in Russian and English only; German and Italian translations have not yet been implemented.
