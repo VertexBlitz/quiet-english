@@ -15,6 +15,13 @@ export function isAdultRegistration(ageBand, adultConfirmed) {
   return ageBand === '18_plus' && adultConfirmed === true;
 }
 
+// Minor accounts stay disabled unless both the feature switch and a separate
+// country-specific legal approval are explicitly present in the deployment.
+export function isMinorRegistrationEnabled(env = process.env) {
+  return env.REGISTRATION_MINORS_ENABLED === 'true' &&
+    env.REGISTRATION_MINORS_LEGAL_APPROVED === 'true';
+}
+
 export function isValidTurnstileResult(result, expectedHostname) {
   return Boolean(
     result &&
