@@ -7,6 +7,7 @@ import {
   isAdultRegistration,
   isSupportedAgeBand,
   requiresGuardianConsent,
+  isMinorRegistrationEnabled,
   verifyTurnstileToken,
   TERMS_POLICY_VERSION,
   PRIVACY_POLICY_VERSION,
@@ -147,7 +148,7 @@ router.post('/register', async (req, res, next) => {
     return res.status(400).json({ error: 'Пароль должен содержать от 12 до 200 символов.' });
   }
   if (!isAdultRegistration(age_band, adult_confirmed)) {
-    return res.status(403).json({ error: 'Для пользователей 13–17 лет сначала требуется подтверждение родителя или опекуна.' });
+    return res.status(403).json({ error: 'На этапе пилотного запуска Quiet English регистрация доступна только совершеннолетним пользователям (18+).' });
   }
   if (!isSupportedAgeBand(age_band)) {
     return res.status(400).json({ error: 'Выбери возрастную группу.' });
@@ -242,6 +243,9 @@ router.post('/register', async (req, res, next) => {
 });
 
 router.post('/guardian-consent-request', async (req, res, next) => {
+  if (!isMinorRegistrationEnabled()) {
+    return res.status(403).json({ error: 'На первом этапе Quiet English регистрирует только совершеннолетних пользователей (18+).' });
+  }
   const blocker = registrationBlocker();
   if (blocker) return res.status(503).json({ error: blocker });
 
@@ -312,6 +316,9 @@ router.post('/guardian-consent-info', async (req, res, next) => {
       [hashToken(token)]
     );
     if (!rows[0]) return res.status(410).json({ error: 'Ссылка недействительна или срок её действия истёк.' });
+    if (rows[0].request_type === 'signup' && !isMinorRegistrationEnabled()) {
+      return res.status(410).json({ error: 'Регистрация несовершеннолетних временно недоступна.' });
+    }
     res.set('Cache-Control', 'no-store');
     res.json({
       available: true,
@@ -324,6 +331,9 @@ router.post('/guardian-consent-info', async (req, res, next) => {
 });
 
 router.post('/guardian-consent-complete', async (req, res, next) => {
+  if (!isMinorRegistrationEnabled()) {
+    return res.status(403).json({ error: 'На первом этапе Quiet English регистрирует только совершеннолетних пользователей (18+).' });
+  }
   const {
     token, email, password, preferred_language = 'ru',
     guardian_confirmed, minimum_age_confirmed, terms_accepted, privacy_accepted, personal_data_accepted

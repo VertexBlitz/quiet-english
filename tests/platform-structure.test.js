@@ -113,23 +113,25 @@ test('offline storage and service-worker cache are present after release updates
   assert.equal(dictionary.split('/offline-client.js').length - 1, 1);
 });
 
-test('registration UI supports age bands and cannot submit before readiness and Turnstile succeed', () => {
+test('registration UI is adult-only and cannot submit before readiness and Turnstile succeed', () => {
   const authJs = read('public/auth.js');
   const registerHtml = read('public/register.html');
+  const authRoutes = read('src/routes/auth.js');
   assert.ok(authJs.includes('/api/registration-status'));
   assert.ok(authJs.includes('turnstile.render'));
   assert.ok(authJs.includes('turnstile_token: captchaToken'));
   assert.ok(registerHtml.includes('type="submit" disabled'));
-  assert.ok(registerHtml.includes('name="age_band"'));
-  assert.ok(registerHtml.includes('value="13_15"'));
-  assert.ok(registerHtml.includes('value="16_17"'));
-  assert.ok(registerHtml.includes('value="18_plus"'));
+  assert.ok(registerHtml.includes('name="age_band" value="18_plus"'));
+  assert.ok(!registerHtml.includes('value="13_15"'));
+  assert.ok(!registerHtml.includes('value="16_17"'));
   assert.ok(registerHtml.includes('name="adult_confirmed"'));
   assert.ok(authJs.includes("adult_confirmed: form.get('adult_confirmed') === 'on'"));
+  assert.ok(authJs.includes("ageBandField?.value !== '18_plus'"));
   assert.ok(registerHtml.includes('data-turnstile-captcha'));
   assert.ok(!registerHtml.includes('<select id="age-band"'));
-  assert.ok(registerHtml.includes('data-minor-fields'));
-  assert.ok(authJs.includes("authRequest('/guardian-consent-request'"));
+  assert.ok(!registerHtml.includes('data-minor-fields'));
+  assert.ok(!authJs.includes("authRequest('/guardian-consent-request'"));
+  assert.ok(authRoutes.includes('isMinorRegistrationEnabled'));
 });
 
 test('password recovery and public AI chat have dedicated rate limits', () => {

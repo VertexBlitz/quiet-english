@@ -10,11 +10,10 @@ const serverConfig = await readFile(new URL('../server.js', import.meta.url), 'u
 const regionConfig = await readFile(new URL('../src/region-config.js', import.meta.url), 'utf8');
 const optionalCountryMigration = await readFile(new URL('../db/migrations/012_optional_country_code.sql', import.meta.url), 'utf8');
 
-test('registration asks for an age band, not a date of birth', () => {
-  assert.match(registerHtml, /name="age_band"/);
-  assert.match(registerHtml, /value="13_15"/);
-  assert.match(registerHtml, /value="16_17"/);
-  assert.match(registerHtml, /value="18_plus"/);
+test('international pilot public registration is adult-only and does not ask for date of birth', () => {
+  assert.match(registerHtml, /name="age_band" value="18_plus"/);
+  assert.doesNotMatch(registerHtml, /value="13_15"|value="16_17"/);
+  assert.match(registerHtml, /only to adults aged 18 or older/i);
   assert.doesNotMatch(registerHtml, /name="(date_of_birth|birth_date|dob)"/i);
 });
 
@@ -27,21 +26,18 @@ test('country code is not collected and legacy columns remain nullable', () => {
   assert.doesNotMatch(optionalCountryMigration, /DROP COLUMN/i);
 });
 
-test('the minor signup step only requests guardian contact and age attestation', () => {
-  const start = registerHtml.indexOf('<div data-minor-fields hidden>');
-  const end = registerHtml.indexOf('<div class="turnstile-widget"', start);
-  assert.ok(start >= 0 && end > start);
-  const minorFields = registerHtml.slice(start, end);
-  assert.match(minorFields, /name="guardian_email"/);
-  assert.match(minorFields, /name="age_confirmed"/);
-  assert.doesNotMatch(minorFields, /name="email"/);
-  assert.doesNotMatch(minorFields, /name="password"/);
-  assert.doesNotMatch(minorFields, /name="country_code"/);
+test('the adult-only pilot hides minor signup and requires an explicit backend gate', () => {
+  assert.doesNotMatch(registerHtml, /data-minor-fields|guardian_email|age_confirmed|value="13_15"|value="16_17"/);
   const requestStart = authRoutes.indexOf("router.post('/guardian-consent-request'");
   const requestEnd = authRoutes.indexOf("router.post('/guardian-consent-info'", requestStart);
   const requestRoute = authRoutes.slice(requestStart, requestEnd);
   assert.ok(requestStart >= 0 && requestEnd > requestStart);
-  assert.doesNotMatch(requestRoute, /country_code|childEmail/);
+  assert.match(requestRoute, /isMinorRegistrationEnabled/);
+  const completeStart = authRoutes.indexOf("router.post('/guardian-consent-complete'");
+  const completeEnd = authRoutes.indexOf("router.post('/guardian-withdrawal-request'", completeStart);
+  const completeRoute = authRoutes.slice(completeStart, completeEnd);
+  assert.ok(completeStart >= 0 && completeEnd > completeStart);
+  assert.match(completeRoute, /isMinorRegistrationEnabled/);
   assert.doesNotMatch(guardianHtml, /name="country_code"/);
   assert.doesNotMatch(guardianJs, /country_code/);
   assert.doesNotMatch(authRoutes, /country_code|normalizeCountryCode|isValidCountryCode/);
@@ -69,7 +65,8 @@ test('guardian flow supports consent approval and withdrawal', () => {
   assert.match(authRoutes, /router.post\('\/guardian-consent-withdraw'/);
 });
 
-test('minor account creation happens only through the guardian approval route', () => {
+test('minor account creation requires country-specific enablement and guardian approval', () => {
+  assert.match(authRoutes, /isMinorRegistrationEnabled/);
   assert.match(authRoutes, /if \(!isAdultRegistration\(age_band, adult_confirmed\)\)/);
   assert.match(authRoutes, /if \(requiresGuardianConsent\(item\.age_band\) && !item\.guardian_consented_at\)/);
   assert.match(authRoutes, /guardian_consented_at\)/);

@@ -7,7 +7,7 @@
   
   <script defer src="/i18n.js"></script>
   <script defer src="/session.js?v=20261108-public-signup-3"></script>
-  <script defer src="/auth.js?v=20261108-public-signup-3"></script>
+  <script defer src="/auth.js?v=20261108-international-18plus-1"></script>
 </head>
 <body>
 <header class="topbar wrap">
@@ -33,23 +33,13 @@
     <p class="lead" data-ru="Сохраняй план, задания и прогресс на всех своих устройствах." data-en="Save your plan, exercises and progress across devices.">Сохраняй план, задания и прогресс на всех своих устройствах.</p>
 
     <form data-auth-form="register" data-auth-status-id="auth-status" novalidate>
-      <div class="form-grid">
-        <label data-ru="Возрастная группа" data-en="Age group">
-          Возрастная группа
-          <select name="age_band" required>
-            <option value="" data-ru="Выбери группу" data-en="Choose an age group">Выбери группу</option>
-            <option value="13_15">13–15</option>
-            <option value="16_17">16–17</option>
-            <option value="18_plus">18+</option>
-          </select>
-        </label>
-      </div>
+      <input type="hidden" name="age_band" value="18_plus">
 
-      <p class="fine-print" data-ru="Дата рождения не запрашивается. На первом этапе регистрация доступна с 13 лет. Для пользователей 13–17 лет сначала требуется подтверждение родителя или законного представителя. Пользователи младше 13 лет пока не могут создать аккаунт." data-en="Your date of birth is not requested. Registration starts at age 13. Users aged 13–17 need parent or legal guardian approval first. Users under 13 cannot create an account at this stage.">
-        Дата рождения не запрашивается. На первом этапе регистрация доступна с 13 лет. Для пользователей 13–17 лет сначала требуется подтверждение родителя или законного представителя. Пользователи младше 13 лет пока не могут создать аккаунт.
+      <p class="fine-print" data-ru="На этапе международного пилотного запуска аккаунт могут создать только совершеннолетние пользователи — от 18 лет. Поддержка несовершеннолетних появится позднее, после отдельной проверки требований каждой страны." data-en="During the international pilot, accounts are available only to adults aged 18 or older. Support for younger learners may be introduced later after a separate review of each country's requirements.">
+        На этапе международного пилотного запуска аккаунт могут создать только совершеннолетние пользователи — от 18 лет. Поддержка несовершеннолетних появится позднее, после отдельной проверки требований каждой страны.
       </p>
 
-      <div data-adult-fields hidden>
+      <div data-adult-fields>
         <label>Email
           <input type="email" name="email" autocomplete="email" maxlength="254" data-required="true">
         </label>
@@ -73,20 +63,6 @@
           <input type="checkbox" name="personal_data_accepted" data-required="true">
           <span data-ru="Отдельно соглашаюсь на обработку персональных данных по" data-en="I separately consent to personal data processing under the">Отдельно соглашаюсь на обработку персональных данных по <a href="/data-consent.html">отдельному согласию</a>.</span>
         </label>
-      </div>
-
-      <div data-minor-fields hidden>
-        <label class="check-row">
-          <input type="checkbox" name="age_confirmed" data-required="true">
-          <span data-ru="Подтверждаю, что мне уже исполнилось 13 лет." data-en="I confirm that I am at least 13 years old.">Подтверждаю, что мне уже исполнилось 13 лет.</span>
-        </label>
-        <label data-ru="Email родителя или законного представителя" data-en="Parent or legal guardian email">
-          Email родителя или законного представителя
-          <input type="email" name="guardian_email" autocomplete="email" maxlength="254" data-required="true">
-        </label>
-        <p class="copy" data-ru="Сначала мы отправим родителю ссылку. До подтверждения родителем email и пароль пользователя не запрашиваются, а аккаунт не создаётся." data-en="We will email the parent first. The learner's email and password are not requested and no account is created until the parent approves.">
-          Сначала мы отправим родителю ссылку. До подтверждения родителем email и пароль пользователя не запрашиваются, а аккаунт не создаётся.
-        </p>
       </div>
 
       <div class="turnstile-widget" data-turnstile-captcha aria-label="Проверка безопасности"></div>
