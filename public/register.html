@@ -9,7 +9,7 @@
   
   <script defer src="/i18n.js"></script>
   <script defer src="/session.js?v=20261108-public-signup-3"></script>
-  <script defer src="/auth.js?v=20261108-germany-italy-1"></script>
+  <script defer src="/auth.js?v=20261108-registration-status-2"></script>
 </head>
 <body>
 <header class="topbar wrap">
@@ -80,6 +80,7 @@
 
       <div class="turnstile-widget" data-turnstile-captcha aria-label="Проверка безопасности"></div>
       <p class="form-status" data-auth-status id="auth-status" aria-live="polite"></p>
+      <ul class="form-status" data-registration-blockers hidden style="margin:0;padding-left:20px;"></ul>
       <button class="button" type="submit" disabled>
         <span data-submit-label data-ru="Создать аккаунт" data-en="Create account">Создать аккаунт</span>
         <span>↗</span>
