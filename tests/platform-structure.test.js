@@ -51,7 +51,7 @@ test('public registration requires legal, operator, localization and isolated da
   assert.ok(auth.includes('verifyTurnstileToken'));
   assert.ok(server.includes("app.get('/api/registration-status'"));
   assert.ok(server.includes("REGISTRATION_LEGAL_APPROVED !== 'true'"));
-  assert.ok(server.includes("REGISTRATION_DATABASE_ISOLATED !== 'true'"));
+  assert.ok(server.includes('isRegistrationDatabaseIsolated()'));
   assert.ok(server.includes("REGISTRATION_DATA_LOCALIZATION_APPROVED !== 'true'"));
   assert.ok(server.includes("REGISTRATION_OPERATOR_DETAILS_APPROVED !== 'true'"));
   assert.ok(server.includes('TURNSTILE_SITE_KEY'));
