@@ -15,14 +15,6 @@ export function isAdultRegistration(ageBand, adultConfirmed) {
   return ageBand === '18_plus' && adultConfirmed === true;
 }
 
-export function normalizeCountryCode(value) {
-  return typeof value === 'string' ? value.trim().toUpperCase() : '';
-}
-
-export function isValidCountryCode(value) {
-  return /^[A-Z]{2}$/.test(normalizeCountryCode(value));
-}
-
 export function isValidTurnstileResult(result, expectedHostname) {
   return Boolean(
     result &&
