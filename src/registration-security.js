@@ -1,7 +1,7 @@
 export const REGISTRATION_CAPTCHA_ACTION = 'qe_registration';
-export const TERMS_POLICY_VERSION = '2026-11-08-1.1';
-export const PRIVACY_POLICY_VERSION = '2026-11-08-1.1';
-export const PERSONAL_DATA_CONSENT_VERSION = '2026-11-08-1.1';
+export const TERMS_POLICY_VERSION = '2026-11-08-1.2';
+export const PRIVACY_POLICY_VERSION = '2026-11-08-1.2';
+export const PERSONAL_DATA_CONSENT_VERSION = '2026-11-08-1.2';
 
 // Initial international pilot markets, represented by ISO 3166-1 alpha-2.
 export const PILOT_COUNTRY_CODES = Object.freeze(['DE', 'IT']);
