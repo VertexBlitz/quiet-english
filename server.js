@@ -229,11 +229,12 @@ function getRegistrationReadiness() {
     blockers,
     captchaSiteKey: process.env.TURNSTILE_SITE_KEY || null,
     audience: {
-      minimumAge: 13,
-      ageBands: ['13_15', '16_17', '18_plus'],
-      under13: 'Регистрация младше 13 лет на первом этапе недоступна.',
-      guardianConsent: 'Для возрастных групп 13–15 и 16–17 требуется предварительное подтверждение родителя или законного представителя.',
-      dateOfBirth: 'Дата рождения не запрашивается.'
+      minimumAge: 18,
+      ageBands: ['18_plus'],
+      pilotCountries: ['DE', 'IT'],
+      countryBasis: 'Self-declared current country of residence; not a geolocation or citizenship check.',
+      under18: 'Registration is limited to adults aged 18 or older during the initial pilot.',
+      dateOfBirth: 'Exact date of birth is not requested.'
     }
   };
 }
@@ -244,7 +245,7 @@ app.get('/api/registration-status', (_req, res) => {
   res.json({
     available: readiness.available,
     message: readiness.available
-      ? 'Регистрация доступна с 13 лет. Для пользователей 13–17 лет требуется предварительное подтверждение родителя или опекуна.'
+      ? 'На первом этапе регистрация доступна только совершеннолетним пользователям, проживающим в Германии или Италии.'
       : 'Регистрация пока недоступна. ' + readiness.blockers.join(' '),
     blockers: readiness.blockers,
     captchaSiteKey: readiness.captchaSiteKey,
