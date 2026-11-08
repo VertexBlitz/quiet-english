@@ -27,7 +27,6 @@ if (authForm?.dataset.authForm === 'register') {
   const captchaContainer = authForm.querySelector('[data-turnstile-captcha]');
   const ageBandField = authForm.querySelector('[name="age_band"]');
   const adultFields = authForm.querySelector('[data-adult-fields]');
-  const minorFields = authForm.querySelector('[data-minor-fields]');
   let pendingVerificationEmail = '';
   let registrationAvailable = false;
   let captchaToken = '';
@@ -41,29 +40,12 @@ if (authForm?.dataset.authForm === 'register') {
     });
   }
 
-  function syncAgeFields() {
-    const ageBand = ageBandField?.value || '';
-    const isAdult = ageBand === '18_plus';
-    const isMinor = ageBand === '13_15' || ageBand === '16_17';
-    setGroupState(adultFields, isAdult);
-    setGroupState(minorFields, isMinor);
-
-    if (submitLabel) {
-      const lang = document.documentElement.lang === 'en' ? 'en' : 'ru';
-      const label = isMinor
-        ? (lang === 'en' ? 'Send parent approval request' : 'Отправить запрос родителю')
-        : isAdult
-          ? (lang === 'en' ? 'Create account' : 'Создать аккаунт')
-          : (lang === 'en' ? 'Choose an age group' : 'Выбери возрастную группу');
-      submitLabel.textContent = label;
-    }
-    updateRegisterButton();
-  }
-
   function updateRegisterButton() {
     if (registerButton) {
-      const ageSelected = ['13_15', '16_17', '18_plus'].includes(ageBandField?.value);
-      registerButton.disabled = !registrationAvailable || !captchaToken || !ageSelected || !authForm.checkValidity();
+      registerButton.disabled = !registrationAvailable ||
+        !captchaToken ||
+        ageBandField?.value !== '18_plus' ||
+        !authForm.checkValidity();
     }
   }
 
@@ -111,13 +93,10 @@ if (authForm?.dataset.authForm === 'register') {
   });
 
   if (registerButton) registerButton.disabled = true;
-  syncAgeFields();
+  setGroupState(adultFields, true);
 
   authForm.addEventListener('input', updateRegisterButton);
-  authForm.addEventListener('change', () => {
-    syncAgeFields();
-    updateRegisterButton();
-  });
+  authForm.addEventListener('change', updateRegisterButton);
 
   fetch('/api/registration-status', { cache: 'no-store' })
     .then(async response => {
@@ -167,7 +146,10 @@ if (authForm?.dataset.authForm === 'register') {
 
   authForm.addEventListener('submit', async event => {
     event.preventDefault();
-    syncAgeFields();
+    if (ageBandField?.value !== '18_plus') {
+      showAuthMessage('На этапе пилотного запуска регистрация доступна только с 18 лет.', true);
+      return;
+    }
     if (!authForm.checkValidity()) {
       authForm.reportValidity();
       return;
@@ -182,32 +164,21 @@ if (authForm?.dataset.authForm === 'register') {
     if (registerButton) registerButton.disabled = true;
 
     try {
-      if (ageBand === '18_plus') {
-        const email = String(form.get('email') || '').trim().toLowerCase();
-        const data = await authRequest('/register', {
-          email,
-          password: form.get('password'),
-          age_band: ageBand,
-          adult_confirmed: form.get('adult_confirmed') === 'on',
-          terms_accepted: form.get('terms_accepted') === 'on',
-          privacy_accepted: form.get('privacy_accepted') === 'on',
-          personal_data_accepted: form.get('personal_data_accepted') === 'on',
-          turnstile_token: captchaToken
-        });
-        pendingVerificationEmail = email;
-        if (resendButton) resendButton.hidden = !data.emailPending;
-        showAuthMessage(data.message || 'Проверь почту для продолжения.');
-      } else {
-        const data = await authRequest('/guardian-consent-request', {
-          age_band: ageBand,
-          age_confirmed: form.get('age_confirmed') === 'on',
-          guardian_email: String(form.get('guardian_email') || '').trim().toLowerCase(),
-          turnstile_token: captchaToken
-        });
-        showAuthMessage(data.message || 'Письмо родителю отправлено.');
-      }
+      const email = String(form.get('email') || '').trim().toLowerCase();
+      const data = await authRequest('/register', {
+        email,
+        password: form.get('password'),
+        age_band: '18_plus',
+        adult_confirmed: form.get('adult_confirmed') === 'on',
+        terms_accepted: form.get('terms_accepted') === 'on',
+        privacy_accepted: form.get('privacy_accepted') === 'on',
+        personal_data_accepted: form.get('personal_data_accepted') === 'on',
+        turnstile_token: captchaToken
+      });
+      pendingVerificationEmail = email;
+      if (resendButton) resendButton.hidden = !data.emailPending;
+      showAuthMessage(data.message || 'Проверь почту для продолжения.');
       authForm.reset();
-      syncAgeFields();
     } catch (error) {
       showAuthMessage(error.message, true);
     } finally {
