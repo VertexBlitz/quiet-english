@@ -98,3 +98,12 @@ The environment flags are controls, not legal conclusions.
 ## Migration and release safety
 
 Do not copy production data to Preview. For a future Russian launch, use an empty dedicated Russian database unless a separate, approved migration plan exists. If records must be migrated, prepare a documented export/import, test it with non-production data, verify counts and integrity, and define a rollback. No Production service or `main` branch is changed by this preparation.
+
+
+## International pilot: adult-only launch
+
+The first international pilot uses the European deployment in Frankfurt as its only application and database region. Public account creation is limited to adults aged 18 or older. Minor sign-up endpoints are denied unless both `REGISTRATION_MINORS_ENABLED=true` and `REGISTRATION_MINORS_LEGAL_APPROVED=true` are explicitly set after a separate country-specific review. These flags are intentionally absent/false by default. Enabling them is not a substitute for consent flows, age-appropriate notices, country-specific review, and operational verification.
+
+The initial country allowlist is not yet configured. Do not open public registration until the adult operator has selected the pilot countries and reviewed the legal requirements, privacy notices, processors, and data flows for each. Any geographic restriction must be enforced using a trusted server-side source; a country value supplied only by browser JavaScript is not an access control. An IP-based location check identifies a likely access location, not citizenship, and must not be represented as proof of nationality.
+
+The adult-only interface and API guard cover new account creation. They do not delete historical accounts or remove guardian withdrawal/deletion routes that may be needed to honor earlier commitments. Public registration remains blocked by the existing readiness flags until all required launch checks have been completed.
