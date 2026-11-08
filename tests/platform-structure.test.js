@@ -179,3 +179,18 @@ test('preview startup logs registration readiness without exposing secrets', () 
   assert.ok(!server.includes('TURNSTILE_SECRET_KEY:'));
   assert.ok(!server.includes('RESEND_API_KEY:'));
 });
+
+test('login explains unverified email separately and offers resend verification', () => {
+  const auth = read('src/routes/auth.js');
+  const client = read('public/auth.js');
+  const loginPage = read('public/login.html');
+  const registerPage = read('public/register.html');
+
+  assert.ok(auth.includes("code: 'EMAIL_NOT_VERIFIED'"));
+  assert.ok(auth.includes("code: 'ACCOUNT_NOT_ACTIVE'"));
+  assert.ok(client.includes("error.code === 'EMAIL_NOT_VERIFIED'"));
+  assert.ok(client.includes("authRequest('/resend-verification'"));
+  assert.ok(loginPage.includes('data-resend-login-verification hidden'));
+  assert.ok(client.includes('resendButton.hidden = false'));
+  assert.ok(registerPage.includes('data-resend-verification hidden'));
+});

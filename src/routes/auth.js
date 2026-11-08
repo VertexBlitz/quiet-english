@@ -654,9 +654,16 @@ router.post('/login', async (req, res, next) => {
     if (!user || !(await argon2.verify(user.password_hash, password))) {
       return res.status(401).json({ error: 'Неверный email или пароль.' });
     }
+    if (!user.email_verified_at) {
+      return res.status(403).json({
+        code: 'EMAIL_NOT_VERIFIED',
+        error: 'Email ещё не подтверждён. Проверь входящие и папку «Спам» или запроси новое письмо.'
+      });
+    }
     if (user.account_status !== 'active') {
       return res.status(403).json({
-        error: 'Сначала подтверди email и, если требуется, дождись согласия родителя или опекуна.'
+        code: 'ACCOUNT_NOT_ACTIVE',
+        error: 'Email подтверждён, но аккаунт пока не активирован. Если для него требуется согласие законного представителя, дождись его подтверждения.'
       });
     }
     await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));

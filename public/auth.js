@@ -10,7 +10,12 @@ async function authRequest(path, body) {
     body: JSON.stringify(body)
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Не удалось выполнить запрос.');
+  if (!response.ok) {
+    const error = new Error(data.error || 'Не удалось выполнить запрос.');
+    error.status = response.status;
+    error.code = typeof data.code === 'string' ? data.code : null;
+    throw error;
+  }
   return data;
 }
 
@@ -215,7 +220,9 @@ if (authForm?.dataset.authForm === 'register') {
         turnstile_token: captchaToken
       });
       pendingVerificationEmail = email;
-      if (resendButton) resendButton.hidden = !data.emailPending;
+      // The provider may accept a message without it reaching the inbox.
+      // Keep resend available until the user confirms the address.
+      if (resendButton) resendButton.hidden = false;
       showAuthMessage(data.message || 'Проверь почту для продолжения.');
       authForm.reset();
     } catch (error) {
@@ -226,19 +233,44 @@ if (authForm?.dataset.authForm === 'register') {
   });
 }
 if (authForm?.dataset.authForm === 'login') {
+  const loginButton = authForm.querySelector('button[type="submit"]');
+  const resendLoginButton = authForm.querySelector('[data-resend-login-verification]');
+  const emailField = authForm.querySelector('[name="email"]');
+
+  resendLoginButton?.addEventListener('click', async () => {
+    const email = String(emailField?.value || '').trim().toLowerCase();
+    if (!emailField?.checkValidity() || !email) {
+      emailField?.reportValidity();
+      return;
+    }
+
+    resendLoginButton.disabled = true;
+    try {
+      const data = await authRequest('/resend-verification', { email });
+      showAuthMessage(data.message || 'Если аккаунт существует и email не подтверждён, письмо отправлено.');
+    } catch (error) {
+      showAuthMessage(error.message, true);
+    } finally {
+      resendLoginButton.disabled = false;
+    }
+  });
+
   authForm.addEventListener('submit', async event => {
     event.preventDefault();
     const form = new FormData(authForm);
-    const button = authForm.querySelector('button[type="submit"]');
-    button.disabled = true;
+    loginButton.disabled = true;
+    if (resendLoginButton) resendLoginButton.hidden = true;
     try {
       await authRequest('/login', { email: form.get('email'), password: form.get('password') });
       const me = await fetch('/api/auth/me', { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null);
       location.href = me?.user?.onboarding_completed_at ? '/plan.html' : '/onboarding.html';
     } catch (error) {
       showAuthMessage(error.message, true);
+      if (resendLoginButton && error.code === 'EMAIL_NOT_VERIFIED') {
+        resendLoginButton.hidden = false;
+      }
     } finally {
-      button.disabled = false;
+      loginButton.disabled = false;
     }
   });
 }
