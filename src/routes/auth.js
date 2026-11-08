@@ -148,7 +148,7 @@ router.post('/register', async (req, res, next) => {
     return res.status(400).json({ error: 'Пароль должен содержать от 12 до 200 символов.' });
   }
   if (!isAdultRegistration(age_band, adult_confirmed)) {
-    return res.status(403).json({ error: 'Для пользователей 13–17 лет сначала требуется подтверждение родителя или опекуна.' });
+    return res.status(403).json({ error: 'На этапе пилотного запуска Quiet English регистрация доступна только совершеннолетним пользователям (18+).' });
   }
   if (!isSupportedAgeBand(age_band)) {
     return res.status(400).json({ error: 'Выбери возрастную группу.' });
