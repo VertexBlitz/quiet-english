@@ -68,7 +68,7 @@ test('public registration requires legal, operator, localization and isolated da
 test('Russian deployment secrets are excluded from Git and container build context', () => {
   const gitignore = read('.gitignore');
   const dockerignore = read('.dockerignore');
-  assert.ok(gitignore.split(/\\r?\\n/).includes('.env.ru'));
+  assert.ok(gitignore.split(String.fromCharCode(10)).includes('.env.ru'));
   assert.ok(dockerignore.includes('.env.*'));
   assert.ok(dockerignore.includes('!.env.ru.example'));
 });
