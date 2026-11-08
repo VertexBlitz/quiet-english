@@ -22,7 +22,6 @@ function showAuthMessage(message, isError = false) {
 
 if (authForm?.dataset.authForm === 'register') {
   const registerButton = authForm.querySelector('button[type="submit"]');
-  const submitLabel = authForm.querySelector('[data-submit-label]');
   const resendButton = authForm.querySelector('[data-resend-verification]');
   const captchaContainer = authForm.querySelector('[data-turnstile-captcha]');
   const ageBandField = authForm.querySelector('[name="age_band"]');
@@ -160,7 +159,6 @@ if (authForm?.dataset.authForm === 'register') {
     }
 
     const form = new FormData(authForm);
-    const ageBand = String(form.get('age_band') || '');
     if (registerButton) registerButton.disabled = true;
 
     try {
