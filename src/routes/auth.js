@@ -67,6 +67,9 @@ function registrationBlocker() {
   if (getAppRegion() === 'ru' && process.env.REGISTRATION_REGION_SERVICES_APPROVED !== 'true') {
     return 'Не утверждены CAPTCHA, почта и другие сервисы обработки данных для российского контура.';
   }
+  if (getAppRegion() === 'ru' && !isExternalPersonalDataProcessingAllowed()) {
+    return 'Не утверждена обработка персональных данных внешними сервисами для российского контура.';
+  }
   if (process.env.REGISTRATION_DATA_LOCALIZATION_APPROVED !== 'true') {
     return 'Не подтверждено соответствие требованиям локализации данных для целевой аудитории.';
   }
