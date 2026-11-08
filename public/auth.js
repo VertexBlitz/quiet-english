@@ -25,6 +25,7 @@ if (authForm?.dataset.authForm === 'register') {
   const resendButton = authForm.querySelector('[data-resend-verification]');
   const captchaContainer = authForm.querySelector('[data-turnstile-captcha]');
   const ageBandField = authForm.querySelector('[name="age_band"]');
+  const countryField = authForm.querySelector('[name="country_code"]');
   const adultFields = authForm.querySelector('[data-adult-fields]');
   let pendingVerificationEmail = '';
   let registrationAvailable = false;
@@ -44,6 +45,7 @@ if (authForm?.dataset.authForm === 'register') {
       registerButton.disabled = !registrationAvailable ||
         !captchaToken ||
         ageBandField?.value !== '18_plus' ||
+        !['DE', 'IT'].includes(countryField?.value) ||
         !authForm.checkValidity();
     }
   }
@@ -167,6 +169,8 @@ if (authForm?.dataset.authForm === 'register') {
         email,
         password: form.get('password'),
         age_band: '18_plus',
+        country_code: countryField?.value || '',
+        preferred_language: document.documentElement.lang === 'en' ? 'en' : 'ru',
         adult_confirmed: form.get('adult_confirmed') === 'on',
         terms_accepted: form.get('terms_accepted') === 'on',
         privacy_accepted: form.get('privacy_accepted') === 'on',
