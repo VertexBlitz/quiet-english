@@ -59,8 +59,16 @@ test('public registration requires legal, operator, localization and isolated da
   assert.ok(server.includes("app.post('/api/chat', chatLimiter"));
   assert.ok(!privacy.includes('рабочим черновиком'));
   assert.ok(!terms.includes('Проект документа'));
-  assert.ok(privacy.includes('Редакция 1.2'));
-  assert.ok(terms.includes('Редакция 1.2'));
+  assert.ok(privacy.includes('Редакция 1.3'));
+  assert.ok(terms.includes('Редакция 1.3'));
+  assert.ok(privacy.includes('Говорушкин Сергей Леонтьевич'));
+  assert.ok(terms.includes('Говорушкин Сергей Леонтьевич'));
+  assert.ok(read('public/data-consent.html').includes('Говорушкин Сергей Леонтьевич'));
+  assert.ok(privacy.includes('rozinilya777@gmail.com'));
+  assert.ok(terms.includes('г. Москва, ул. 1-я Тверская-Ямская, д. 6'));
+  assert.ok(!privacy.includes('предварительный текст'));
+  assert.ok(!terms.includes('предварительный текст'));
+  assert.ok(!read('public/data-consent.html').includes('предварительный текст'));
   assert.ok(privacy.includes('Создание новых аккаунтов несовершеннолетних отключено'));
   assert.ok(terms.includes('только совершеннолетние пользователи (18+)'));
   assert.ok(terms.includes('Германия или Италия'));
