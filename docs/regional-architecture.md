@@ -69,7 +69,7 @@ The present codebase contains outbound integrations, including:
 - Cloudflare Workers AI for AI chat and AI-assisted learning/writing functions;
 - YooKassa for payment processing.
 
-A PostgreSQL move alone does not localise data sent to these services. The Russian Docker template leaves these integrations unconfigured and keeps registration closed. The code also blocks Russian-region use of configured external personal-data processors unless `REGION_EXTERNAL_PROCESSORS_APPROVED=true` is explicitly set after a documented assessment.
+A PostgreSQL move alone does not localise data sent to these services. The public HTML pages no longer request Google Fonts from Google's CDN; they use the browser's local sans-serif fallback instead. The Russian Docker template leaves the external API integrations unconfigured and keeps registration closed. The code also blocks Russian-region use of configured external personal-data processors unless `REGION_EXTERNAL_PROCESSORS_APPROVED=true` is explicitly set after a documented assessment.
 
 Before enabling registration, the operator must select and test appropriate service providers, update the integration code where needed, review contracts and processing locations, and complete the applicable legal review. Do not set approval flags merely to make the health/readiness check green.
 
