@@ -189,8 +189,6 @@ if (authForm?.dataset.authForm === 'register') {
           password: form.get('password'),
           age_band: ageBand,
           adult_confirmed: form.get('adult_confirmed') === 'on',
-          country_code: String(form.get('country_code') || '').trim().toUpperCase(),
-          preferred_language: form.get('preferred_language') || 'ru',
           terms_accepted: form.get('terms_accepted') === 'on',
           privacy_accepted: form.get('privacy_accepted') === 'on',
           personal_data_accepted: form.get('personal_data_accepted') === 'on',

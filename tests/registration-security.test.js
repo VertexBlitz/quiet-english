@@ -4,8 +4,6 @@ import {
   isSupportedAgeBand,
   requiresGuardianConsent,
   isAdultRegistration,
-  normalizeCountryCode,
-  isValidCountryCode,
   isValidTurnstileResult,
   verifyTurnstileToken,
   REGISTRATION_CAPTCHA_ACTION
@@ -31,14 +29,6 @@ test('adult self-registration requires the 18+ band and explicit confirmation', 
   assert.equal(isAdultRegistration('18_plus', false), false);
   assert.equal(isAdultRegistration('16_17', true), false);
   assert.equal(isAdultRegistration('13_15', true), false);
-});
-
-test('country codes are normalized and validated', () => {
-  assert.equal(normalizeCountryCode(' de '), 'DE');
-  assert.equal(isValidCountryCode('DE'), true);
-  assert.equal(isValidCountryCode('US'), true);
-  assert.equal(isValidCountryCode('RUS'), false);
-  assert.equal(isValidCountryCode(''), false);
 });
 
 test('Turnstile Siteverify result must be successful and match hostname and action', () => {
