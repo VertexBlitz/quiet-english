@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 
 import { pool, recordActivity } from './src/db.js';
+import { getAppRegion, isRegistrationDatabaseIsolated, isExternalPersonalDataProcessingAllowed } from './src/region-config.js';
 import authRoutes from './src/routes/auth.js';
 import learningRoutes from './src/routes/learning.js';
 import knowledgeRoutes from './src/routes/knowledge.js';
@@ -49,6 +50,30 @@ if (pool) {
 
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
+
+app.get('/healthz', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
+app.get('/readyz', async (_req, res) => {
+  if (!pool || !sessionsConfigured) {
+    return res.status(503).json({ status: 'not_ready' });
+  }
+  try {
+    await pool.query('SELECT 1');
+    return res.json({ status: 'ready' });
+  } catch {
+    return res.status(503).json({ status: 'not_ready' });
+  }
+});
+
+app.get('/api/region', (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    region: getAppRegion(),
+    contentVersion: process.env.CONTENT_VERSION || 'source'
+  });
+});
 app.use(express.json({ limit: '24kb' }));
 const generalApiLimiter = rateLimit({
   windowMs: 60_000,
@@ -182,7 +207,7 @@ const SYSTEM_PROMPT = [
 ].join(' ');
 
 function isAiConfigured() {
-  return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
+  return isExternalPersonalDataProcessingAllowed() && Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
 }
 
 function getRegistrationReadiness() {
@@ -192,11 +217,14 @@ function getRegistrationReadiness() {
   if (process.env.REGISTRATION_LEGAL_APPROVED !== 'true') blockers.push('Новые Условия использования, Политика конфиденциальности и отдельное согласие на обработку данных не утверждены оператором.');
   if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM || !process.env.APP_BASE_URL) blockers.push('Не настроена отправка и подтверждение email.');
   if (!process.env.TURNSTILE_SITE_KEY || !process.env.TURNSTILE_SECRET_KEY) blockers.push('Не настроена CAPTCHA (Cloudflare Turnstile).');
-  if (process.env.REGISTRATION_DATABASE_ISOLATED !== 'true' || process.env.DB_SCHEMA !== 'quiet_english_preview') blockers.push('Не настроена изолированная схема PostgreSQL для Preview.');
+  if (getAppRegion() === 'unknown') blockers.push('APP_REGION должен быть preview, eu или ru.');
+  if (!isRegistrationDatabaseIsolated()) blockers.push('Не подтверждена отдельная база данных и ожидаемая схема для выбранного региона.');
+  if (getAppRegion() === 'ru' && process.env.REGISTRATION_REGION_SERVICES_APPROVED !== 'true') blockers.push('Не утверждены CAPTCHA, почта и другие сервисы обработки данных для российского контура.');
   if (process.env.REGISTRATION_DATA_LOCALIZATION_APPROVED !== 'true') blockers.push('Не подтверждена локализация персональных данных для целевой аудитории.');
   if (process.env.REGISTRATION_OPERATOR_DETAILS_APPROVED !== 'true') blockers.push('Не заполнены и не подтверждены сведения об операторе и контакты для обращений.');
   return {
     available: blockers.length === 0,
+    region: getAppRegion(),
     blockers,
     captchaSiteKey: process.env.TURNSTILE_SITE_KEY || null,
     audience: {
