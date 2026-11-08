@@ -7,10 +7,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=20261108-public-signup-2">
+  <link rel="stylesheet" href="/styles.css?v=20261108-public-signup-3">
   <script defer src="/i18n.js"></script>
-  <script defer src="/session.js?v=20261108-public-signup-2"></script>
-  <script defer src="/auth.js?v=20261108-public-signup-2"></script>
+  <script defer src="/session.js?v=20261108-public-signup-3"></script>
+  <script defer src="/auth.js?v=20261108-public-signup-3"></script>
 </head>
 <body>
 <header class="topbar wrap">
@@ -53,23 +53,12 @@
       </p>
 
       <div data-adult-fields hidden>
-        <label data-ru="Код страны (две буквы)" data-en="Country code (two letters)">
-          Код страны (две буквы)
-          <input name="country_code" autocomplete="country" placeholder="RU" minlength="2" maxlength="2" pattern="[A-Za-z]{2}" data-required="true">
-        </label>
         <label>Email
           <input type="email" name="email" autocomplete="email" maxlength="254" data-required="true">
         </label>
         <label data-ru="Пароль (не менее 12 символов)" data-en="Password (at least 12 characters)">
           Пароль (не менее 12 символов)
           <input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="200" data-required="true">
-        </label>
-        <label data-ru="Язык интерфейса" data-en="Interface language">
-          Язык интерфейса
-          <select name="preferred_language">
-            <option value="ru">Русский</option>
-            <option value="en">English</option>
-          </select>
         </label>
         <label class="check-row">
           <input type="checkbox" name="adult_confirmed" data-required="true">
