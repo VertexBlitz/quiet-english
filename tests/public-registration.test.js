@@ -82,7 +82,9 @@ test('public registration requires all operational and legal launch gates', () =
   for (const name of [
     'REGISTRATION_ENABLED',
     'REGISTRATION_LEGAL_APPROVED',
-    'REGISTRATION_DATABASE_ISOLATED',
+    'isRegistrationDatabaseIsolated',
+    'REGISTRATION_REGION_SERVICES_APPROVED',
+    'REGION_EXTERNAL_PROCESSORS_APPROVED'
     'REGISTRATION_DATA_LOCALIZATION_APPROVED',
     'REGISTRATION_OPERATOR_DETAILS_APPROVED',
     'TURNSTILE_SECRET_KEY',
