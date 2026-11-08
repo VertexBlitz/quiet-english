@@ -6,8 +6,6 @@ import {
   isAdultRegistration,
   isSupportedAgeBand,
   requiresGuardianConsent,
-  normalizeCountryCode,
-  isValidCountryCode,
   verifyTurnstileToken,
   TERMS_POLICY_VERSION,
   PRIVACY_POLICY_VERSION,
@@ -126,7 +124,7 @@ router.post('/resend-verification', async (req, res, next) => {
 
 router.post('/register', async (req, res, next) => {
   const {
-    email, password, age_band, country_code,
+    email, password, age_band,
     preferred_language = 'ru',
     terms_accepted, privacy_accepted, personal_data_accepted, adult_confirmed
   } = req.body || {};
@@ -135,7 +133,6 @@ router.post('/register', async (req, res, next) => {
   if (blocker) return res.status(503).json({ error: blocker });
 
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
-  const normalizedCountryCode = normalizeCountryCode(country_code);
   if (!validEmail(normalizedEmail)) return res.status(400).json({ error: 'Укажи корректный email.' });
   if (typeof password !== 'string' || password.length < 12 || password.length > 200) {
     return res.status(400).json({ error: 'Пароль должен содержать от 12 до 200 символов.' });
@@ -143,8 +140,8 @@ router.post('/register', async (req, res, next) => {
   if (!isAdultRegistration(age_band, adult_confirmed)) {
     return res.status(403).json({ error: 'Для пользователей 13–17 лет сначала требуется подтверждение родителя или опекуна.' });
   }
-  if (!isSupportedAgeBand(age_band) || !isValidCountryCode(normalizedCountryCode)) {
-    return res.status(400).json({ error: 'Проверь возрастную группу и двухбуквенный код страны.' });
+  if (!isSupportedAgeBand(age_band)) {
+    return res.status(400).json({ error: 'Выбери возрастную группу.' });
   }
   if (!['ru', 'en'].includes(preferred_language)) {
     return res.status(400).json({ error: 'Выбери язык интерфейса.' });
@@ -175,9 +172,9 @@ router.post('/register', async (req, res, next) => {
     }
 
     const result = await client.query(
-      `INSERT INTO users (email, password_hash, age_band, country_code)
-       VALUES ($1,$2,$3,$4) RETURNING id`,
-      [normalizedEmail, passwordHash, age_band, normalizedCountryCode]
+      `INSERT INTO users (email, password_hash, age_band)
+       VALUES ($1,$2,$3) RETURNING id`,
+      [normalizedEmail, passwordHash, age_band]
     );
     userId = result.rows[0].id;
     await client.query(
@@ -195,11 +192,11 @@ router.post('/register', async (req, res, next) => {
     );
     await client.query(
       `INSERT INTO registration_events
-         (user_id, event_type, age_band, country_code, adult_attested, preferred_language,
+         (user_id, event_type, age_band, adult_attested, preferred_language,
           terms_version, privacy_version, personal_data_consent_version)
-       VALUES ($1,'account_created',$2,$3,TRUE,$4,$5,$6,$7)`,
+       VALUES ($1,'account_created',$2,TRUE,$3,$4,$5,$6)`,
       [
-        userId, age_band, normalizedCountryCode, preferred_language,
+        userId, age_band, preferred_language,
         TERMS_POLICY_VERSION, PRIVACY_POLICY_VERSION, PERSONAL_DATA_CONSENT_VERSION
       ]
     );
@@ -209,7 +206,6 @@ router.post('/register', async (req, res, next) => {
       event: 'registration.account_created',
       user_id: userId,
       age_band,
-      country_code: normalizedCountryCode,
       occurred_at: new Date().toISOString()
     }));
   } catch (error) {
@@ -275,7 +271,7 @@ router.post('/guardian-consent-request', async (req, res, next) => {
         to: guardianEmail,
         subject: 'Запрос родительского подтверждения — Quiet English',
         html: `<p>Поступил запрос на создание учебного аккаунта Quiet English для возрастной группы ${ageBand === '13_15' ? '13–15' : '16–17'}.</p>
-          <p>Аккаунт ещё не создан. Email пользователя, код страны и пароль пока не собирались.</p>
+          <p>Аккаунт ещё не создан. Email и пароль пользователя пока не собирались.</p>
           <p>Открой ссылку, ознакомься с документами и подтверди запрос только в том случае, если ты являешься родителем или законным представителем:</p>
           <p><a href="${guardianConsentPageUrl(rawToken)}">Проверить запрос и дать согласие</a></p>
           <p>Ссылка действует 24 часа. Если ты не ожидаешь этот запрос, проигнорируй письмо.</p>`
@@ -320,7 +316,7 @@ router.post('/guardian-consent-info', async (req, res, next) => {
 
 router.post('/guardian-consent-complete', async (req, res, next) => {
   const {
-    token, email, password, country_code, preferred_language = 'ru',
+    token, email, password, preferred_language = 'ru',
     guardian_confirmed, minimum_age_confirmed, terms_accepted, privacy_accepted, personal_data_accepted
   } = req.body || {};
 
@@ -333,11 +329,7 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
   }
 
   const childEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
-  const normalizedCountryCode = normalizeCountryCode(country_code);
   if (!validEmail(childEmail)) return res.status(400).json({ error: 'Укажи корректный email пользователя.' });
-  if (!isValidCountryCode(normalizedCountryCode)) {
-    return res.status(400).json({ error: 'Укажи двухбуквенный код страны пользователя, например RU или DE.' });
-  }
   if (typeof password !== 'string' || password.length < 12 || password.length > 200) {
     return res.status(400).json({ error: 'Пароль должен содержать от 12 до 200 символов.' });
   }
@@ -385,9 +377,9 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
 
     const created = await client.query(
       `INSERT INTO users
-         (email, password_hash, age_band, country_code, guardian_email, guardian_consented_at)
-       VALUES ($1,$2,$3,$4,$5,NOW()) RETURNING id`,
-      [childEmail, passwordHash, consentRequest.age_band, normalizedCountryCode, guardianEmail]
+         (email, password_hash, age_band, guardian_email, guardian_consented_at)
+       VALUES ($1,$2,$3,$4,NOW()) RETURNING id`,
+      [childEmail, passwordHash, consentRequest.age_band, guardianEmail]
     );
     userId = created.rows[0].id;
     await client.query(
@@ -399,7 +391,6 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
       source: 'guardian-consent',
       guardian_authority_confirmed: true,
       age_band: consentRequest.age_band,
-      country_code: normalizedCountryCode,
       language: preferred_language
     });
     await client.query(
@@ -412,13 +403,13 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
     );
     await client.query(
       `INSERT INTO registration_events
-         (user_id, event_type, age_band, country_code, adult_attested, preferred_language,
+         (user_id, event_type, age_band, adult_attested, preferred_language,
           terms_version, privacy_version, personal_data_consent_version)
        VALUES
-         ($1,'guardian_consented',$2,$3,FALSE,$4,$5,$6,$7),
-         ($1,'account_created',$2,$3,FALSE,$4,$5,$6,$7)`,
+         ($1,'guardian_consented',$2,FALSE,$3,$4,$5,$6),
+         ($1,'account_created',$2,FALSE,$3,$4,$5,$6)`,
       [
-        userId, consentRequest.age_band, normalizedCountryCode, preferred_language,
+        userId, consentRequest.age_band, preferred_language,
         TERMS_POLICY_VERSION, PRIVACY_POLICY_VERSION, PERSONAL_DATA_CONSENT_VERSION
       ]
     );
@@ -432,7 +423,6 @@ router.post('/guardian-consent-complete', async (req, res, next) => {
       event: 'registration.guardian_consented',
       user_id: userId,
       age_band: consentRequest.age_band,
-      country_code: normalizedCountryCode,
       occurred_at: new Date().toISOString()
     }));
   } catch (error) {
@@ -579,7 +569,7 @@ router.post('/verify-email', async (req, res, next) => {
   try {
     await client.query('BEGIN');
     const found = await client.query(
-      `SELECT t.id, t.user_id, u.age_band, u.country_code, u.guardian_consented_at
+      `SELECT t.id, t.user_id, u.age_band, u.guardian_consented_at
        FROM email_tokens t JOIN users u ON u.id=t.user_id
        WHERE t.token_hash=$1 AND t.token_type='email_verify'
          AND t.consumed_at IS NULL AND t.expires_at > NOW()
@@ -603,12 +593,12 @@ router.post('/verify-email', async (req, res, next) => {
     );
     await client.query(
       `INSERT INTO registration_events
-         (user_id, event_type, age_band, country_code, adult_attested, preferred_language,
+         (user_id, event_type, age_band, adult_attested, preferred_language,
           terms_version, privacy_version, personal_data_consent_version)
-       SELECT $1,'email_verified',$2,$3,$4,p.preferred_language,$5,$6,$7
+       SELECT $1,'email_verified',$2,$3,p.preferred_language,$4,$5,$6
        FROM learner_profiles p WHERE p.user_id=$1`,
       [
-        item.user_id, item.age_band, item.country_code, item.age_band === '18_plus',
+        item.user_id, item.age_band, item.age_band === '18_plus',
         TERMS_POLICY_VERSION, PRIVACY_POLICY_VERSION, PERSONAL_DATA_CONSENT_VERSION
       ]
     );
@@ -634,7 +624,7 @@ router.post('/login', async (req, res, next) => {
   if (!validEmail(email) || typeof password !== 'string') return res.status(400).json({ error: 'Проверь email и пароль.' });
   try {
     const { rows } = await pool.query(
-      'SELECT id, email, password_hash, role, account_status, age_band, country_code, email_verified_at FROM users WHERE LOWER(email)=$1',
+      'SELECT id, email, password_hash, role, account_status, age_band, email_verified_at FROM users WHERE LOWER(email)=$1',
       [email]
     );
     const user = rows[0];
