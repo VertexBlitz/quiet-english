@@ -8,9 +8,62 @@ async function learningApi(path, options = {}) {
     headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) }
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Не удалось загрузить учебные данные.');
+  if (!response.ok) throw new Error(data.error || (document.documentElement.lang === 'en' ? 'Could not load learning data.' : 'Не удалось загрузить учебные данные.'));
   return data;
 }
+
+
+const learningLanguage = () => document.documentElement.lang === 'en' ? 'en' : 'ru';
+const learningT = (ru, en) => learningLanguage() === 'en' ? en : ru;
+const learningPick = value => {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const lang = learningLanguage();
+    return value[lang] ?? value.en ?? value.ru ?? '';
+  }
+  return value ?? '';
+};
+const learningSkillLabels = {
+  grammar: ['Грамматика', 'Grammar'],
+  vocabulary: ['Лексика', 'Vocabulary'],
+  reading: ['Чтение', 'Reading'],
+  listening: ['Аудирование', 'Listening'],
+  writing: ['Письмо', 'Writing'],
+  speaking: ['Говорение', 'Speaking'],
+  mixed: ['Смешанная практика', 'Mixed practice'],
+  communication: ['Общение', 'Communication']
+};
+const learningSkill = value => {
+  const pair = learningSkillLabels[String(value || '').toLowerCase()];
+  return pair ? learningT(pair[0], pair[1]) : String(value || '');
+};
+const learningGoalLabels = {
+  general: ['Общий английский', 'General English'],
+  work: ['Для работы', 'Work'],
+  travel: ['Для путешествий', 'Travel'],
+  communication: ['Повседневное общение', 'Everyday communication'],
+  relocation: ['Переезд за границу', 'Moving abroad'],
+  study: ['Учёба', 'Study'],
+  exam: ['Подготовка к экзамену', 'Exam preparation']
+};
+const learningGoal = value => {
+  const raw = String(value || '').toLowerCase();
+  const pair = learningGoalLabels[raw];
+  return pair ? learningT(pair[0], pair[1]) : learningPick(value);
+};
+const learningMinutes = value => learningLanguage() === 'en' ? String(value) + ' min' : String(value) + ' мин';
+const setLearningText = (node, ru, en) => {
+  if (!node) return;
+  node.dataset.learningRu = ru;
+  node.dataset.learningEn = en;
+  node.textContent = learningT(ru, en);
+};
+const refreshLearningText = () => {
+  document.querySelectorAll('[data-learning-ru][data-learning-en]').forEach(node => {
+    node.textContent = learningT(node.dataset.learningRu, node.dataset.learningEn);
+  });
+};
+window.addEventListener('quietenglish:languagechange', refreshLearningText);
+
 
 function learningMessage(node, message, isError = false) {
   if (!node) return;
@@ -97,7 +150,7 @@ if (placementRoot) {
           radio.value = option.id;
           radio.required = true;
           const text = document.createElement('span');
-          text.textContent = option.text;
+          text.textContent = learningPick(option.text);
           label.append(radio, text);
           fieldset.appendChild(label);
         });
@@ -134,179 +187,292 @@ const planPage = $('[data-plan-page]');
 if (planPage) {
   const dashboardSummary = $('[data-dashboard-summary]', planPage);
   const dashboardStatus = $('[data-dashboard-status]', planPage);
-  if (dashboardSummary) {
-    learningApi('/progress').then(({ summary }) => {
-      dashboardSummary.replaceChildren();
-      [
-        [summary.minutes, 'Минут обучения'],
-        [summary.completed_tasks, 'Выполнено заданий'],
-        [summary.active_days, 'Активных дней'],
-        [summary.open_errors, 'Открытых ошибок']
-      ].forEach(([value, label]) => {
-        const card = document.createElement('article');
-        card.className = 'dashboard-metric';
-        const number = document.createElement('strong');
-        number.textContent = String(value ?? 0);
-        const caption = document.createElement('span');
-        caption.textContent = label;
-        card.append(number, caption);
-        dashboardSummary.append(card);
-      });
-      if (dashboardStatus) dashboardStatus.textContent = 'Данные собраны из сохранённых занятий и результатов.';
-    }).catch(error => {
-      if (dashboardStatus) {
-        dashboardStatus.textContent = error.message;
-        dashboardStatus.classList.add('error-text');
-      }
+  const main = $('[data-today-main]', planPage);
+  const weeks = $('[data-plan-weeks]', planPage);
+  const coachTasks = $('[data-plan-coach-tasks]', planPage);
+  const planState = { plan: null, today: null, planError: null, todayError: null, coach: [] };
+
+  function renderPlanSummary(summary) {
+    if (!dashboardSummary || !summary) return;
+    dashboardSummary.replaceChildren();
+    [
+      [summary.minutes, 'Минут обучения', 'Learning minutes'],
+      [summary.completed_tasks, 'Выполнено заданий', 'Tasks completed'],
+      [summary.active_days, 'Активных дней', 'Active days'],
+      [summary.open_errors, 'Открытых ошибок', 'Open errors']
+    ].forEach(([value, ru, en]) => {
+      const card = document.createElement('article');
+      card.className = 'dashboard-metric';
+      const number = document.createElement('strong');
+      number.textContent = String(value ?? 0);
+      const caption = document.createElement('span');
+      setLearningText(caption, ru, en);
+      card.append(number, caption);
+      dashboardSummary.append(card);
     });
+    setLearningText(dashboardStatus, 'Данные собраны из сохранённых занятий и результатов.', 'Data is based on saved sessions and results.');
+    dashboardStatus.classList.remove('error-text');
   }
-  Promise.all([
-    learningApi('/plan').catch(error => ({ planError: error.message })),
-    learningApi('/today').catch(error => ({ todayError: error.message }))
-  ]).then(([planData, todayData]) => {
-    const main = $('[data-today-main]', planPage);
-    const weeks = $('[data-plan-weeks]', planPage);
-    if (planData.planError) {
-      learningMessage($('[data-learning-status]'), planData.planError, true);
-      main.innerHTML = '<p>Заверши онбординг и тест, чтобы получить персональный план.</p><a class="button" href="/onboarding.html">Начать настройку <span>↗</span></a>';
+
+  function renderToday() {
+    main.replaceChildren();
+    if (planState.todayError) {
+      const note = document.createElement('p');
+      note.textContent = learningT('Не удалось загрузить задание на сегодня. Проверь подключение и попробуй ещё раз.', 'Could not load today’s task. Check your connection and try again.');
+      main.append(note);
       return;
     }
-    const plan = planData.plan;
-    $('[data-plan-level]', planPage).textContent = plan.level;
-    $('[data-plan-goal]', planPage).textContent = plan.goal;
-    if (todayData.todayError) {
-      main.textContent = todayData.todayError;
+    const today = planState.today;
+    if (!today) return;
+    setLearningText(
+      $('[data-day-label]', planPage),
+      'Неделя ' + today.week_number + ' · День ' + today.day_index,
+      'Week ' + today.week_number + ' · Day ' + today.day_index
+    );
+    $('[data-today-theme]', planPage).textContent = learningPick(today.theme);
+    $('[data-review-count]', planPage).textContent = String(today.review_due ?? 0);
+
+    const task = today.main_task;
+    if (task) {
+      const card = document.createElement('article');
+      card.className = 'task-card';
+      const meta = document.createElement('p');
+      meta.className = 'eyebrow';
+      const skill = learningSkillLabels[String(task.skill || '').toLowerCase()];
+      setLearningText(
+        meta,
+        task.level + ' · ' + (skill?.[0] || task.skill) + ' · ' + task.estimated_time + ' мин',
+        task.level + ' · ' + (skill?.[1] || task.skill) + ' · ' + task.estimated_time + ' min'
+      );
+      const title = document.createElement('h3');
+      title.textContent = learningPick(task.objective);
+      const objective = document.createElement('p');
+      objective.textContent = learningPick(today.objective);
+      const start = document.createElement('a');
+      start.className = 'button';
+      start.href = '/exercise.html?id=' + encodeURIComponent(task.id);
+      setLearningText(start, 'Начать задание ↗', 'Start task ↗');
+      card.append(meta, title, objective, start);
+      main.append(card);
     } else {
-      const today = todayData.today;
-      $('[data-day-label]', planPage).textContent = `Week ${today.week_number} · Day ${today.day_index}`;
-      $('[data-today-theme]', planPage).textContent = today.theme;
-      $('[data-review-count]', planPage).textContent = today.review_due;
-      const task = today.main_task;
-      if (task) {
-        const card = document.createElement('article');
-        card.className = 'task-card';
-        const meta = document.createElement('p');
-        meta.className = 'eyebrow';
-        meta.textContent = `${task.level} · ${task.skill} · ${task.estimated_time} min`;
-        const title = document.createElement('h3');
-        title.textContent = task.objective;
-        const objective = document.createElement('p');
-        objective.textContent = today.objective;
-        const start = document.createElement('a');
-        start.className = 'button';
-        start.href = '/exercise.html?id=' + encodeURIComponent(task.id);
-        start.textContent = 'Начать задание ↗';
-        card.append(meta, title, objective, start);
-        main.replaceChildren(card);
-      }
-      $('[data-mini-prompt]', planPage).textContent = today.mini_prompt;
+      const note = document.createElement('p');
+      note.textContent = learningT('На сегодня отдельное задание не назначено. Открой практику, чтобы выбрать упражнение.', 'There is no specific task for today. Open Practice to choose an exercise.');
+      main.append(note);
     }
+    $('[data-mini-prompt]', planPage).textContent = learningPick(today.mini_prompt);
+  }
+
+  function renderPlanWeeks() {
     weeks.replaceChildren();
-    (plan.weeks || []).forEach(week => {
+    (planState.plan?.weeks || []).forEach(week => {
       const item = document.createElement('article');
       item.className = 'week-row';
       const title = document.createElement('h3');
-      title.textContent = `Week ${week.week_number} · ${week.theme}`;
-      const text = document.createElement('p');
-      text.textContent = week.objective;
-      item.append(title, text);
-      weeks.appendChild(item);
+      setLearningText(
+        title,
+        'Неделя ' + week.week_number + ' · ' + learningPick(week.theme),
+        'Week ' + week.week_number + ' · ' + learningPick(week.theme)
+      );
+      const description = document.createElement('p');
+      description.textContent = learningPick(week.objective);
+      item.append(title, description);
+      weeks.append(item);
     });
-    const coachTasks = $('[data-plan-coach-tasks]', planPage);
-    if (coachTasks) {
-      const renderCoachTasks = data => {
-        coachTasks.replaceChildren();
-        const tasks = data && Array.isArray(data.tasks) ? data.tasks : [];
-        if (!tasks.length) {
-          const note = document.createElement('p');
-          note.className = 'fine-print';
-          note.textContent = 'Открой Quiet English AI, чтобы получить персональные рекомендации после первых упражнений.';
-          coachTasks.append(note);
-          return;
-        }
-        tasks.forEach(task => {
-          const card = document.createElement('article');
-          card.className = 'coach-task';
-          const info = document.createElement('div');
-          const heading = document.createElement('strong');
-          heading.textContent = task.title;
-          const detail = document.createElement('p');
-          detail.textContent = task.description || task.topic || '';
-          info.append(heading, detail);
-          const link = document.createElement('a');
-          link.className = 'text-link';
-          link.href = '/studio.html';
-          link.textContent = 'Открыть AI Coach →';
-          card.append(info, link);
-          coachTasks.append(card);
-        });
-      };
-      fetch('/api/studio/coach/latest', { credentials: 'same-origin' })
-        .then(response => response.ok ? response.json() : Promise.reject(new Error('AI Coach пока недоступен.')))
-        .then(data => {
-          if (data.report) renderCoachTasks(data);
-          else fetch('/api/studio/coach/analyze', {
-            method: 'POST', credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json' }, body: '{}'
-          }).then(response => response.ok ? response.json() : Promise.reject(new Error('AI Coach пока недоступен.')))
-            .then(renderCoachTasks).catch(() => renderCoachTasks({ tasks: [] }));
-        })
-        .catch(() => renderCoachTasks({ tasks: [] }));
+  }
+
+  function renderPlanCoachTasks() {
+    if (!coachTasks) return;
+    coachTasks.replaceChildren();
+    if (!planState.coach.length) {
+      const note = document.createElement('p');
+      note.className = 'fine-print';
+      setLearningText(note, 'Открой AI Coach, чтобы получить персональные рекомендации после первых упражнений.', 'Open AI Coach to get personal recommendations after your first exercises.');
+      coachTasks.append(note);
+      return;
     }
+    planState.coach.forEach(task => {
+      const card = document.createElement('article');
+      card.className = 'coach-task';
+      const info = document.createElement('div');
+      const title = document.createElement('strong');
+      title.textContent = learningPick(task.title);
+      const description = document.createElement('p');
+      description.textContent = learningPick(task.description || task.topic || '');
+      info.append(title, description);
+      const link = document.createElement('a');
+      link.className = 'text-link';
+      link.href = '/studio.html';
+      setLearningText(link, 'Открыть AI Coach →', 'Open AI Coach →');
+      card.append(info, link);
+      coachTasks.append(card);
+    });
+  }
+
+  function renderPlanPage() {
+    if (planState.planError) {
+      const status = $('[data-learning-status]', planPage);
+      learningMessage(status, learningT('План пока не создан. Заверши настройку и тест, чтобы получить персональный маршрут.', 'Your plan has not been created yet. Complete setup and the placement test to get your learning path.'), true);
+      const note = document.createElement('p');
+      note.textContent = learningT('Заверши настройку и тест, чтобы получить персональный план.', 'Complete setup and the placement test to create your personal plan.');
+      const link = document.createElement('a');
+      link.className = 'button';
+      link.href = '/onboarding.html';
+      setLearningText(link, 'Начать настройку ↗', 'Start setup ↗');
+      main.replaceChildren(note, link);
+      weeks.replaceChildren();
+      if (coachTasks) coachTasks.replaceChildren();
+      return;
+    }
+    if (!planState.plan) return;
+    $('[data-plan-level]', planPage).textContent = planState.plan.level || '—';
+    $('[data-plan-goal]', planPage).textContent = learningGoal(planState.plan.goal);
+    renderToday();
+    renderPlanWeeks();
+    renderPlanCoachTasks();
+  }
+
+  learningApi('/progress')
+    .then(({ summary }) => renderPlanSummary(summary))
+    .catch(error => {
+      if (dashboardStatus) {
+        dashboardStatus.textContent = learningT('Не удалось загрузить аналитику. Попробуй ещё раз.', 'Could not load learning analytics. Please try again.');
+        dashboardStatus.classList.add('error-text');
+      }
+    });
+
+  Promise.all([
+    learningApi('/plan').catch(error => ({ planError: error.message })),
+    learningApi('/today').catch(error => ({ todayError: error.message }))
+  ]).then(async ([planData, todayData]) => {
+    if (planData.planError) {
+      planState.planError = planData.planError;
+      renderPlanPage();
+      return;
+    }
+    planState.plan = planData.plan;
+    planState.today = todayData.today || null;
+    planState.todayError = todayData.todayError || null;
+
+    try {
+      const latest = await fetch('/api/studio/coach/latest', { credentials: 'same-origin' });
+      const latestData = latest.ok ? await latest.json() : null;
+      if (latestData?.report && Array.isArray(latestData.tasks)) {
+        planState.coach = latestData.tasks;
+      } else {
+        const analysis = await fetch('/api/studio/coach/analyze', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}'
+        });
+        if (analysis.ok) {
+          const analysisData = await analysis.json();
+          planState.coach = analysisData.tasks || [];
+        }
+      }
+    } catch {
+      planState.coach = [];
+    }
+    renderPlanPage();
   });
+  window.addEventListener('quietenglish:languagechange', renderPlanPage);
 }
 
 const practicePage = $('[data-practice-page]');
 if (practicePage) {
   const list = $('[data-exercise-list]', practicePage);
-  const status = $('[data-learning-status]', practicePage);
-  learningApi('/exercises').then(({ exercises }) => {
+  const practiceState = { exercises: [], error: false };
+
+  function renderPracticeList() {
     list.replaceChildren();
-    exercises.forEach(exercise => {
+    if (practiceState.error) {
+      const note = document.createElement('p');
+      note.className = 'copy';
+      setLearningText(
+        note,
+        'Готовые упражнения требуют настроенной базы аккаунтов. Генератор ИИ выше работает отдельно — выбери грамматику, лексику, чтение или аудирование.',
+        'The curated exercise library requires an account database. The AI generator above works separately — choose grammar, vocabulary, reading or listening.'
+      );
+      list.append(note);
+      return;
+    }
+    practiceState.exercises.forEach(exercise => {
       const card = document.createElement('article');
       card.className = 'exercise-card';
       const meta = document.createElement('p');
       meta.className = 'eyebrow';
-      meta.textContent = `${exercise.level} · ${exercise.skill} · ${exercise.estimated_time} min`;
-      const heading = document.createElement('h3');
-      heading.textContent = exercise.objective;
-      const text = document.createElement('p');
-      text.textContent = exercise.success_criteria;
+      const skill = learningSkillLabels[String(exercise.skill || '').toLowerCase()];
+      setLearningText(
+        meta,
+        exercise.level + ' · ' + (skill?.[0] || exercise.skill) + ' · ' + exercise.estimated_time + ' мин',
+        exercise.level + ' · ' + (skill?.[1] || exercise.skill) + ' · ' + exercise.estimated_time + ' min'
+      );
+      const title = document.createElement('h3');
+      title.textContent = learningPick(exercise.objective);
+      const criteria = document.createElement('p');
+      criteria.textContent = learningPick(exercise.success_criteria);
       const link = document.createElement('a');
       link.className = 'text-link';
       link.href = '/exercise.html?id=' + encodeURIComponent(exercise.id);
-      link.textContent = 'Открыть задание →';
-      card.append(meta, heading, text, link);
-      list.appendChild(card);
+      setLearningText(link, 'Открыть задание →', 'Open exercise →');
+      card.append(meta, title, criteria, link);
+      list.append(card);
     });
-  }).catch(() => {
-    list.replaceChildren();
-    const note = document.createElement('p');
-    note.className = 'copy';
-    note.textContent = 'Готовые упражнения из личной библиотеки требуют настроенной базы аккаунтов. Генератор ИИ выше работает отдельно — выбери грамматику, лексику, чтение или аудирование.';
-    list.appendChild(note);
-  });
+    if (!practiceState.exercises.length) {
+      const empty = document.createElement('p');
+      empty.className = 'fine-print';
+      setLearningText(empty, 'Пока нет опубликованных упражнений.', 'There are no published exercises yet.');
+      list.append(empty);
+    }
+  }
+
+  learningApi('/exercises')
+    .then(({ exercises }) => {
+      practiceState.exercises = Array.isArray(exercises) ? exercises : [];
+      renderPracticeList();
+    })
+    .catch(() => {
+      practiceState.error = true;
+      renderPracticeList();
+    });
+  window.addEventListener('quietenglish:languagechange', renderPracticeList);
 }
 
 const exercisePage = $('[data-exercise-page]');
 if (exercisePage) {
   const status = $('[data-learning-status]', exercisePage);
+  const form = $('form', exercisePage);
+  const options = $('[data-exercise-options]', exercisePage);
+  const resultBox = $('[data-exercise-result]', exercisePage);
   const id = new URLSearchParams(location.search).get('id');
-  if (!id) learningMessage(status, 'Не указан идентификатор задания.', true);
-  else learningApi('/exercises/' + encodeURIComponent(id)).then(({ exercise }) => {
-    $('[data-exercise-meta]', exercisePage).textContent = `${exercise.level} · ${exercise.skill} · ${exercise.estimated_time} min`;
-    $('[data-exercise-title]', exercisePage).textContent = exercise.objective;
-    $('[data-exercise-instructions]', exercisePage).textContent = exercise.instructions?.ru || exercise.instructions?.en || '';
-    const content = exercise.content;
+  const exerciseState = { exercise: null, result: null };
+
+  function renderExercisePage() {
+    const exercise = exerciseState.exercise;
+    if (!exercise) return;
+    const content = exercise.content || {};
+    const selected = form.elements.namedItem('answer')?.value || '';
+    const skill = learningSkillLabels[String(exercise.skill || '').toLowerCase()];
+    setLearningText(
+      $('[data-exercise-meta]', exercisePage),
+      exercise.level + ' · ' + (skill?.[0] || exercise.skill) + ' · ' + exercise.estimated_time + ' мин',
+      exercise.level + ' · ' + (skill?.[1] || exercise.skill) + ' · ' + exercise.estimated_time + ' min'
+    );
+    $('[data-exercise-title]', exercisePage).textContent = learningPick(exercise.objective);
+    $('[data-exercise-instructions]', exercisePage).textContent =
+      learningPick(exercise.instructions) || learningT('Прочитай задание и выбери ответ.', 'Read the task and choose an answer.');
+
+    const material = $('[data-exercise-material]', exercisePage);
+    material.replaceChildren();
     if (content.passage) {
       const passage = document.createElement('blockquote');
       passage.className = 'reading-passage';
-      passage.textContent = content.passage;
-      $('[data-exercise-material]', exercisePage).appendChild(passage);
+      passage.textContent = learningPick(content.passage);
+      material.append(passage);
     }
-    $('[data-exercise-prompt]', exercisePage).textContent = content.prompt || '';
-    const options = $('[data-exercise-options]', exercisePage);
-    content.options.forEach(option => {
+    $('[data-exercise-prompt]', exercisePage).textContent = learningPick(content.prompt || '');
+    options.replaceChildren();
+    (content.options || []).forEach(option => {
       const label = document.createElement('label');
       label.className = 'option-row';
       const radio = document.createElement('input');
@@ -314,38 +480,55 @@ if (exercisePage) {
       radio.name = 'answer';
       radio.value = option.id;
       radio.required = true;
+      radio.checked = option.id === selected;
       const text = document.createElement('span');
-      text.textContent = option.text;
+      text.textContent = learningPick(option.text);
       label.append(radio, text);
-      options.appendChild(label);
+      options.append(label);
     });
-    const form = $('form', exercisePage);
-    form.hidden = false;
-    form.addEventListener('submit', async event => {
-      event.preventDefault();
-      const selected = form.elements.namedItem('answer')?.value;
-      const button = $('button[type="submit"]', form);
-      button.disabled = true;
-      try {
-        const result = await learningApi('/exercises/' + encodeURIComponent(id) + '/attempts', {
-          method: 'POST',
-          body: JSON.stringify({ answer: { option_id: selected } })
-        });
-        const resultBox = $('[data-exercise-result]', exercisePage);
-        resultBox.hidden = false;
-        resultBox.className = result.is_correct ? 'result-box success' : 'result-box';
-        resultBox.textContent = result.is_correct
-          ? 'Верно! ' + (result.feedback.explanation?.ru || result.feedback.explanation?.en || '')
-          : 'Правильный ответ: ' + (result.feedback.correct_answer || '') + '. ' + (result.feedback.explanation?.ru || result.feedback.explanation?.en || '');
-        const chat = $('[data-explain-chat]', exercisePage);
-        chat.href = '/tutor.html?exercise=' + encodeURIComponent(exercise.id);
-      } catch (error) {
-        learningMessage(status, error.message, true);
-      } finally {
-        button.disabled = false;
-      }
-    });
-  }).catch(error => learningMessage(status, error.message, true));
+
+    if (exerciseState.result && resultBox) {
+      const result = exerciseState.result;
+      resultBox.hidden = false;
+      resultBox.className = result.is_correct ? 'result-box success' : 'result-box';
+      resultBox.textContent = result.is_correct
+        ? learningT('Верно! ', 'Correct! ') + learningPick(result.feedback?.explanation)
+        : learningT('Правильный ответ: ', 'Correct answer: ') +
+          learningPick(result.feedback?.correct_answer || '') + '. ' + learningPick(result.feedback?.explanation);
+    }
+  }
+
+  if (!id) {
+    learningMessage(status, learningT('Не указан идентификатор задания.', 'The exercise ID is missing.'), true);
+  } else {
+    learningApi('/exercises/' + encodeURIComponent(id)).then(({ exercise }) => {
+      exerciseState.exercise = exercise;
+      renderExercisePage();
+      form.hidden = false;
+    }).catch(error => learningMessage(status, error.message, true));
+  }
+
+  form?.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!exerciseState.exercise) return;
+    const selected = form.elements.namedItem('answer')?.value;
+    const button = $('button[type="submit"]', form);
+    button.disabled = true;
+    try {
+      exerciseState.result = await learningApi('/exercises/' + encodeURIComponent(id) + '/attempts', {
+        method: 'POST',
+        body: JSON.stringify({ answer: { option_id: selected } })
+      });
+      renderExercisePage();
+      const chat = $('[data-explain-chat]', exercisePage);
+      if (chat) chat.href = '/tutor.html?exercise=' + encodeURIComponent(exerciseState.exercise.id);
+    } catch (error) {
+      learningMessage(status, error.message, true);
+    } finally {
+      button.disabled = false;
+    }
+  });
+  window.addEventListener('quietenglish:languagechange', renderExercisePage);
 }
 
 const reviewPage = $('[data-review-page]');
@@ -357,36 +540,36 @@ if (reviewPage) {
   let showingAnswer = false;
   const renderCard = () => {
     deck.replaceChildren();
-    if (!items.length) {
+    if (!items.length || index >= items.length) {
       const empty = document.createElement('p');
-      empty.textContent = 'Сейчас нет карточек для повторения. Новые карточки появятся после практики.';
+      setLearningText(empty, 'Сейчас нет карточек для повторения. Новые карточки появятся после практики.', 'There are no cards due for review now. New cards will appear after you complete practice.');
       deck.appendChild(empty);
       return;
     }
     const item = items[index];
     const title = document.createElement('p');
     title.className = 'eyebrow';
-    title.textContent = `REVIEW ${index + 1} / ${items.length}`;
+    setLearningText(title, `ПОВТОРЕНИЕ ${index + 1} / ${items.length}`, `REVIEW ${index + 1} / ${items.length}`);
     const prompt = document.createElement('h2');
-    prompt.textContent = item.prompt;
+    prompt.textContent = learningPick(item.prompt);
     deck.append(title, prompt);
     if (showingAnswer) {
       const answer = document.createElement('p');
       answer.className = 'review-answer';
-      answer.textContent = item.answer;
+      answer.textContent = learningPick(item.answer);
       deck.appendChild(answer);
       if (item.explanation) {
         const explanation = document.createElement('p');
-        explanation.textContent = item.explanation;
+        explanation.textContent = learningPick(item.explanation);
         deck.appendChild(explanation);
       }
       const ratings = document.createElement('div');
       ratings.className = 'rating-row';
-      ['Again','Hard','Good','Easy'].forEach(rating => {
+      [['Again','Снова','Again'],['Hard','Сложно','Hard'],['Good','Хорошо','Good'],['Easy','Легко','Easy']].forEach(([rating,ru,en]) => {
         const button = document.createElement('button');
         button.className = 'button secondary';
         button.type = 'button';
-        button.textContent = rating;
+        setLearningText(button, ru, en);
         button.addEventListener('click', async () => {
           try {
             await learningApi('/review/' + item.id, { method:'POST', body:JSON.stringify({rating}) });
@@ -402,7 +585,7 @@ if (reviewPage) {
       const button = document.createElement('button');
       button.className = 'button';
       button.type = 'button';
-      button.textContent = 'Показать ответ';
+      setLearningText(button, 'Показать ответ', 'Show answer');
       button.addEventListener('click', async () => {
         button.disabled = true;
         try {
@@ -426,6 +609,7 @@ if (reviewPage) {
     items = data.items || [];
     renderCard();
   }).catch(error => learningMessage(status, error.message, true));
+  window.addEventListener('quietenglish:languagechange', renderCard);
 }
 
 const progressPage = $('[data-progress-page]');
@@ -441,7 +625,7 @@ if (progressPage) {
       const row = document.createElement('div');
       row.className = 'skill-progress-row';
       const label = document.createElement('span');
-      label.textContent = skill.skill;
+      setLearningText(label, learningSkillLabels[skill.skill]?.[0] || skill.skill, learningSkillLabels[skill.skill]?.[1] || skill.skill);
       const value = document.createElement('strong');
       value.textContent = skill.accuracy == null ? '—' : skill.accuracy + '%';
       const track = document.createElement('div');

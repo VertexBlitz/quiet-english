@@ -348,3 +348,46 @@ test('dynamic learning modules respond to the shared language-change event', () 
     assert.ok(read(file).includes('quietenglish:languagechange'), file + ' should update after language changes');
   }
 });
+
+
+test('dynamic Plan, Practice, exercise, review and Speaking Lab screens stay bilingual after switching languages', () => {
+  const learning = read('public/learning.js');
+  const practice = read('public/ai-practice.js');
+  const speaking = read('public/pronunciation.js');
+
+  for (const marker of [
+    "window.addEventListener('quietenglish:languagechange', renderPlanPage)",
+    "window.addEventListener('quietenglish:languagechange', renderPracticeList)",
+    "window.addEventListener('quietenglish:languagechange', renderExercisePage)",
+    "window.addEventListener('quietenglish:languagechange', renderCard)"
+  ]) {
+    assert.ok(learning.includes(marker), 'missing language refresh: ' + marker);
+  }
+
+  assert.ok(practice.includes("window.addEventListener('quietenglish:languagechange'"));
+  assert.ok(practice.includes('localizedValue(exercise.instructions)'));
+  assert.ok(practice.includes('variantHeadingPair'));
+  assert.ok(practice.includes('lastCheckedResult'));
+
+  assert.ok(speaking.includes("window.addEventListener('quietenglish:languagechange'"));
+  for (const phrase of ['Words matched', 'Substitutions', 'Speaking pace', 'Your history will appear after your first assessment.']) {
+    assert.ok(speaking.includes(phrase), 'Speaking Lab missing English translation: ' + phrase);
+  }
+
+  for (const page of ['plan.html', 'practice.html', 'pronunciation.html']) {
+    const html = read('public/' + page);
+    assert.ok(html.includes('data-title-ru='), page + ' needs a Russian page title');
+    assert.ok(html.includes('data-title-en='), page + ' needs an English page title');
+    assert.ok(html.includes('name="viewport"'), page + ' needs a mobile viewport');
+  }
+});
+
+test('every public HTML page includes responsive viewport and site stylesheet', () => {
+  const pages = fs.readdirSync(path.join(process.cwd(), 'public')).filter(file => file.endsWith('.html'));
+  assert.ok(pages.length > 0);
+  for (const page of pages) {
+    const html = read('public/' + page);
+    assert.ok(html.includes('name="viewport"'), page + ' must declare a viewport');
+    assert.ok(html.includes('/styles.css'), page + ' must load the site stylesheet');
+  }
+});

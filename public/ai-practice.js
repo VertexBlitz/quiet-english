@@ -33,13 +33,56 @@
   let pendingAiExercise = null;
   let generationSequence = 0;
   let activeKnowledgeQuiz = null;
+  let lastCheckedResult = null;
+  let lastTranslationPair = null;
+  let lastStatusPair = null;
+  let variantHeadingPair = null;
+  let variantNotePair = null;
   try {
     const raw = sessionStorage.getItem('qe-knowledge-quiz');
     if (raw) { activeKnowledgeQuiz = JSON.parse(raw); sessionStorage.removeItem('qe-knowledge-quiz'); }
   } catch { activeKnowledgeQuiz = null; }
 
-  const t = (ru, en) => document.documentElement.lang === 'en' ? en : ru;
+  const t = (ru, en) => {
+    lastTranslationPair = [ru, en];
+    return document.documentElement.lang === 'en' ? en : ru;
+  };
+  const localizedValue = value => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value[document.documentElement.lang === 'en' ? 'en' : 'ru'] ?? value.en ?? value.ru ?? '';
+    }
+    return value ?? '';
+  };
+  const skillLabels = {
+    grammar: ['Грамматика', 'Grammar'], vocabulary: ['Лексика', 'Vocabulary'],
+    reading: ['Чтение', 'Reading'], listening: ['Аудирование', 'Listening'],
+    communication: ['Общение', 'Communication'], mixed: ['Смешанная практика', 'Mixed practice']
+  };
+  const skillLabel = value => {
+    const pair = skillLabels[String(value || '').toLowerCase()];
+    return pair ? t(pair[0], pair[1]) : String(value || '');
+  };
+  const topicLabels = {
+    'Any topic': ['Любая тема', 'Any topic'], 'Everyday life': ['Повседневная жизнь', 'Everyday life'],
+    Travel: ['Путешествия', 'Travel'], Science: ['Наука', 'Science'],
+    'History and culture': ['История и культура', 'History and culture'],
+    Technology: ['Технологии', 'Technology'], Environment: ['Окружающая среда', 'Environment'],
+    Education: ['Образование', 'Education'], 'Books and media': ['Книги и медиа', 'Books and media']
+  };
+  const topicLabel = value => {
+    const pair = topicLabels[String(value || '')];
+    return pair ? t(pair[0], pair[1]) : String(value || '');
+  };
+  const setVariantHeading = (ru, en) => {
+    variantHeadingPair = [ru, en];
+    aiVariantHeading.textContent = t(ru, en);
+  };
+  const setVariantNote = (ru, en) => {
+    variantNotePair = [ru, en];
+    aiVariantNote.textContent = t(ru, en);
+  };
   const setStatus = (text, error = false) => {
+    lastStatusPair = lastTranslationPair && lastTranslationPair.includes(text) ? lastTranslationPair : null;
     status.textContent = text;
     status.classList.toggle('error-text', error);
     status.classList.toggle('success-text', !error);
@@ -62,7 +105,7 @@
       const row = document.createElement('article');
       row.className = 'ai-history-row';
       const label = document.createElement('span');
-      label.textContent = item.level + ' · ' + item.skill + ' · ' + item.title;
+      label.textContent = item.level + ' · ' + skillLabel(item.skill) + ' · ' + item.title;
       const score = document.createElement('strong');
       score.textContent = item.score + '/' + item.total;
       row.append(label, score);
@@ -108,14 +151,16 @@
     pendingAiExercise = null;
     aiVariantWrap.hidden = true;
     aiVariantOpen.hidden = true;
+    variantHeadingPair = null;
+    variantNotePair = null;
     checked = false;
     lastMistakes = [];
     resultNode.hidden = true;
     resultNode.replaceChildren();
     workspace.hidden = false;
-    title.textContent = exercise.title;
-    meta.textContent = exercise.level + ' · ' + exercise.skill.toUpperCase() + ' · ' + exercise.topic;
-    instructions.textContent = exercise.instructions;
+    title.textContent = localizedValue(exercise.title);
+    meta.textContent = exercise.level + ' · ' + skillLabel(exercise.skill) + ' · ' + topicLabel(exercise.topic);
+    instructions.textContent = localizedValue(exercise.instructions);
 
     passageWrap.hidden = !exercise.passage;
     passage.textContent = exercise.passage || '';
@@ -136,6 +181,7 @@
       const category = document.createElement('span');
       category.className = 'ai-question-category';
       category.textContent = categoryLabel(question.category);
+      category.dataset.category = question.category || exercise.skill;
       card.append(category);
 
       question.options.forEach(option => {
@@ -164,8 +210,8 @@
     const recent = readHistory().slice(0, 4).map(item => item.avoidText || item.title).filter(Boolean);
     aiVariantWrap.hidden = false;
     aiVariantOpen.hidden = true;
-    aiVariantHeading.textContent = t('ИИ готовит уникальный вариант…', 'AI is preparing a unique version…');
-    aiVariantNote.textContent = t(
+    setVariantHeading('ИИ готовит уникальный вариант…', 'AI is preparing a unique version…');
+    setVariantNote(
       'Можешь уже выполнять мгновенное задание. Уникальный вариант появится здесь, когда будет готов.',
       'Start the instant exercise now. The unique AI version will appear here when ready.'
     );
@@ -178,23 +224,23 @@
         body: JSON.stringify(Object.assign({}, request, { avoid: recent }))
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'AI version is temporarily unavailable.');
+      if (!response.ok) throw new Error(data.error || t('Дополнительный вариант ИИ временно недоступен.', 'The additional AI version is temporarily unavailable.'));
       if (!data.exercise_id || !data.exercise || !Array.isArray(data.exercise.questions)) {
-        throw new Error('AI returned an incomplete exercise.');
+        throw new Error(t('ИИ вернул неполное упражнение.', 'AI returned an incomplete exercise.'));
       }
       if (sequence !== generationSequence) return;
 
       pendingAiExercise = Object.assign({}, data.exercise, { id: data.exercise_id });
-      aiVariantHeading.textContent = t('Уникальный вариант ИИ готов.', 'Your unique AI version is ready.');
-      aiVariantNote.textContent = t(
+      setVariantHeading('Уникальный вариант ИИ готов.', 'Your unique AI version is ready.');
+      setVariantNote(
         'Мгновенное задание уже доступно. Можешь открыть и уникальную версию ИИ.',
         'The instant exercise is ready. You can also open the unique AI version.'
       );
       aiVariantOpen.hidden = false;
     } catch (error) {
       if (sequence !== generationSequence) return;
-      aiVariantHeading.textContent = t('Мгновенное задание готово.', 'Your instant exercise is ready.');
-      aiVariantNote.textContent = t(
+      setVariantHeading('Мгновенное задание готово.', 'Your instant exercise is ready.');
+      setVariantNote(
         'Дополнительный вариант ИИ пока недоступен. Ты можешь продолжить текущее упражнение.',
         'The additional AI version is unavailable for now. You can continue with the current exercise.'
       );
@@ -263,7 +309,8 @@
     setStatus(t('Открыт уникальный вариант, созданный ИИ.', 'The unique AI-generated version is open.'));
   });
 
-  function renderCheckedResults(result) {
+  function renderCheckedResults(result, persist = true) {
+    lastCheckedResult = result;
     resultNode.replaceChildren();
     resultNode.hidden = false;
 
@@ -301,7 +348,7 @@
         item.selected_answer + (item.is_correct ? '' : '. ' + t('Правильно: ', 'Correct: ') + item.correct_answer);
       const explain = document.createElement('p');
       explain.className = 'ai-explanation';
-      explain.textContent = item.explanation;
+      explain.textContent = localizedValue(item.explanation);
       card.append(top, answer, explain);
       resultNode.append(card);
     });
@@ -334,7 +381,7 @@
       resultNode.append(retryWrap);
     }
 
-    saveHistory({
+    if (persist) saveHistory({
       title: currentExercise.title,
       level: currentExercise.level,
       skill: currentExercise.skill,
@@ -343,9 +390,11 @@
       createdAt: new Date().toISOString(),
       avoidText: [currentExercise.title, currentExercise.passage || '', ...currentExercise.questions.map(q => q.prompt)].join(' ').slice(0, 480)
     });
-    setStatus(result.saved
-      ? t('Результат сохранён в профиле и карте знаний.', 'Result saved to your profile and knowledge map.')
-      : t('Ответы проверены. Результат сохранён в истории этого браузера.', 'Answers checked. Result saved in this browser history.'));
+    if (persist) {
+      setStatus(result.saved
+        ? t('Результат сохранён в профиле и карте знаний.', 'Result saved to your profile and knowledge map.')
+        : t('Ответы проверены. Результат сохранён в истории этого браузера.', 'Answers checked. Result saved in this browser history.'));
+    }
     checkButton.hidden = true;
     checked = true;
   }
@@ -410,6 +459,23 @@
   generateButton.addEventListener('click', () => activeKnowledgeQuiz ? generateKnowledgeQuiz() : generateExercise());
   listenButton.addEventListener('click', speakPassage);
   renderHistory();
+  window.addEventListener('quietenglish:languagechange', () => {
+    renderHistory();
+    if (currentExercise) {
+      meta.textContent = currentExercise.level + ' · ' + skillLabel(currentExercise.skill) + ' · ' + currentExercise.topic;
+      questionsNode.querySelectorAll('[data-category]').forEach(node => {
+        node.textContent = categoryLabel(node.dataset.category);
+      });
+      generateButton.textContent = t('Создать задание ↗', 'Generate exercise ↗');
+      if (!checked) checkButton.textContent = t('Проверить ответы', 'Check answers');
+      if (variantHeadingPair) aiVariantHeading.textContent = t(variantHeadingPair[0], variantHeadingPair[1]);
+      if (variantNotePair) aiVariantNote.textContent = t(variantNotePair[0], variantNotePair[1]);
+    }
+    if (lastCheckedResult && checked) renderCheckedResults(lastCheckedResult, false);
+    if (lastStatusPair) {
+      status.textContent = t(lastStatusPair[0], lastStatusPair[1]);
+    }
+  });
   if (activeKnowledgeQuiz) {
     const levelForQuiz = activeKnowledgeQuiz.level === 'C2' ? 'C1' : activeKnowledgeQuiz.level;
     if (level) level.value = levelForQuiz;

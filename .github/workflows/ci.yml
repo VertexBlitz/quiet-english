@@ -1,9 +1,9 @@
 name: Quiet English 2.0 checks
 on:
   push:
-    branches: [quiet-english-2-mvp, main, feat/pronunciation-and-listening-library, feat/adult-signup-turnstile-audit]
+    branches: [quiet-english-2-mvp, main, feat/pronunciation-and-listening-library, feat/adult-signup-turnstile-audit, feat/phase-1-learning-localization]
   pull_request:
-    branches: [quiet-english-2-mvp, main, feat/pronunciation-and-listening-library]
+    branches: [quiet-english-2-mvp, main, feat/pronunciation-and-listening-library, feat/phase-1-learning-localization]
 jobs:
   test:
     runs-on: ubuntu-latest

@@ -41,17 +41,45 @@ if (pronRoot) {
   let recordingReferenceText = '';
   let generatedPassages = [];
   let recentHistoryTexts = [];
+  let lastTranslationPair = null;
+  let lastStatusPair = null;
+  let lastGeneratorPair = null;
+  let latestAttempts = [];
+  let latestResult = null;
 
+  const t = (ru, en) => {
+    lastTranslationPair = [ru, en];
+    return document.documentElement.lang === 'en' ? en : ru;
+  };
   const message = (text, error = false) => {
+    lastStatusPair = lastTranslationPair && lastTranslationPair.includes(text) ? lastTranslationPair : null;
     statusNode.textContent = text;
     statusNode.classList.toggle('error-text', error);
     statusNode.classList.toggle('success-text', !error);
+  };
+  const generatorStatus = (text, error = false) => {
+    lastGeneratorPair = lastTranslationPair && lastTranslationPair.includes(text) ? lastTranslationPair : null;
+    aiGeneratorStatus.textContent = text;
+    aiGeneratorStatus.classList.toggle('error-text', error);
   };
 
   const selectedPrompt = () => promptList.querySelector('input[name="pron-prompt"]:checked');
   const allPassages = () => [...generatedPassages, ...PASSAGES];
   const selectedPassage = () => allPassages().find(item => item.id === selectedPrompt()?.dataset.passageId);
   const selectedText = () => activeReviewText || selectedPrompt()?.value || PASSAGES[0].text;
+  const topicLabels = {
+    'Everyday life': ['Повседневная жизнь', 'Everyday life'], Food: ['Еда', 'Food'],
+    'Free time': ['Свободное время', 'Free time'], 'Around town': ['В городе', 'Around town'],
+    Travel: ['Путешествия', 'Travel'], Hobbies: ['Хобби', 'Hobbies'], Education: ['Образование', 'Education'],
+    Environment: ['Окружающая среда', 'Environment'], Technology: ['Технологии', 'Technology'],
+    'Work and study': ['Работа и учёба', 'Work and study'], Culture: ['Культура', 'Culture'],
+    Cities: ['Города', 'Cities'], Society: ['Общество', 'Society'],
+    'Media literacy': ['Медиаграмотность', 'Media literacy'], Innovation: ['Инновации', 'Innovation']
+  };
+  const displayTopic = topic => {
+    const pair = topicLabels[topic];
+    return pair ? t(pair[0], pair[1]) : String(topic || '');
+  };
 
   const formatTime = seconds => {
     const safe = Math.max(0, Math.floor(seconds));
@@ -65,13 +93,13 @@ if (pronRoot) {
   function updateActiveTask() {
     if (!activeTaskNode) return;
     activeTaskNode.textContent = activeReviewText
-      ? 'Режим повторения: ' + activeReviewText
-      : 'Выбрано: ' + (selectedPassage()?.level || 'A1') + ' · ' + (selectedPassage()?.topic || 'Everyday life');
+      ? t('Режим повторения: ', 'Review mode: ') + activeReviewText
+      : t('Выбрано: ', 'Selected: ') + (selectedPassage()?.level || 'A1') + ' · ' + (displayTopic(selectedPassage()?.topic || 'Everyday life'));
   }
 
   function speakText(text) {
     if (!('speechSynthesis' in window)) {
-      message('В этом браузере недоступно воспроизведение примера.', true);
+      message(t('В этом браузере недоступно воспроизведение примера.', 'Example playback is not available in this browser.'), true);
       return;
     }
     window.speechSynthesis.cancel();
@@ -112,7 +140,7 @@ if (pronRoot) {
       words.className = 'pron-prompt-content';
       const meta = document.createElement('strong');
       meta.className = 'pron-prompt-meta';
-      meta.textContent = item.level + ' · ' + item.topic + (item.generated ? ' · AI' : '');
+      meta.textContent = item.level + ' · ' + displayTopic(item.topic) + (item.generated ? ' · AI' : '');
       const passage = document.createElement('span');
       passage.className = 'pron-prompt-body';
       passage.textContent = item.text;
@@ -130,7 +158,9 @@ if (pronRoot) {
       listen.className = 'pron-listen';
       listen.type = 'button';
       listen.textContent = '▶';
-      listen.setAttribute('aria-label', 'Listen to ' + item.level + ' passage');
+      listen.setAttribute('aria-label', t('Прослушать текст уровня ', 'Listen to the ') + item.level + t('', ' passage'));
+      listen.dataset.ariaLabelRu = 'Прослушать текст уровня ' + item.level;
+      listen.dataset.ariaLabelEn = 'Listen to the ' + item.level + ' passage';
       listen.addEventListener('click', () => speakText(item.text));
 
       card.append(label, listen);
@@ -138,8 +168,8 @@ if (pronRoot) {
     });
 
     const count = visiblePassages.length;
-    const noun = count === 1 ? ' задание' : count >= 2 && count <= 4 ? ' задания' : ' заданий';
-    pronRoot.querySelector('[data-pron-count]').textContent = count + noun;
+    const nounRu = count === 1 ? ' задание' : count >= 2 && count <= 4 ? ' задания' : ' заданий';
+    pronRoot.querySelector('[data-pron-count]').textContent = count + (document.documentElement.lang === 'en' ? (count === 1 ? ' passage' : ' passages') : nounRu);
     updateActiveTask();
   }
 
@@ -151,8 +181,8 @@ if (pronRoot) {
       : levelFilter.value;
     const topic = topicFilter.value;
     generateButton.disabled = true;
-    generateButton.textContent = 'Создаём…';
-    aiGeneratorStatus.textContent = 'ИИ создаёт новый текст. Это может занять несколько секунд.';
+    generateButton.textContent = t('Создаём…', 'Generating…');
+    generatorStatus(t('ИИ создаёт новый текст. Это может занять несколько секунд.', 'AI is creating a new passage. This may take a few seconds.'));
     aiGeneratorStatus.classList.remove('error-text');
 
     const avoid = [
@@ -169,19 +199,19 @@ if (pronRoot) {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(data.error || 'Не удалось создать новое задание.');
+        throw new Error(data.error || t('Не удалось создать новое задание.', 'Could not create a new passage.'));
       }
 
       const result = data.passage;
       if (!result || result.level !== level || typeof result.passage !== 'string' || !result.passage.trim()) {
-        throw new Error('ИИ вернул некорректное задание. Попробуй ещё раз.');
+        throw new Error(t('ИИ вернул некорректное задание. Попробуй ещё раз.', 'AI returned an invalid passage. Please try again.'));
       }
 
       const generated = {
         id: 'ai-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
         level: result.level,
         topic: result.topic || topic,
-        title: result.title || 'New speaking task',
+        title: result.title || t('Новое задание на говорение', 'New speaking task'),
         text: result.passage,
         generated: true
       };
@@ -192,15 +222,14 @@ if (pronRoot) {
       retryPanel.hidden = true;
       resultSection.hidden = true;
       renderPassages(generated.id);
-      aiGeneratorStatus.textContent = 'Готово: создано новое задание ' + level + '. Оно добавлено в начало списка.';
-      message('Новое задание готово. Прочитай текст или включи пример произношения.');
+      generatorStatus(t('Готово: создано новое задание ' + level + '-уровня добавлено в начало списка.', 'Ready: a new ' + level + ' passage was added to the top of the list.'));
+      message(t('Новое задание готово. Прочитай текст или включи пример произношения.', 'Your new passage is ready. Read it or play the pronunciation example.'));
     } catch (error) {
-      aiGeneratorStatus.textContent = error?.message || 'Генерация временно недоступна.';
-      aiGeneratorStatus.classList.add('error-text');
-      message('Не удалось создать задание. Существующая библиотека по-прежнему доступна.', true);
+      generatorStatus(error?.message || t('Генерация временно недоступна.', 'Passage generation is temporarily unavailable.'), true);
+      message(t('Не удалось создать задание. Существующая библиотека по-прежнему доступна.', 'Could not create a new passage. The existing library is still available.'), true);
     } finally {
       generateButton.disabled = false;
-      generateButton.textContent = 'Сгенерировать ↗';
+      generateButton.textContent = t('Сгенерировать ↗', 'Generate ↗');
     }
   }
 
@@ -209,12 +238,12 @@ if (pronRoot) {
       const response = await fetch('/api/health', { credentials: 'same-origin' });
       const data = await response.json().catch(() => ({}));
       if (response.ok && data.configured) {
-        aiGeneratorStatus.textContent = 'ИИ подключён · новые задания генерируются по запросу.';
+        generatorStatus(t('ИИ подключён · новые задания генерируются по запросу.', 'AI is connected · new passages are generated on request.'));
       } else {
-        aiGeneratorStatus.textContent = 'Для генерации на Preview нужны настройки Cloudflare Workers AI в Render.';
+        generatorStatus(t('Для генерации на Preview нужны настройки Cloudflare Workers AI в Render.', 'Cloudflare Workers AI must be configured in Render to generate passages on Preview.'), true);
       }
     } catch {
-      aiGeneratorStatus.textContent = 'Не удалось проверить подключение ИИ. Можно пользоваться готовой библиотекой.';
+      generatorStatus(t('Не удалось проверить подключение ИИ. Можно пользоваться готовой библиотекой.', 'Could not check the AI connection. You can still use the existing passage library.'), true);
     }
   }
 
@@ -241,20 +270,20 @@ if (pronRoot) {
     if (!lastReviewWords.length) return;
     activeReviewText = lastReviewWords.join(' ');
     updateActiveTask();
-    message('Теперь прочитай только слова, которые требуют дополнительной практики.');
+    message(t('Теперь прочитай только слова, которые требуют дополнительной практики.', 'Now read only the words that need more practice.'));
     pronRoot.querySelector('.pron-record-box').scrollIntoView({ behavior: 'smooth', block: 'center' });
     recordButton.focus({ preventScroll: true });
   });
 
   async function toSamples(recordingBlob) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) throw new Error('В этом браузере не поддерживается обработка аудио.');
+    if (!AudioContextClass) throw new Error(t('В этом браузере не поддерживается обработка аудио.', 'Audio processing is not supported in this browser.'));
 
     const context = new AudioContextClass();
     try {
       const decoded = await context.decodeAudioData(await recordingBlob.arrayBuffer());
       if (decoded.duration > MAX_SECONDS + 1 || decoded.duration < 0.45) {
-        throw new Error('Запись должна длиться от половины секунды до 28 секунд.');
+        throw new Error(t('Запись должна длиться от половины секунды до 28 секунд.', 'The recording must be between half a second and 28 seconds long.'));
       }
 
       const mono = new Float32Array(decoded.length);
@@ -284,7 +313,7 @@ if (pronRoot) {
   async function getTranscriber() {
     if (!transcriberPromise) {
       transcriberPromise = (async () => {
-        message('Подключаем движок Whisper. При первом запуске скачиваются файлы модели; запись остаётся в этом браузере.');
+        message(t('Подключаем движок Whisper. При первом запуске скачиваются файлы модели; запись остаётся в этом браузере.', 'Loading Whisper. Model files are downloaded on first use; your recording stays in this browser.'));
         const { pipeline, env } = await import(TRANSFORMERS_URL);
         env.allowLocalModels = false;
         env.useBrowserCache = true;
@@ -292,9 +321,9 @@ if (pronRoot) {
           dtype: 'q8',
           progress_callback: progress => {
             if (progress?.status === 'progress' && Number.isFinite(progress.progress)) {
-              message('Загрузка модели Whisper: ' + Math.round(progress.progress) + '%. Запись не отправляется на сервер.');
+              message(t('Загрузка модели Whisper: ' + Math.round(progress.progress) + '%. Запись не отправляется на сервер.', 'Downloading Whisper model: ' + Math.round(progress.progress) + '%. Your recording is not uploaded to the server.'));
             } else if (progress?.status === 'done') {
-              message('Модель Whisper готова. Распознаём запись локально…');
+              message(t('Модель Whisper готова. Распознаём запись локально…', 'Whisper is ready. Transcribing your recording on this device…'));
             }
           }
         });
@@ -306,20 +335,21 @@ if (pronRoot) {
     return transcriberPromise;
   }
 
-  function renderResult(recognizedText, analysis, duration) {
+  function renderResult(recognizedText, analysis, duration, shouldScroll = true) {
+    latestResult = { recognizedText, analysis, duration };
     resultSection.hidden = false;
     pronRoot.querySelector('[data-pron-overall]').textContent = analysis.wordMatchPercent + '%';
     pronRoot.querySelector('[data-pron-transcript]').textContent = recognizedText
-      ? 'Whisper распознал: ' + recognizedText
-      : 'Речь не удалось распознать. Попробуй записать фразу ещё раз.';
+      ? t('Whisper распознал: ' + recognizedText, 'Whisper recognised: ' + recognizedText)
+      : t('Речь не удалось распознать. Попробуй записать фразу ещё раз.', 'Speech could not be recognised. Please record the passage again.');
 
     const pace = Math.round((analysis.recognizedWords / duration) * 60);
     const metrics = [
-      ['Совпало слов', analysis.matched + ' / ' + analysis.referenceWords],
-      ['Пропуски', String(analysis.missing)],
-      ['Замены', String(analysis.different)],
-      ['Лишние слова', String(analysis.extra)],
-      ['Темп речи', pace + ' слов/мин']
+      [t('Совпало слов', 'Words matched'), analysis.matched + ' / ' + analysis.referenceWords],
+      [t('Пропуски', 'Missing'), String(analysis.missing)],
+      [t('Замены', 'Substitutions'), String(analysis.different)],
+      [t('Лишние слова', 'Extra words'), String(analysis.extra)],
+      [t('Темп речи', 'Speaking pace'), pace + (document.documentElement.lang === 'en' ? ' words/min' : ' слов/мин')]
     ];
 
     const metricsNode = pronRoot.querySelector('[data-pron-metrics]');
@@ -358,19 +388,19 @@ if (pronRoot) {
       if (item.status === 'match') {
         expected.textContent = item.reference;
         heard.textContent = '✓';
-        heard.setAttribute('aria-label', 'Совпало');
+        heard.setAttribute('aria-label', t('Совпало', 'Matched'));
       } else if (item.status === 'different') {
         expected.textContent = item.reference;
         heard.textContent = '→ ' + item.recognized;
-        heard.setAttribute('aria-label', 'Распознано вместо ожидаемого: ' + item.recognized);
+        heard.setAttribute('aria-label', t('Распознано вместо ожидаемого: ', 'Recognised instead of expected: ') + item.recognized);
       } else if (item.status === 'missing') {
         expected.textContent = item.reference;
-        heard.textContent = 'пропуск';
-        heard.setAttribute('aria-label', 'Не распознано');
+        heard.textContent = t('пропуск', 'missing');
+        heard.setAttribute('aria-label', t('Не распознано', 'Not recognised'));
       } else {
         expected.textContent = item.recognized;
-        heard.textContent = '+ лишнее';
-        heard.setAttribute('aria-label', 'Лишнее слово');
+        heard.textContent = '+ ' + t('лишнее', 'extra');
+        heard.setAttribute('aria-label', t('Лишнее слово', 'Extra word'));
       }
 
       row.classList.add('pron-word-' + item.status);
@@ -388,7 +418,7 @@ if (pronRoot) {
       updateActiveTask();
     }
 
-    resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (shouldScroll) resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function svgElement(name, attributes = {}, text = '') {
@@ -400,7 +430,7 @@ if (pronRoot) {
 
   function renderProgressChart(attempts) {
     const series = buildProgressSeries(attempts);
-    progressCount.textContent = series.length + (series.length === 1 ? ' попытка' : ' попыток');
+    progressCount.textContent = series.length + (document.documentElement.lang === 'en' ? (series.length === 1 ? ' attempt' : ' attempts') : (series.length === 1 ? ' попытка' : ' попыток'));
     progressChart.replaceChildren();
 
     if (!series.length) {
@@ -412,7 +442,7 @@ if (pronRoot) {
     chartEmpty.hidden = true;
     progressChart.hidden = false;
     progressChart.setAttribute('aria-label',
-      'Совпадение текста по последним попыткам: ' + series.map(item => item.score + '%').join(', '));
+      t('Совпадение текста по последним попыткам: ', 'Word-match scores over recent attempts: ') + series.map(item => item.score + '%').join(', '));
 
     const left = 38;
     const right = 326;
@@ -451,7 +481,7 @@ if (pronRoot) {
       const circle = svgElement('circle', {
         cx: x, cy: y, r: 4.5, fill: '#fff', stroke: '#171717', 'stroke-width': 2
       });
-      circle.append(svgElement('title', {}, 'Попытка ' + point.attempt + ': ' + point.score + '%'));
+      circle.append(svgElement('title', {}, t('Попытка ', 'Attempt ') + point.attempt + ': ' + point.score + '%'));
       progressChart.append(circle);
       progressChart.append(svgElement('text', {
         x, y: Math.max(top + 10, y - 9), fill: '#171717', 'font-size': 9, 'text-anchor': 'middle'
@@ -463,16 +493,17 @@ if (pronRoot) {
 
     progressChart.append(svgElement('text', {
       x: right, y: 184, fill: '#888', 'font-size': 9, 'text-anchor': 'end'
-    }, 'новые →'));
+    }, t('новые →', 'newer →')));
   }
 
   function renderHistory(attempts) {
+    latestAttempts = attempts;
     renderProgressChart(attempts);
     const history = pronRoot.querySelector('[data-pron-history]');
     history.replaceChildren();
 
     if (!attempts.length) {
-      history.textContent = 'История появится после первой оценки.';
+      history.textContent = t('История появится после первой оценки.', 'Your history will appear after your first assessment.');
       return;
     }
 
@@ -482,7 +513,7 @@ if (pronRoot) {
       const summary = document.createElement('span');
       summary.textContent = item.reference_text;
       const score = document.createElement('strong');
-      score.textContent = Math.round(Number(item.word_match_score)) + '% совпадение';
+      score.textContent = Math.round(Number(item.word_match_score)) + t('% совпадение', '% match');
       row.append(summary, score);
       history.append(row);
     });
@@ -541,16 +572,16 @@ if (pronRoot) {
     } catch {}
 
     if (savedLocally) return 'device';
-    throw new Error('Результат показан, но его не удалось сохранить. Проверь свободное место и настройки хранения браузера.');
+    throw new Error(t('Результат показан, но его не удалось сохранить. Проверь свободное место и настройки хранения браузера.', 'The result is shown but could not be saved. Check available space and your browser storage settings.'));
   }
 
   async function processRecording(recordingBlob, referenceText) {
     recordButton.disabled = true;
     try {
-      message('Подготавливаем аудио для обработки в браузере…');
+      message(t('Подготавливаем аудио для обработки в браузере…', 'Preparing audio for browser processing…'));
       const { samples, duration } = await toSamples(recordingBlob);
       const transcriber = await getTranscriber();
-      message('Whisper распознаёт речь прямо на устройстве. Это может занять некоторое время.');
+      message(t('Whisper распознаёт речь прямо на устройстве. Это может занять некоторое время.', 'Whisper is transcribing speech on this device. This may take a little while.'));
       const output = await transcriber(samples);
       const recognizedText = String(output?.text || '').trim();
       if (!recognizedText) {
@@ -563,16 +594,16 @@ if (pronRoot) {
       try {
         const savedTo = await saveAttempt(referenceText, recognizedText, analysis);
         message(savedTo === 'account'
-          ? 'Готово. Аудио обработано на устройстве; текст и результат сохранены в аккаунте.'
-          : 'Готово. Аудио обработано на устройстве; результат сохранён в истории этого браузера.');
+          ? t('Готово. Аудио обработано на устройстве; текст и результат сохранены в аккаунте.', 'Done. Audio was processed on this device; the transcript and result were saved to your account.')
+          : t('Готово. Аудио обработано на устройстве; результат сохранён в истории этого браузера.', 'Done. Audio was processed on this device; the result was saved in this browser history.'));
         await loadHistory();
       } catch (error) {
-        message(error.message || 'Результат показан, но историю не удалось сохранить.', true);
+        message(error.message || t('Результат показан, но историю не удалось сохранить.', 'The result is shown but could not be saved to history.'), true);
       }
     } catch (error) {
-      const detail = error?.message || 'Не удалось распознать запись.';
+      const detail = error?.message || t('Не удалось распознать запись.', 'Could not transcribe the recording.');
       message(detail.includes('Failed to fetch') || detail.includes('NetworkError')
-        ? 'Не удалось загрузить модель Whisper. Проверь подключение к интернету и попробуй ещё раз.'
+        ? t('Не удалось загрузить модель Whisper. Проверь подключение к интернету и попробуй ещё раз.', 'Could not download the Whisper model. Check your internet connection and try again.')
         : detail, true);
     } finally {
       updateRecordAvailability();
@@ -581,11 +612,11 @@ if (pronRoot) {
 
   async function startRecording() {
     if (!consent.checked) {
-      message('Сначала подтверди обработку записи локально в браузере.', true);
+      message(t('Сначала подтверди обработку записи локально в браузере.', 'First confirm that the recording will be processed locally in your browser.'), true);
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-      message('Этот браузер не поддерживает запись с микрофона. Попробуй актуальную версию Chrome, Edge или Safari.', true);
+      message(t('Этот браузер не поддерживает запись с микрофона. Попробуй актуальную версию Chrome, Edge или Safari.', 'This browser does not support microphone recording. Try an up-to-date version of Chrome, Edge or Safari.'), true);
       return;
     }
 
@@ -615,22 +646,22 @@ if (pronRoot) {
         clearInterval(clockId);
         clearTimeout(autoStopId);
         timerNode.textContent = '00:00 / 00:28';
-        recordLabel.textContent = 'Начать запись';
+        recordLabel.textContent = t('Начать запись', 'Start recording');
         recordButton.classList.remove('recording');
 
         if (recording.size) processRecording(recording, recordingReferenceText);
         else {
-          message('Запись пустая. Попробуй ещё раз.', true);
+          message(t('Запись пустая. Попробуй ещё раз.', 'The recording is empty. Please try again.'), true);
           updateRecordAvailability();
         }
       }, { once: true });
 
       recorder.start(250);
       startedAt = Date.now();
-      recordLabel.textContent = 'Остановить запись';
+      recordLabel.textContent = t('Остановить запись', 'Stop recording');
       recordButton.classList.add('recording');
       recordButton.disabled = false;
-      message('Говори чётко и в обычном темпе. Нажми кнопку, когда закончишь.');
+      message(t('Говори чётко и в обычном темпе. Нажми кнопку, когда закончишь.', 'Speak clearly at a natural pace. Press the button when you are finished.'));
 
       clockId = setInterval(() => {
         const elapsed = (Date.now() - startedAt) / 1000;
@@ -641,7 +672,7 @@ if (pronRoot) {
       mediaStream?.getTracks().forEach(track => track.stop());
       mediaStream = null;
       recorder = null;
-      message('Не удалось получить доступ к микрофону. Проверь разрешение микрофона в браузере.', true);
+      message(t('Не удалось получить доступ к микрофону. Проверь разрешение микрофона в браузере.', 'Could not access the microphone. Check your browser microphone permission.'), true);
       updateRecordAvailability();
     }
   }
@@ -649,7 +680,7 @@ if (pronRoot) {
   function stopRecording() {
     if (!recorder || recorder.state === 'inactive') return;
     recordButton.disabled = true;
-    message('Завершаем запись…');
+    message(t('Завершаем запись…', 'Finishing recording…'));
     recorder.stop();
   }
 
@@ -660,8 +691,25 @@ if (pronRoot) {
 
   engineBadge.textContent = 'WHISPER · ON-DEVICE';
   renderPassages();
+
+  window.addEventListener('quietenglish:languagechange', () => {
+    renderPassages(selectedPassage()?.id || '');
+    if (latestResult) {
+      renderResult(latestResult.recognizedText, latestResult.analysis, latestResult.duration, false);
+    }
+    renderHistory(latestAttempts);
+    if (lastStatusPair) statusNode.textContent = t(lastStatusPair[0], lastStatusPair[1]);
+    if (lastGeneratorPair) aiGeneratorStatus.textContent = t(lastGeneratorPair[0], lastGeneratorPair[1]);
+    generateButton.textContent = generateButton.disabled ? t('Создаём…', 'Generating…') : t('Сгенерировать ↗', 'Generate ↗');
+    recordLabel.textContent = recorder ? t('Остановить запись', 'Stop recording') : t('Начать запись', 'Start recording');
+    const count = promptList.querySelectorAll('.pron-prompt').length;
+    const countNode = pronRoot.querySelector('[data-pron-count]');
+    if (countNode) countNode.textContent = count + (document.documentElement.lang === 'en' ? (count === 1 ? ' passage' : ' passages') : (count === 1 ? ' задание' : count >= 2 && count <= 4 ? ' задания' : ' заданий'));
+  });
+
+
   checkAiGeneratorStatus();
-  message('Выбери уровень и текст, сгенерируй новый вариант или используй библиотеку A1–C1.');
+  message(t('Выбери уровень и текст, сгенерируй новый вариант или используй библиотеку A1–C1.', 'Choose a level and passage, generate a new one or use the A1–C1 library.'));
   updateRecordAvailability();
   loadHistory();
 }
