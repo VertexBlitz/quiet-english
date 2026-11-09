@@ -38,7 +38,7 @@ Encode the keystore for the `ANDROID_KEYSTORE_BASE64` secret:
 - macOS/Linux: `base64 < quiet-english-release.jks | tr -d '\n'`
 - PowerShell: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("quiet-english-release.jks"))`
 
-The tagged workflow produces:
+The tagged workflow derives a unique `versionCode` from `GITHUB_RUN_NUMBER` and uses the semantic version from the tag. The tagged workflow produces:
 
 - `app-release.apk` — installable Android package for GitHub Releases.
 - `app-release.aab` — Android App Bundle for Google Play Console.

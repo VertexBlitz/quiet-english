@@ -94,7 +94,12 @@ jobs:
       - name: Build signed APK and AAB
         if: steps.signing.outputs.ready == 'true'
         working-directory: android
-        run: gradle --no-daemon :app:assembleRelease :app:bundleRelease
+        run: |
+          RELEASE_VERSION="${GITHUB_REF_NAME#quiet-english-preview-v}"
+          gradle --no-daemon \
+            -PappVersionCode="${GITHUB_RUN_NUMBER}" \
+            -PappVersionName="${RELEASE_VERSION}" \
+            :app:assembleRelease :app:bundleRelease
       - name: Generate Digital Asset Links statement
         if: steps.signing.outputs.ready == 'true'
         env:

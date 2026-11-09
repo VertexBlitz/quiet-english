@@ -117,7 +117,8 @@ test('offline storage and service-worker cache are present after release updates
   const dictionary = read('public/dictionary.html');
   assert.ok(offlineClient.includes('window.QuietOffline = { save, all, remove }'));
   assert.ok(offlineClient.includes('navigator.serviceWorker.register'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v5'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v6'"));
+  assert.ok(serviceWorker.includes("url.pathname === '/' ? '/' : url.pathname"));
   assert.ok(serviceWorker.includes("url.pathname === '/styles.css'"));
   assert.ok(serviceWorker.includes('cache.match(request, { ignoreSearch: true })'));
   assert.ok(serviceWorker.includes('"/register.html"'));
@@ -267,5 +268,14 @@ test('Digital Asset Links are served explicitly from the public well-known path'
   const assetLinks = JSON.parse(read('public/.well-known/assetlinks.json'));
   assert.ok(server.includes("app.get('/.well-known/assetlinks.json'"));
   assert.deepEqual(assetLinks, []);
+});
+
+test('Android release versions can be supplied from a unique GitHub Actions run', () => {
+  const gradle = read('android/app/build.gradle');
+  const workflow = read('.github/workflows/mobile-app.yml');
+  assert.ok(gradle.includes('findProperty("appVersionCode")'));
+  assert.ok(gradle.includes('findProperty("appVersionName")'));
+  assert.ok(workflow.includes('GITHUB_RUN_NUMBER'));
+  assert.ok(workflow.includes('GITHUB_REF_NAME#quiet-english-preview-v'));
 });
 

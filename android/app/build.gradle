@@ -12,8 +12,9 @@ android {
         applicationId "com.vertexblitz.quietenglish.preview"
         minSdk 23
         targetSdk 36
-        versionCode 1
-        versionName "1.0.0-preview"
+        // Play requires a strictly increasing versionCode for each release.
+        versionCode (project.findProperty("appVersionCode") ?: "1").toInteger()
+        versionName (project.findProperty("appVersionName") ?: "1.0.0-preview")
     }
 
     signingConfigs {
