@@ -413,3 +413,27 @@ test('mobile PWA cache refreshes the shared UI and the learning method page is b
   assert.ok(styles.includes('background:#fff'));
   assert.ok(styles.includes('env(safe-area-inset-bottom, 0px)'));
 });
+
+
+test('homepage editorial labels and feature tags follow the selected language', () => {
+  const home = read('public/index.html');
+  const method = read('public/method.html');
+
+  for (const [ru, en] of [
+    ['АНГЛИЙСКИЙ В ТВОЁМ ТЕМПЕ', 'A QUIETER WAY TO LEARN'],
+    ['ВСЕ НАВЫКИ В ОДНОМ МЕСТЕ', 'ONE LEARNING SPACE'],
+    ['ВОЗМОЖНОСТИ QUIET ENGLISH', 'EXPLORE QUIET ENGLISH'],
+    ['ТВОЙ МАРШРУТ', 'YOUR ROUTE'],
+    ['ПРАКТИКА С AI', 'AI PRACTICE'],
+    ['УСТНАЯ РЕЧЬ', 'SPEAKING LAB'],
+    ['АУДИРОВАНИЕ', 'LISTENING LAB'],
+    ['ПИСЬМЕННАЯ РЕЧЬ', 'WRITING LAB'],
+    ['УМНОЕ ПОВТОРЕНИЕ', 'SMART REVIEW'],
+    ['ПРОСТАЯ СИСТЕМА', 'A SIMPLE ROUTINE'],
+    ['ТВОЙ СЛЕДУЮЩИЙ ШАГ', 'YOUR NEXT STEP']
+  ]) {
+    assert.ok(home.includes('data-ru="' + ru + '" data-en="' + en + '"'), 'missing localized label: ' + ru);
+  }
+  assert.ok(home.includes('data-ru=" / ЛИЧНОЕ ОБУЧЕНИЕ"'));
+  assert.ok(method.includes('data-ru=" / ЛИЧНОЕ ОБУЧЕНИЕ"'));
+});
