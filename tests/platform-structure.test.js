@@ -117,7 +117,7 @@ test('offline storage and service-worker cache are present after release updates
   const dictionary = read('public/dictionary.html');
   assert.ok(offlineClient.includes('window.QuietOffline = { save, all, remove }'));
   assert.ok(offlineClient.includes('navigator.serviceWorker.register'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v6'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v7'"));
   assert.ok(serviceWorker.includes("url.pathname === '/' ? '/' : url.pathname"));
   assert.ok(serviceWorker.includes("url.pathname === '/styles.css'"));
   assert.ok(serviceWorker.includes('cache.match(request, { ignoreSearch: true })'));
@@ -242,7 +242,7 @@ test('PWA manifest, install metadata, and offline shell are configured', () => {
   assert.ok(index.includes('data-pwa-install-card'));
   assert.ok(installScript.includes('beforeinstallprompt'));
   assert.ok(installScript.includes('На экран Домой'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v6'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v7'"));
   assert.ok(serviceWorker.includes('"/manifest.webmanifest"'));
   assert.ok(serviceWorker.includes('"/library.html"'));
 });
@@ -390,4 +390,26 @@ test('every public HTML page includes responsive viewport and site stylesheet', 
     assert.ok(html.includes('name="viewport"'), page + ' must declare a viewport');
     assert.ok(html.includes('/styles.css'), page + ' must load the site stylesheet');
   }
+});
+
+
+test('mobile PWA cache refreshes the shared UI and the learning method page is bilingual', () => {
+  const serviceWorker = read('public/sw.js');
+  const method = read('public/method.html');
+  const home = read('public/index.html');
+  const styles = read('public/styles.css');
+
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v7'"));
+  assert.ok(serviceWorker.includes('"/method.html"'));
+  assert.ok(serviceWorker.includes('"/pronunciation.js"'));
+  assert.ok(method.includes('data-title-ru='));
+  assert.ok(method.includes('data-title-en='));
+  for (const phrase of ['Практика', 'Обратная связь', 'Прогресс', 'A GOOD PLACE TO BEGIN']) {
+    assert.ok(method.includes(phrase), 'method page should include localized content: ' + phrase);
+  }
+  assert.ok(method.includes('viewport-fit=cover'));
+  assert.ok(home.includes('viewport-fit=cover'));
+  assert.ok(home.includes('/styles.css?v=20261109-mobile-fix-2'));
+  assert.ok(styles.includes('background:#fff'));
+  assert.ok(styles.includes('env(safe-area-inset-bottom, 0px)'));
 });
