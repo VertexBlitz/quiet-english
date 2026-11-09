@@ -296,3 +296,55 @@ test('Android signing key material is excluded and release workflow fails closed
   assert.ok(psScript.includes('quietenglish-upload'));
   assert.ok(shScript.includes('quietenglish-upload'));
 });
+
+
+test('phase 1 provides unified navigation, bilingual page shells and responsive landing page', () => {
+  const navigation = read('public/session.js');
+  const language = read('public/i18n.js');
+  const styles = read('public/styles.css');
+  const home = read('public/index.html');
+
+  for (const route of [
+    "['plan', '/plan.html']",
+    "['practice', '/practice.html']",
+    "['speaking', '/pronunciation.html']",
+    "['progress', '/progress.html']"
+  ]) {
+    assert.ok(navigation.includes(route), 'missing primary navigation route: ' + route);
+  }
+  assert.ok(navigation.includes('site-nav-more'));
+  assert.ok(navigation.includes('skip-link'));
+  assert.ok(navigation.includes('quietenglish:languagechange'));
+  assert.ok(language.includes('data-placeholder-ru'));
+  assert.ok(language.includes('quietenglish:languagechange'));
+
+  for (const page of ['index.html','writing.html','dictionary.html','calendar.html','studio.html','offline.html']) {
+    const html = read('public/' + page);
+    assert.ok(html.includes('data-title-ru'), page + ' needs a Russian document title');
+    assert.ok(html.includes('data-title-en'), page + ' needs an English document title');
+    assert.ok(html.includes('name="viewport"'), page + ' needs a mobile viewport');
+  }
+
+  for (const route of [
+    '/plan.html','/practice.html','/pronunciation.html',
+    '/listening.html','/writing.html','/review.html'
+  ]) {
+    assert.ok(home.includes(route), 'homepage should expose ' + route);
+  }
+  assert.equal((home.match(/class="home-feature-card"/g) || []).length, 6);
+  assert.ok(styles.includes('.home-feature-grid'));
+  assert.ok(styles.includes('.skip-link:focus'));
+  assert.ok(styles.includes('@media(max-width:760px)'));
+  assert.ok(!/data-(?:ru|en)="[^"]*<br/.test(home));
+  assert.ok(!/data-(?:ru|en)="[^"]*<br/.test(read('public/writing.html')));
+});
+
+test('dynamic learning modules respond to the shared language-change event', () => {
+  for (const file of [
+    'public/writing.js','public/dictionary.js','public/calendar.js',
+    'public/studio.js','public/offline.js','public/listening.js','public/knowledge.js',
+    'public/pwa-install.js'
+  ]) {
+    assert.ok(read(file).includes('quietenglish:languagechange'), file + ' should update after language changes');
+  }
+});
