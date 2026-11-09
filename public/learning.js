@@ -12,6 +12,45 @@ async function learningApi(path, options = {}) {
   return data;
 }
 
+
+const learningLanguage = () => document.documentElement.lang === 'en' ? 'en' : 'ru';
+const learningT = (ru, en) => learningLanguage() === 'en' ? en : ru;
+const learningPick = value => {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const lang = learningLanguage();
+    return value[lang] ?? value.en ?? value.ru ?? '';
+  }
+  return value ?? '';
+};
+const learningSkillLabels = {
+  grammar: ['Грамматика', 'Grammar'],
+  vocabulary: ['Лексика', 'Vocabulary'],
+  reading: ['Чтение', 'Reading'],
+  listening: ['Аудирование', 'Listening'],
+  writing: ['Письмо', 'Writing'],
+  speaking: ['Говорение', 'Speaking'],
+  mixed: ['Смешанная практика', 'Mixed practice'],
+  communication: ['Общение', 'Communication']
+};
+const learningSkill = value => {
+  const pair = learningSkillLabels[String(value || '').toLowerCase()];
+  return pair ? learningT(pair[0], pair[1]) : String(value || '');
+};
+const learningMinutes = value => learningLanguage() === 'en' ? String(value) + ' min' : String(value) + ' мин';
+const setLearningText = (node, ru, en) => {
+  if (!node) return;
+  node.dataset.learningRu = ru;
+  node.dataset.learningEn = en;
+  node.textContent = learningT(ru, en);
+};
+const refreshLearningText = () => {
+  document.querySelectorAll('[data-learning-ru][data-learning-en]').forEach(node => {
+    node.textContent = learningT(node.dataset.learningRu, node.dataset.learningEn);
+  });
+};
+window.addEventListener('quietenglish:languagechange', refreshLearningText);
+
+
 function learningMessage(node, message, isError = false) {
   if (!node) return;
   node.textContent = message;
@@ -97,7 +136,7 @@ if (placementRoot) {
           radio.value = option.id;
           radio.required = true;
           const text = document.createElement('span');
-          text.textContent = option.text;
+          text.textContent = learningPick(option.text);
           label.append(radio, text);
           fieldset.appendChild(label);
         });
@@ -138,21 +177,21 @@ if (planPage) {
     learningApi('/progress').then(({ summary }) => {
       dashboardSummary.replaceChildren();
       [
-        [summary.minutes, 'Минут обучения'],
-        [summary.completed_tasks, 'Выполнено заданий'],
-        [summary.active_days, 'Активных дней'],
-        [summary.open_errors, 'Открытых ошибок']
+        [summary.minutes, 'Минут обучения', 'Learning minutes'],
+        [summary.completed_tasks, 'Выполнено заданий', 'Tasks completed'],
+        [summary.active_days, 'Активных дней', 'Active days'],
+        [summary.open_errors, 'Открытых ошибок', 'Open errors']
       ].forEach(([value, label]) => {
         const card = document.createElement('article');
         card.className = 'dashboard-metric';
         const number = document.createElement('strong');
         number.textContent = String(value ?? 0);
         const caption = document.createElement('span');
-        caption.textContent = label;
+        setLearningText(caption, label, arguments.length && label === 'Минут обучения' ? 'Learning minutes' : label === 'Выполнено заданий' ? 'Tasks completed' : label === 'Активных дней' ? 'Active days' : 'Open errors');
         card.append(number, caption);
         dashboardSummary.append(card);
       });
-      if (dashboardStatus) dashboardStatus.textContent = 'Данные собраны из сохранённых занятий и результатов.';
+      if (dashboardStatus) setLearningText(dashboardStatus, 'Данные собраны из сохранённых занятий и результатов.', 'Data is based on saved sessions and results.');
     }).catch(error => {
       if (dashboardStatus) {
         dashboardStatus.textContent = error.message;
@@ -178,7 +217,7 @@ if (planPage) {
       main.textContent = todayData.todayError;
     } else {
       const today = todayData.today;
-      $('[data-day-label]', planPage).textContent = `Week ${today.week_number} · Day ${today.day_index}`;
+      setLearningText($('[data-day-label]', planPage), `Неделя ${today.week_number} · День ${today.day_index}`, `Week ${today.week_number} · Day ${today.day_index}`);
       $('[data-today-theme]', planPage).textContent = today.theme;
       $('[data-review-count]', planPage).textContent = today.review_due;
       const task = today.main_task;
@@ -187,15 +226,15 @@ if (planPage) {
         card.className = 'task-card';
         const meta = document.createElement('p');
         meta.className = 'eyebrow';
-        meta.textContent = `${task.level} · ${task.skill} · ${task.estimated_time} min`;
+        setLearningText(meta, `${task.level} · ${learningSkillLabels[task.skill]?.[0] || task.skill} · ${task.estimated_time} мин`, `${task.level} · ${learningSkillLabels[task.skill]?.[1] || task.skill} · ${task.estimated_time} min`);
         const title = document.createElement('h3');
-        title.textContent = task.objective;
+        title.textContent = learningPick(task.objective);
         const objective = document.createElement('p');
-        objective.textContent = today.objective;
+        objective.textContent = learningPick(today.objective);
         const start = document.createElement('a');
         start.className = 'button';
         start.href = '/exercise.html?id=' + encodeURIComponent(task.id);
-        start.textContent = 'Начать задание ↗';
+        setLearningText(start, 'Начать задание ↗', 'Start task ↗');
         card.append(meta, title, objective, start);
         main.replaceChildren(card);
       }
@@ -206,9 +245,9 @@ if (planPage) {
       const item = document.createElement('article');
       item.className = 'week-row';
       const title = document.createElement('h3');
-      title.textContent = `Week ${week.week_number} · ${week.theme}`;
+      setLearningText(title, `Неделя ${week.week_number} · ${learningPick(week.theme)}`, `Week ${week.week_number} · ${learningPick(week.theme)}`);
       const text = document.createElement('p');
-      text.textContent = week.objective;
+      text.textContent = learningPick(week.objective);
       item.append(title, text);
       weeks.appendChild(item);
     });
@@ -220,7 +259,7 @@ if (planPage) {
         if (!tasks.length) {
           const note = document.createElement('p');
           note.className = 'fine-print';
-          note.textContent = 'Открой Quiet English AI, чтобы получить персональные рекомендации после первых упражнений.';
+          setLearningText(note, 'Открой AI Coach, чтобы получить персональные рекомендации после первых упражнений.', 'Open AI Coach to get personal recommendations after your first exercises.');
           coachTasks.append(note);
           return;
         }
@@ -229,14 +268,14 @@ if (planPage) {
           card.className = 'coach-task';
           const info = document.createElement('div');
           const heading = document.createElement('strong');
-          heading.textContent = task.title;
+          heading.textContent = learningPick(task.title);
           const detail = document.createElement('p');
-          detail.textContent = task.description || task.topic || '';
+          detail.textContent = learningPick(task.description || task.topic || '');
           info.append(heading, detail);
           const link = document.createElement('a');
           link.className = 'text-link';
           link.href = '/studio.html';
-          link.textContent = 'Открыть AI Coach →';
+          setLearningText(link, 'Открыть AI Coach →', 'Open AI Coach →');
           card.append(info, link);
           coachTasks.append(card);
         });
@@ -267,15 +306,15 @@ if (practicePage) {
       card.className = 'exercise-card';
       const meta = document.createElement('p');
       meta.className = 'eyebrow';
-      meta.textContent = `${exercise.level} · ${exercise.skill} · ${exercise.estimated_time} min`;
+      setLearningText(meta, `${exercise.level} · ${learningSkillLabels[exercise.skill]?.[0] || exercise.skill} · ${exercise.estimated_time} мин`, `${exercise.level} · ${learningSkillLabels[exercise.skill]?.[1] || exercise.skill} · ${exercise.estimated_time} min`);
       const heading = document.createElement('h3');
-      heading.textContent = exercise.objective;
+      heading.textContent = learningPick(exercise.objective);
       const text = document.createElement('p');
-      text.textContent = exercise.success_criteria;
+      text.textContent = learningPick(exercise.success_criteria);
       const link = document.createElement('a');
       link.className = 'text-link';
       link.href = '/exercise.html?id=' + encodeURIComponent(exercise.id);
-      link.textContent = 'Открыть задание →';
+      setLearningText(link, 'Открыть задание →', 'Open exercise →');
       card.append(meta, heading, text, link);
       list.appendChild(card);
     });
@@ -283,7 +322,7 @@ if (practicePage) {
     list.replaceChildren();
     const note = document.createElement('p');
     note.className = 'copy';
-    note.textContent = 'Готовые упражнения из личной библиотеки требуют настроенной базы аккаунтов. Генератор ИИ выше работает отдельно — выбери грамматику, лексику, чтение или аудирование.';
+    setLearningText(note, 'Готовые упражнения требуют настроенной базы аккаунтов. Генератор ИИ выше работает отдельно — выбери грамматику, лексику, чтение или аудирование.', 'The curated exercise library requires an account database. The AI generator above works separately — choose grammar, vocabulary, reading or listening.');
     list.appendChild(note);
   });
 }
@@ -294,17 +333,17 @@ if (exercisePage) {
   const id = new URLSearchParams(location.search).get('id');
   if (!id) learningMessage(status, 'Не указан идентификатор задания.', true);
   else learningApi('/exercises/' + encodeURIComponent(id)).then(({ exercise }) => {
-    $('[data-exercise-meta]', exercisePage).textContent = `${exercise.level} · ${exercise.skill} · ${exercise.estimated_time} min`;
-    $('[data-exercise-title]', exercisePage).textContent = exercise.objective;
-    $('[data-exercise-instructions]', exercisePage).textContent = exercise.instructions?.ru || exercise.instructions?.en || '';
+    setLearningText($('[data-exercise-meta]', exercisePage), `${exercise.level} · ${learningSkillLabels[exercise.skill]?.[0] || exercise.skill} · ${exercise.estimated_time} мин`, `${exercise.level} · ${learningSkillLabels[exercise.skill]?.[1] || exercise.skill} · ${exercise.estimated_time} min`);
+    $('[data-exercise-title]', exercisePage).textContent = learningPick(exercise.objective);
+    setLearningText($('[data-exercise-instructions]', exercisePage), exercise.instructions?.ru || exercise.instructions?.en || 'Прочитай задание и выбери ответ.', exercise.instructions?.en || exercise.instructions?.ru || 'Read the task and choose an answer.');
     const content = exercise.content;
     if (content.passage) {
       const passage = document.createElement('blockquote');
       passage.className = 'reading-passage';
-      passage.textContent = content.passage;
+      passage.textContent = learningPick(content.passage);
       $('[data-exercise-material]', exercisePage).appendChild(passage);
     }
-    $('[data-exercise-prompt]', exercisePage).textContent = content.prompt || '';
+    $('[data-exercise-prompt]', exercisePage).textContent = learningPick(content.prompt || '');
     const options = $('[data-exercise-options]', exercisePage);
     content.options.forEach(option => {
       const label = document.createElement('label');
@@ -335,8 +374,8 @@ if (exercisePage) {
         resultBox.hidden = false;
         resultBox.className = result.is_correct ? 'result-box success' : 'result-box';
         resultBox.textContent = result.is_correct
-          ? 'Верно! ' + (result.feedback.explanation?.ru || result.feedback.explanation?.en || '')
-          : 'Правильный ответ: ' + (result.feedback.correct_answer || '') + '. ' + (result.feedback.explanation?.ru || result.feedback.explanation?.en || '');
+          ? learningT('Верно! ', 'Correct! ') + learningPick(result.feedback.explanation)
+          : learningT('Правильный ответ: ', 'Correct answer: ') + (result.feedback.correct_answer || '') + '. ' + learningPick(result.feedback.explanation);
         const chat = $('[data-explain-chat]', exercisePage);
         chat.href = '/tutor.html?exercise=' + encodeURIComponent(exercise.id);
       } catch (error) {
@@ -359,34 +398,34 @@ if (reviewPage) {
     deck.replaceChildren();
     if (!items.length) {
       const empty = document.createElement('p');
-      empty.textContent = 'Сейчас нет карточек для повторения. Новые карточки появятся после практики.';
+      setLearningText(empty, 'Сейчас нет карточек для повторения. Новые карточки появятся после практики.', 'There are no cards due for review now. New cards will appear after you complete practice.');
       deck.appendChild(empty);
       return;
     }
     const item = items[index];
     const title = document.createElement('p');
     title.className = 'eyebrow';
-    title.textContent = `REVIEW ${index + 1} / ${items.length}`;
+    setLearningText(title, `ПОВТОРЕНИЕ ${index + 1} / ${items.length}`, `REVIEW ${index + 1} / ${items.length}`);
     const prompt = document.createElement('h2');
-    prompt.textContent = item.prompt;
+    prompt.textContent = learningPick(item.prompt);
     deck.append(title, prompt);
     if (showingAnswer) {
       const answer = document.createElement('p');
       answer.className = 'review-answer';
-      answer.textContent = item.answer;
+      answer.textContent = learningPick(item.answer);
       deck.appendChild(answer);
       if (item.explanation) {
         const explanation = document.createElement('p');
-        explanation.textContent = item.explanation;
+        explanation.textContent = learningPick(item.explanation);
         deck.appendChild(explanation);
       }
       const ratings = document.createElement('div');
       ratings.className = 'rating-row';
-      ['Again','Hard','Good','Easy'].forEach(rating => {
+      [['Again','Снова','Again'],['Hard','Сложно','Hard'],['Good','Хорошо','Good'],['Easy','Легко','Easy']].forEach(([rating,ru,en]) => {
         const button = document.createElement('button');
         button.className = 'button secondary';
         button.type = 'button';
-        button.textContent = rating;
+        setLearningText(button, ru, en);
         button.addEventListener('click', async () => {
           try {
             await learningApi('/review/' + item.id, { method:'POST', body:JSON.stringify({rating}) });
@@ -402,7 +441,7 @@ if (reviewPage) {
       const button = document.createElement('button');
       button.className = 'button';
       button.type = 'button';
-      button.textContent = 'Показать ответ';
+      setLearningText(button, 'Показать ответ', 'Show answer');
       button.addEventListener('click', async () => {
         button.disabled = true;
         try {
@@ -441,7 +480,7 @@ if (progressPage) {
       const row = document.createElement('div');
       row.className = 'skill-progress-row';
       const label = document.createElement('span');
-      label.textContent = skill.skill;
+      label.textContent = learningSkill(skill.skill);
       const value = document.createElement('strong');
       value.textContent = skill.accuracy == null ? '—' : skill.accuracy + '%';
       const track = document.createElement('div');
