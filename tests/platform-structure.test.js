@@ -117,7 +117,9 @@ test('offline storage and service-worker cache are present after release updates
   const dictionary = read('public/dictionary.html');
   assert.ok(offlineClient.includes('window.QuietOffline = { save, all, remove }'));
   assert.ok(offlineClient.includes('navigator.serviceWorker.register'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v3'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v4'"));
+  assert.ok(serviceWorker.includes("url.pathname === '/styles.css'"));
+  assert.ok(serviceWorker.includes('cache.match(request, { ignoreSearch: true })'));
   assert.ok(serviceWorker.includes('"/register.html"'));
   assert.equal(dictionary.split('/offline-client.js').length - 1, 1);
 });
