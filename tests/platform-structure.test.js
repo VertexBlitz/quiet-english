@@ -196,3 +196,27 @@ test('login explains unverified email separately and offers resend verification'
   assert.ok(client.includes('resendButton.hidden = false'));
   assert.ok(registerPage.includes('data-resend-verification hidden'));
 });
+
+test('shared app pages load the responsive site stylesheet', () => {
+  const pages = [
+    'public/admin.html',
+    'public/errors.html',
+    'public/exercise.html',
+    'public/forgot-password.html',
+    'public/guardian-approval.html',
+    'public/knowledge-map.html',
+    'public/library.html',
+    'public/placement.html',
+    'public/reset-password.html',
+    'public/topics.html',
+    'public/verify.html'
+  ];
+
+  for (const page of pages) {
+    const html = read(page);
+    assert.ok(html.includes('/styles.css'), `${page} must load styles.css`);
+    assert.ok(html.includes('name="viewport"'), `${page} must declare a mobile viewport`);
+  }
+
+  assert.ok(read('public/guardian-approval.html').startsWith('<!doctype html>'));
+});
