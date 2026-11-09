@@ -506,7 +506,7 @@
     const targetLevel = exportLevelSelect?.value || 'A1';
     runPdfExport(lessons.filter(item => item.level === targetLevel), targetLevel);
   });
-  document.querySelectorAll('[data-set-lang]').forEach(button=>button.addEventListener('click',()=>{setPlaceholder();render();}));
+  window.addEventListener('quietenglish:languagechange',()=>{setPlaceholder();render();});
   setPlaceholder();
   if (initialNoteId && lessons.some(item => item.id === initialNoteId)) {
     const initial = lessons.find(item => item.id === initialNoteId);
