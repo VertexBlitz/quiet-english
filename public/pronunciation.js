@@ -67,6 +67,19 @@ if (pronRoot) {
   const allPassages = () => [...generatedPassages, ...PASSAGES];
   const selectedPassage = () => allPassages().find(item => item.id === selectedPrompt()?.dataset.passageId);
   const selectedText = () => activeReviewText || selectedPrompt()?.value || PASSAGES[0].text;
+  const topicLabels = {
+    'Everyday life': ['Повседневная жизнь', 'Everyday life'], Food: ['Еда', 'Food'],
+    'Free time': ['Свободное время', 'Free time'], 'Around town': ['В городе', 'Around town'],
+    Travel: ['Путешествия', 'Travel'], Hobbies: ['Хобби', 'Hobbies'], Education: ['Образование', 'Education'],
+    Environment: ['Окружающая среда', 'Environment'], Technology: ['Технологии', 'Technology'],
+    'Work and study': ['Работа и учёба', 'Work and study'], Culture: ['Культура', 'Culture'],
+    Cities: ['Города', 'Cities'], Society: ['Общество', 'Society'],
+    'Media literacy': ['Медиаграмотность', 'Media literacy'], Innovation: ['Инновации', 'Innovation']
+  };
+  const displayTopic = topic => {
+    const pair = topicLabels[topic];
+    return pair ? t(pair[0], pair[1]) : String(topic || '');
+  };
 
   const formatTime = seconds => {
     const safe = Math.max(0, Math.floor(seconds));
@@ -81,7 +94,7 @@ if (pronRoot) {
     if (!activeTaskNode) return;
     activeTaskNode.textContent = activeReviewText
       ? t('Режим повторения: ', 'Review mode: ') + activeReviewText
-      : t('Выбрано: ', 'Selected: ') + (selectedPassage()?.level || 'A1') + ' · ' + (selectedPassage()?.topic || 'Everyday life');
+      : t('Выбрано: ', 'Selected: ') + (selectedPassage()?.level || 'A1') + ' · ' + (displayTopic(selectedPassage()?.topic || 'Everyday life'));
   }
 
   function speakText(text) {
@@ -127,7 +140,7 @@ if (pronRoot) {
       words.className = 'pron-prompt-content';
       const meta = document.createElement('strong');
       meta.className = 'pron-prompt-meta';
-      meta.textContent = item.level + ' · ' + item.topic + (item.generated ? ' · AI' : '');
+      meta.textContent = item.level + ' · ' + displayTopic(item.topic) + (item.generated ? ' · AI' : '');
       const passage = document.createElement('span');
       passage.className = 'pron-prompt-body';
       passage.textContent = item.text;
@@ -209,7 +222,7 @@ if (pronRoot) {
       retryPanel.hidden = true;
       resultSection.hidden = true;
       renderPassages(generated.id);
-      generatorStatus(t('Готово: создано новое задание ', 'Ready: a new ') + level + t('-уровня добавлено в начало списка.', ' passage was added to the top of the list.'));
+      generatorStatus(t('Готово: создано новое задание ' + level + '-уровня добавлено в начало списка.', 'Ready: a new ' + level + ' passage was added to the top of the list.'));
       message(t('Новое задание готово. Прочитай текст или включи пример произношения.', 'Your new passage is ready. Read it or play the pronunciation example.'));
     } catch (error) {
       generatorStatus(error?.message || t('Генерация временно недоступна.', 'Passage generation is temporarily unavailable.'), true);
@@ -308,7 +321,7 @@ if (pronRoot) {
           dtype: 'q8',
           progress_callback: progress => {
             if (progress?.status === 'progress' && Number.isFinite(progress.progress)) {
-              message(t('Загрузка модели Whisper: ', 'Downloading Whisper model: ') + Math.round(progress.progress) + t('%. Запись не отправляется на сервер.', '%. Your recording is not uploaded to the server.'));
+              message(t('Загрузка модели Whisper: ' + Math.round(progress.progress) + '%. Запись не отправляется на сервер.', 'Downloading Whisper model: ' + Math.round(progress.progress) + '%. Your recording is not uploaded to the server.'));
             } else if (progress?.status === 'done') {
               message(t('Модель Whisper готова. Распознаём запись локально…', 'Whisper is ready. Transcribing your recording on this device…'));
             }
@@ -327,7 +340,7 @@ if (pronRoot) {
     resultSection.hidden = false;
     pronRoot.querySelector('[data-pron-overall]').textContent = analysis.wordMatchPercent + '%';
     pronRoot.querySelector('[data-pron-transcript]').textContent = recognizedText
-      ? t('Whisper распознал: ', 'Whisper recognised: ') + recognizedText
+      ? t('Whisper распознал: ' + recognizedText, 'Whisper recognised: ' + recognizedText)
       : t('Речь не удалось распознать. Попробуй записать фразу ещё раз.', 'Speech could not be recognised. Please record the passage again.');
 
     const pace = Math.round((analysis.recognizedWords / duration) * 60);
