@@ -1,6 +1,6 @@
-<!doctype html><html lang="ru"><head>
-  <link rel="stylesheet" href="/styles.css?v=20261108-style-restore-1">
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Practice — Quiet English</title><script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/offline-client.js"></script><script defer src="/learning.js"></script><script defer src="/ai-practice.js"></script><script defer src="/coach-practice.js"></script></head><body><header class="topbar wrap">
+<!doctype html><html lang="ru" data-title-ru="Практика — Quiet English" data-title-en="Practice — Quiet English"><head>
+  <link rel="stylesheet" href="/styles.css?v=20261109-phase1-2">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Практика — Quiet English</title><script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/offline-client.js"></script><script defer src="/learning.js"></script><script defer src="/ai-practice.js"></script><script defer src="/coach-practice.js"></script></head><body><header class="topbar wrap">
   <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
   <nav aria-label="Main navigation">
     <a href="/plan.html" data-i18n="nav_plan" data-ru="План" data-en="Plan">План</a>
@@ -14,7 +14,7 @@
     <button type="button" data-set-lang="en">EN</button>
     <a class="account-link" href="/login.html" data-i18n="nav_account" data-ru="Аккаунт" data-en="Account">Аккаунт</a>
   </div>
-</header><main class="wrap" data-practice-page><section class="panel page-head"><p class="eyebrow">PRACTICE LIBRARY</p><h1 data-ru="Выбирай, что тренировать." data-en="Choose what to practise.">Выбирай, что тренировать.</h1><p class="lead" data-ru="Практикуй грамматику, лексику, чтение и аудирование. Выбирай уровень и тему, а затем разбирай ошибки и закрепляй результат." data-en="Practise grammar, vocabulary, reading and listening. Choose a level and topic, then review your mistakes and consolidate what you learn.">Практикуй грамматику, лексику, чтение и аудирование. Выбирай уровень и тему, а затем разбирай ошибки и закрепляй результат.</p></section><p class="form-status" data-learning-status></p>
+</header><main class="wrap" id="main-content" data-practice-page><section class="panel page-head"><p class="eyebrow">PRACTICE LIBRARY</p><h1 data-ru="Выбирай, что тренировать." data-en="Choose what to practise.">Выбирай, что тренировать.</h1><p class="lead" data-ru="Практикуй грамматику, лексику, чтение и аудирование. Выбирай уровень и тему, а затем разбирай ошибки и закрепляй результат." data-en="Practise grammar, vocabulary, reading and listening. Choose a level and topic, then review your mistakes and consolidate what you learn.">Практикуй грамматику, лексику, чтение и аудирование. Выбирай уровень и тему, а затем разбирай ошибки и закрепляй результат.</p></section><p class="form-status" data-learning-status></p>
 <section class="panel practice-tools">
   <article><p class="eyebrow">SPEAKING LAB</p><h2 data-ru="Потренируй устную речь." data-en="Practise speaking.">Потренируй устную речь.</h2><p class="copy" data-ru="Whisper распознаёт речь на устройстве; ты увидишь совпавшие, пропущенные и лишние слова." data-en="Local Whisper transcription, matched and missed words, and estimated speaking pace.">Whisper распознаёт речь на устройстве; ты увидишь совпавшие, пропущенные и лишние слова.</p><a class="button" href="/pronunciation.html" data-ru="Начать ↗" data-en="Start ↗">Начать ↗</a></article>
   <article><p class="eyebrow">LISTENING LIBRARY</p><h2 data-ru="Слушай больше." data-en="Listen to more.">Слушай больше.</h2><p class="copy" data-ru="15 подборок и уроков от A1 до C1 с аудио и упражнениями." data-en="15 curated collections and lessons from A1 to C1, with audio and activities.">15 подборок и уроков от A1 до C1 с аудио и упражнениями.</p><a class="button" href="/listening.html" data-ru="Открыть библиотеку ↗" data-en="Open library ↗">Открыть библиотеку ↗</a></article>
@@ -28,11 +28,11 @@
   <div class="ai-practice-controls">
     <label><span data-ru="Уровень" data-en="Level">Уровень</span>
       <select data-ai-level>
-        <option value="A1">A1 · Beginner</option>
-        <option value="A2">A2 · Elementary</option>
-        <option value="B1" selected>B1 · Intermediate</option>
-        <option value="B2">B2 · Upper-intermediate</option>
-        <option value="C1">C1 · Advanced</option>
+        <option value="A1" data-ru="A1 · Начальный" data-en="A1 · Beginner">A1 · Beginner</option>
+        <option value="A2" data-ru="A2 · Элементарный" data-en="A2 · Elementary">A2 · Elementary</option>
+        <option value="B1" selected data-ru="B1 · Средний" data-en="B1 · Intermediate">B1 · Intermediate</option>
+        <option value="B2" data-ru="B2 · Выше среднего" data-en="B2 · Upper-intermediate">B2 · Upper-intermediate</option>
+        <option value="C1" data-ru="C1 · Продвинутый" data-en="C1 · Advanced">C1 · Advanced</option>
       </select>
     </label>
     <label><span data-ru="Тип задания" data-en="Exercise type">Тип задания</span>
@@ -47,19 +47,19 @@
     <label><span data-ru="Тема" data-en="Topic">Тема</span>
       <select data-ai-topic>
         <option value="Any topic" data-ru="Любая тема" data-en="Any topic">Любая тема</option>
-        <option value="Everyday life">Everyday life</option>
-        <option value="Travel">Travel</option>
-        <option value="Science">Science</option>
-        <option value="History and culture">History and culture</option>
-        <option value="Technology">Technology</option>
-        <option value="Environment">Environment</option>
-        <option value="Education">Education</option>
-        <option value="Books and media">Books and media</option>
+        <option value="Everyday life" data-ru="Повседневная жизнь" data-en="Everyday life">Everyday life</option>
+        <option value="Travel" data-ru="Путешествия" data-en="Travel">Travel</option>
+        <option value="Science" data-ru="Наука" data-en="Science">Science</option>
+        <option value="History and culture" data-ru="История и культура" data-en="History and culture">History and culture</option>
+        <option value="Technology" data-ru="Технологии" data-en="Technology">Technology</option>
+        <option value="Environment" data-ru="Окружающая среда" data-en="Environment">Окружающая среда</option>
+        <option value="Education" data-ru="Образование" data-en="Education">Образование</option>
+        <option value="Books and media" data-ru="Книги и медиа" data-en="Books and media">Книги и медиа</option>
       </select>
     </label>
     <button class="button ai-generate-button" type="button" data-ai-generate data-ru="Создать задание ↗" data-en="Generate exercise ↗">Создать задание ↗</button>
   </div>
-  <p class="form-status" data-ai-status role="status" aria-live="polite">Выбери тип задания и нажми «Создать задание».</p>
+  <p class="form-status" data-ai-status role="status" aria-live="polite" data-ru="Выбери тип задания и нажми «Создать задание»." data-en="Choose an exercise type and select “Generate exercise”.">Выбери тип задания и нажми «Создать задание».</p>
   <div class="ai-practice-workspace" data-ai-workspace hidden>
     <div class="ai-practice-title">
       <p class="eyebrow" data-ai-meta></p>
@@ -91,4 +91,4 @@
     <div data-ai-history></div>
   </section>
 </section>
-<section class="panel"><div class="exercise-grid" data-exercise-list><p>Загружаем упражнения…</p></div></section></main></body></html>
+<section class="panel"><div class="exercise-grid" data-exercise-list><p data-ru="Загружаем упражнения…" data-en="Loading exercises…">Загружаем упражнения…</p></div></section></main></body></html>
