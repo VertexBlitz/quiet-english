@@ -220,3 +220,52 @@ test('shared app pages load the responsive site stylesheet', () => {
 
   assert.ok(read('public/guardian-approval.html').startsWith('<!doctype html>'));
 });
+
+test('PWA manifest, install metadata, and offline shell are configured', () => {
+  const manifest = JSON.parse(read('public/manifest.webmanifest'));
+  const index = read('public/index.html');
+  const login = read('public/login.html');
+  const library = read('public/library.html');
+  const serviceWorker = read('public/sw.js');
+  const installScript = read('public/pwa-install.js');
+
+  assert.equal(manifest.name, 'Quiet English');
+  assert.equal(manifest.start_url, '/?source=installed-app');
+  assert.equal(manifest.display, 'standalone');
+  assert.ok(manifest.icons.some(icon => icon.sizes === '192x192'));
+  assert.ok(manifest.icons.some(icon => icon.sizes === '512x512' && icon.purpose === 'maskable'));
+  for (const html of [index, login, library]) {
+    assert.ok(html.includes('rel="manifest"'));
+    assert.ok(html.includes('apple-touch-icon'));
+  }
+  assert.ok(index.includes('data-pwa-install-card'));
+  assert.ok(installScript.includes('beforeinstallprompt'));
+  assert.ok(installScript.includes('На экран Домой'));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v5'"));
+  assert.ok(serviceWorker.includes('"/manifest.webmanifest"'));
+  assert.ok(serviceWorker.includes('"/library.html"'));
+});
+
+test('Android preview TWA targets API 36 and does not embed signing secrets', () => {
+  const gradle = read('android/app/build.gradle');
+  const manifest = read('android/app/src/main/AndroidManifest.xml');
+  const workflow = read('.github/workflows/mobile-app.yml');
+  const docs = read('android/README.md');
+
+  assert.ok(gradle.includes('targetSdk 36'));
+  assert.ok(gradle.includes('com.vertexblitz.quietenglish.preview'));
+  assert.ok(gradle.includes('androidbrowserhelper:androidbrowserhelper:2.7.3'));
+  assert.ok(manifest.includes('quiet-english-speaking-preview.onrender.com'));
+  assert.ok(workflow.includes('app-release.aab'));
+  assert.ok(workflow.includes('ANDROID_KEYSTORE_BASE64'));
+  assert.ok(docs.includes('Digital Asset Links'));
+  assert.ok(!gradle.includes('BEGIN PRIVATE KEY'));
+});
+
+test('Digital Asset Links are served explicitly from the public well-known path', () => {
+  const server = read('server.js');
+  const assetLinks = JSON.parse(read('public/.well-known/assetlinks.json'));
+  assert.ok(server.includes("app.get('/.well-known/assetlinks.json'"));
+  assert.deepEqual(assetLinks, []);
+});
+

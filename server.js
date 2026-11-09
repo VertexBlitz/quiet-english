@@ -950,6 +950,13 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
   return res.json({ message: message.trim(), demo: false });
 });
 
+app.get('/.well-known/assetlinks.json', (_req, res, next) => {
+  const assetLinksPath = path.join(root, 'public', '.well-known', 'assetlinks.json');
+  res.type('application/json').sendFile(assetLinksPath, error => {
+    if (error) next(error);
+  });
+});
+
 app.use(express.static(path.join(root, 'public')));
 
 app.use((error, _req, res, _next) => {

@@ -142,3 +142,32 @@ CMS changes to a published template affect newly generated plans. Existing learn
 This work is developed in `quiet-english-2-mvp`, not deployed to the existing production Render service. The production site remains unchanged until the pull request is reviewed and merged.
 
 The pronunciation and listening improvements are developed in `feat/pronunciation-and-listening-library` as a separate reviewable change. After merging, the site can serve the new pages, but account and learning APIs remain disabled until the required database and session settings exist. Speaking history is stored locally in the current browser when account storage is unavailable; account history requires the `005_pronunciation_attempts.sql` migration and configured account/database sessions. Whisper itself runs in the browser and does not need provider credentials. AI passage generation reuses `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_MODEL`; these must also be configured on the separate Preview Render service. The endpoint limits generation to 12 requests per hour per IP and validates the model response before returning a passage. The Practice generator also reuses the same Cloudflare Workers AI credentials, limits generation to 12 requests per hour per IP, keeps answer keys server-side, and stores up to eight recent scores in the learner's browser. Email registration additionally requires the Resend settings. Keep the registration feature flags off until the safety and privacy review is complete.
+
+
+## Installable app (preview)
+
+The `feat/pronunciation-and-listening-library` branch now contains the installable PWA and an Android Trusted Web Activity wrapper. These are preview builds and open the preview Render origin only.
+
+### iPhone / iPad — PWA
+
+1. Open `https://quiet-english-speaking-preview.onrender.com/` in Safari.
+2. Tap **Share → Add to Home Screen**.
+3. Keep **Open as Web App** enabled when Safari offers the option, then tap **Add**.
+
+The PWA uses `public/manifest.webmanifest`, the app icons in `public/icons/`, and the existing Service Worker. The offline shell can load cached app pages and static assets; sign-in, account synchronization, AI generation, email, and other API-backed features still require an internet connection.
+
+### Android — APK and Google Play bundle
+
+The Android TWA project lives in `android/`. GitHub Actions builds a debug APK on every preview-branch push. A signed release build (APK plus AAB) is created when a tag named `quiet-english-preview-vX.Y.Z` is pushed and the Android signing secrets are configured.
+
+See [android/README.md](android/README.md) for the signing secrets and Digital Asset Links setup. Do not commit a release keystore or passwords.
+
+The AAB is the distribution artifact for Google Play Console. The APK is included for direct installation and GitHub Releases.
+
+### Preview-only boundary
+
+The Android package ID is `com.vertexblitz.quietenglish.preview` and its launch URL is the preview Render domain. It is not configured for the production domain. The iPhone PWA also uses the preview domain.
+
+The site serves `/.well-known/assetlinks.json` through a dedicated route. It remains an empty JSON array until the release signing certificate is available; fullscreen TWA verification is therefore not complete yet. After a signed release is built, publish the generated `assetlinks.json` from that release to `public/.well-known/assetlinks.json` on this preview branch.
+
+A PWA is installed from Safari on iPhone; it is not itself an Apple App Store binary. A native iOS App Store release would be a separate project.

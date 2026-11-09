@@ -8,6 +8,13 @@
   <title>Learn English with AI — Quiet English</title>
   
   <script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/offline-client.js"></script><script defer src="/app.js"></script>
+  <link rel="manifest" href="/manifest.webmanifest?v=20261109-app-1">
+<meta name="theme-color" content="#FAFAFA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Quiet English">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <script defer src="/pwa-install.js"></script>
 </head>
 <body>
   <header class="topbar wrap">
@@ -26,6 +33,14 @@
     <a class="account-link" href="/login.html" data-ru="Войти" data-en="Sign in">Войти</a>
   </div>
 </header>
+<section class="wrap pwa-install-card" data-pwa-install-card hidden aria-live="polite">
+  <div>
+    <p class="eyebrow">QUIET ENGLISH APP</p>
+    <p data-pwa-install-message>Установи Quiet English на своё устройство для быстрого доступа.</p>
+  </div>
+  <button class="button" type="button" data-pwa-install-button hidden>Установить приложение</button>
+</section>
+
   <main class="wrap"><section class="panel hero reveal">
   <p class="eyebrow">A QUIETER WAY TO LEARN</p>
   <h1>Learn English<br><em>with AI.</em></h1>
