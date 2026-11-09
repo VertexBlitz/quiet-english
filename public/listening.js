@@ -65,6 +65,6 @@ if (listeningRoot) {
   }
   levelFilter.addEventListener('change', render);
   topicFilter.addEventListener('change', render);
-  listeningRoot.querySelectorAll('[data-set-lang]').forEach(button => button.addEventListener('click', () => setTimeout(render, 0)));
+  window.addEventListener('quietenglish:languagechange', render);
   render();
 }
