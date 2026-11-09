@@ -33,13 +33,35 @@
   let pendingAiExercise = null;
   let generationSequence = 0;
   let activeKnowledgeQuiz = null;
+  let lastCheckedResult = null;
+  let lastTranslationPair = null;
+  let lastStatusPair = null;
   try {
     const raw = sessionStorage.getItem('qe-knowledge-quiz');
     if (raw) { activeKnowledgeQuiz = JSON.parse(raw); sessionStorage.removeItem('qe-knowledge-quiz'); }
   } catch { activeKnowledgeQuiz = null; }
 
-  const t = (ru, en) => document.documentElement.lang === 'en' ? en : ru;
+  const t = (ru, en) => {
+    lastTranslationPair = [ru, en];
+    return document.documentElement.lang === 'en' ? en : ru;
+  };
+  const localizedValue = value => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value[document.documentElement.lang === 'en' ? 'en' : 'ru'] ?? value.en ?? value.ru ?? '';
+    }
+    return value ?? '';
+  };
+  const skillLabels = {
+    grammar: ['Грамматика', 'Grammar'], vocabulary: ['Лексика', 'Vocabulary'],
+    reading: ['Чтение', 'Reading'], listening: ['Аудирование', 'Listening'],
+    communication: ['Общение', 'Communication'], mixed: ['Смешанная практика', 'Mixed practice']
+  };
+  const skillLabel = value => {
+    const pair = skillLabels[String(value || '').toLowerCase()];
+    return pair ? t(pair[0], pair[1]) : String(value || '');
+  };
   const setStatus = (text, error = false) => {
+    lastStatusPair = lastTranslationPair && lastTranslationPair.includes(text) ? lastTranslationPair : null;
     status.textContent = text;
     status.classList.toggle('error-text', error);
     status.classList.toggle('success-text', !error);
@@ -62,7 +84,7 @@
       const row = document.createElement('article');
       row.className = 'ai-history-row';
       const label = document.createElement('span');
-      label.textContent = item.level + ' · ' + item.skill + ' · ' + item.title;
+      label.textContent = item.level + ' · ' + skillLabel(item.skill) + ' · ' + item.title;
       const score = document.createElement('strong');
       score.textContent = item.score + '/' + item.total;
       row.append(label, score);
@@ -114,8 +136,8 @@
     resultNode.replaceChildren();
     workspace.hidden = false;
     title.textContent = exercise.title;
-    meta.textContent = exercise.level + ' · ' + exercise.skill.toUpperCase() + ' · ' + exercise.topic;
-    instructions.textContent = exercise.instructions;
+    meta.textContent = exercise.level + ' · ' + skillLabel(exercise.skill) + ' · ' + exercise.topic;
+    instructions.textContent = localizedValue(exercise.instructions);
 
     passageWrap.hidden = !exercise.passage;
     passage.textContent = exercise.passage || '';
@@ -136,6 +158,7 @@
       const category = document.createElement('span');
       category.className = 'ai-question-category';
       category.textContent = categoryLabel(question.category);
+      category.dataset.category = question.category || exercise.skill;
       card.append(category);
 
       question.options.forEach(option => {
@@ -263,7 +286,8 @@
     setStatus(t('Открыт уникальный вариант, созданный ИИ.', 'The unique AI-generated version is open.'));
   });
 
-  function renderCheckedResults(result) {
+  function renderCheckedResults(result, persist = true) {
+    lastCheckedResult = result;
     resultNode.replaceChildren();
     resultNode.hidden = false;
 
@@ -301,7 +325,7 @@
         item.selected_answer + (item.is_correct ? '' : '. ' + t('Правильно: ', 'Correct: ') + item.correct_answer);
       const explain = document.createElement('p');
       explain.className = 'ai-explanation';
-      explain.textContent = item.explanation;
+      explain.textContent = localizedValue(item.explanation);
       card.append(top, answer, explain);
       resultNode.append(card);
     });
@@ -334,7 +358,7 @@
       resultNode.append(retryWrap);
     }
 
-    saveHistory({
+    if (persist) saveHistory({
       title: currentExercise.title,
       level: currentExercise.level,
       skill: currentExercise.skill,
@@ -343,9 +367,11 @@
       createdAt: new Date().toISOString(),
       avoidText: [currentExercise.title, currentExercise.passage || '', ...currentExercise.questions.map(q => q.prompt)].join(' ').slice(0, 480)
     });
-    setStatus(result.saved
-      ? t('Результат сохранён в профиле и карте знаний.', 'Result saved to your profile and knowledge map.')
-      : t('Ответы проверены. Результат сохранён в истории этого браузера.', 'Answers checked. Result saved in this browser history.'));
+    if (persist) {
+      setStatus(result.saved
+        ? t('Результат сохранён в профиле и карте знаний.', 'Result saved to your profile and knowledge map.')
+        : t('Ответы проверены. Результат сохранён в истории этого браузера.', 'Answers checked. Result saved in this browser history.'));
+    }
     checkButton.hidden = true;
     checked = true;
   }
@@ -410,6 +436,21 @@
   generateButton.addEventListener('click', () => activeKnowledgeQuiz ? generateKnowledgeQuiz() : generateExercise());
   listenButton.addEventListener('click', speakPassage);
   renderHistory();
+  window.addEventListener('quietenglish:languagechange', () => {
+    renderHistory();
+    if (currentExercise) {
+      meta.textContent = currentExercise.level + ' · ' + skillLabel(currentExercise.skill) + ' · ' + currentExercise.topic;
+      questionsNode.querySelectorAll('[data-category]').forEach(node => {
+        node.textContent = categoryLabel(node.dataset.category);
+      });
+      generateButton.textContent = t('Создать задание ↗', 'Generate exercise ↗');
+      if (!checked) checkButton.textContent = t('Проверить ответы', 'Check answers');
+    }
+    if (lastCheckedResult && checked) renderCheckedResults(lastCheckedResult, false);
+    if (lastStatusPair) {
+      status.textContent = t(lastStatusPair[0], lastStatusPair[1]);
+    }
+  });
   if (activeKnowledgeQuiz) {
     const levelForQuiz = activeKnowledgeQuiz.level === 'C2' ? 'C1' : activeKnowledgeQuiz.level;
     if (level) level.value = levelForQuiz;
