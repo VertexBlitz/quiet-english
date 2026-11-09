@@ -17,7 +17,9 @@ Debug builds use the package suffix `.debug` and a debug signing key. They are f
 
 ## Signed release and Google Play
 
-A tag named `quiet-english-preview-v1.0.0` (or a later version) starts the signed release workflow. Before creating the tag, add these repository secrets under **Settings → Secrets and variables → Actions**:
+A tag named `quiet-english-preview-v1.0.0` (or a later version) starts the signed release workflow. Before creating the tag, the adult owner of the Play Console developer account should create the Upload Key locally using `android/scripts/create-upload-key.ps1` (Windows PowerShell) or `android/scripts/create-upload-key.sh` (macOS/Linux). These scripts create files only in the ignored `android/signing/` directory. Keep a secure offline backup of the `.jks` file. Do not send the keystore or passwords through chat or commit them to Git.
+
+Then add these repository secrets under **Settings → Secrets and variables → Actions**:
 
 - `ANDROID_KEYSTORE_BASE64` — Base64-encoded release keystore file.
 - `ANDROID_KEYSTORE_PASSWORD` — keystore password.
@@ -38,6 +40,8 @@ Encode the keystore for the `ANDROID_KEYSTORE_BASE64` secret:
 - macOS/Linux: `base64 < quiet-english-release.jks | tr -d '\n'`
 - PowerShell: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("quiet-english-release.jks"))`
 
+The release workflow now fails explicitly when any required signing secret is missing; it will not report a successful release while skipping the AAB.
+
 The tagged workflow derives a unique `versionCode` from `GITHUB_RUN_NUMBER` and uses the semantic version from the tag. The tagged workflow produces:
 
 - `app-release.apk` — installable Android package for GitHub Releases.
@@ -45,6 +49,22 @@ The tagged workflow derives a unique `versionCode` from `GITHUB_RUN_NUMBER` and 
 - `assetlinks.json` — Digital Asset Links statement for the release package and signing certificate(s).
 
 Google Play submissions for new apps require an Android App Bundle (AAB); the APK remains available for direct download.
+
+## Google Play Internal Testing
+
+Use the adult owner's existing Play Console account. Create an app with the exact package name `com.vertexblitz.quietenglish.preview` and enroll in Google Play App Signing, letting Google manage the app-signing key. The first AAB is signed with the local Upload Key; Google signs the APKs delivered to testers.
+
+After the signed AAB has been generated:
+
+1. Push a tag such as `quiet-english-preview-v1.0.0` to start the signed build.
+2. Download `app-release.aab` from the GitHub Release.
+3. In Play Console, open **Test and release → Testing → Internal testing**.
+4. Create a release, upload the AAB, review the release details, and roll it out to the internal track.
+5. Add tester email addresses or a Google Group, save the tester list, and share the opt-in link with testers.
+
+An internal test supports up to 100 individually listed email testers. Internal testers can be in different countries. Internal testing is for initial QA; it does not publish the app to the public Play Store.
+
+Keep the package name `com.vertexblitz.quietenglish.preview` for this preview app. It is intentionally separate from any future production Android application ID.
 
 ## Verify the domain (required for fullscreen TWA)
 

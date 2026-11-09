@@ -279,3 +279,20 @@ test('Android release versions can be supplied from a unique GitHub Actions run'
   assert.ok(workflow.includes('GITHUB_REF_NAME#quiet-english-preview-v'));
 });
 
+
+
+test('Android signing key material is excluded and release workflow fails closed without secrets', () => {
+  const ignore = read('.gitignore');
+  const workflow = read('.github/workflows/mobile-app.yml');
+  const androidDocs = read('android/README.md');
+  const psScript = read('android/scripts/create-upload-key.ps1');
+  const shScript = read('android/scripts/create-upload-key.sh');
+
+  assert.ok(ignore.includes('android/signing/'));
+  assert.ok(workflow.includes('::error::Release signing secrets are missing'));
+  assert.ok(workflow.includes('keytool -list -keystore'));
+  assert.ok(androidDocs.includes('com.vertexblitz.quietenglish.preview'));
+  assert.ok(androidDocs.includes('Internal testing'));
+  assert.ok(psScript.includes('quietenglish-upload'));
+  assert.ok(shScript.includes('quietenglish-upload'));
+});

@@ -171,3 +171,8 @@ The Android package ID is `com.vertexblitz.quietenglish.preview` and its launch 
 The site serves `/.well-known/assetlinks.json` through a dedicated route. It remains an empty JSON array until the release signing certificate is available; fullscreen TWA verification is therefore not complete yet. After a signed release is built, publish the generated `assetlinks.json` from that release to `public/.well-known/assetlinks.json` on this preview branch.
 
 A PWA is installed from Safari on iPhone; it is not itself an Apple App Store binary. A native iOS App Store release would be a separate project.
+
+
+### Google Play Internal Testing (Android Preview)
+
+The Android preview package is `com.vertexblitz.quietenglish.preview`. The adult owner of the Play Console account must create and protect the Upload Key, add the GitHub Actions signing secrets, and upload the signed AAB to the Internal Testing track. See [android/README.md](android/README.md). Do not put keystores or signing passwords in Git.

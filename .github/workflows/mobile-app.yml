@@ -80,12 +80,13 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Android release signing secrets are not configured. Debug APK is still available from the previous job."
-            exit 0
+            echo "::error::Release signing secrets are missing. Create the Upload Key and add all four ANDROID_KEYSTORE_* secrets before pushing a release tag."
+            exit 1
           fi
           mkdir -p "$RUNNER_TEMP/quiet-english-signing"
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/quiet-english-signing/release.jks"
+          test -s "$RUNNER_TEMP/quiet-english-signing/release.jks"
+          keytool -list -keystore "$RUNNER_TEMP/quiet-english-signing/release.jks" -alias "$ANDROID_KEY_ALIAS" -storepass "$ANDROID_KEYSTORE_PASSWORD" >/dev/null
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/quiet-english-signing/release.jks" >> "$GITHUB_ENV"
           echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
           echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"

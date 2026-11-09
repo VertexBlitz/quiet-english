@@ -11,3 +11,6 @@ android/build/
 *.jks
 *.keystore
 android/keystore*
+
+# Local Android upload key material (never commit)
+android/signing/
