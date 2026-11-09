@@ -1,62 +1,146 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-title-ru="Quiet English — английский с персональным AI-наставником" data-title-en="Quiet English — your personal AI English coach">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/styles.css?v=20261108-style-restore-1">
-  <meta name="description" content="Quiet English — personal AI English practice, at your pace.">
-  <title>Learn English with AI — Quiet English</title>
-  
-  <script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/offline-client.js"></script><script defer src="/app.js"></script>
+  <meta name="description" content="Quiet English — персональная платформа для изучения английского языка с AI-практикой, планом занятий и отслеживанием прогресса.">
+  <link rel="stylesheet" href="/styles.css?v=20261109-phase1-1">
   <link rel="manifest" href="/manifest.webmanifest?v=20261109-app-1">
-<meta name="theme-color" content="#FAFAFA">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Quiet English">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#FAFAFA">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Quiet English">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <title>Quiet English — английский с персональным AI-наставником</title>
+  <script defer src="/i18n.js"></script>
+  <script defer src="/session.js"></script>
+  <script defer src="/offline-client.js"></script>
+  <script defer src="/app.js"></script>
   <script defer src="/pwa-install.js"></script>
 </head>
 <body>
   <header class="topbar wrap">
-  <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
-  <nav aria-label="Main navigation">
-    <a href="/plan.html" data-ru="План" data-en="Plan">План</a>
-    <a href="/practice.html" data-ru="Практика" data-en="Practice">Практика</a><a href="/knowledge.html" data-ru="База знаний" data-en="Knowledge">База знаний</a><a href="/writing.html">Writing Lab</a><a href="/listening.html">Аудирование</a><a href="/dictionary.html">Словарь</a><a href="/calendar.html">Календарь</a><a href="/studio.html">Quiet English AI</a>
-    <a href="/review.html" data-ru="Повторение" data-en="Review">Повторение</a>
-    <a href="/progress.html" data-ru="Прогресс" data-en="Progress">Прогресс</a>
-    <a href="/subscription.html" data-ru="Premium" data-en="Premium">Premium</a>
-    <a href="/tutor.html" data-ru="Чат" data-en="Tutor">Чат</a>
-  </nav>
-  <div class="language-switch" aria-label="Language">
-    <button type="button" data-set-lang="ru">RU</button>
-    <button type="button" data-set-lang="en">EN</button>
-    <a class="account-link" href="/login.html" data-ru="Войти" data-en="Sign in">Войти</a>
-  </div>
-</header>
-<section class="wrap pwa-install-card" data-pwa-install-card hidden aria-live="polite">
-  <div>
-    <p class="eyebrow">QUIET ENGLISH APP</p>
-    <p data-pwa-install-message>Установи Quiet English на своё устройство для быстрого доступа.</p>
-  </div>
-  <button class="button" type="button" data-pwa-install-button hidden>Установить приложение</button>
-</section>
+    <a class="wordmark" href="/" aria-label="Quiet English home">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
+    <nav aria-label="Main navigation"></nav>
+    <div class="language-switch" aria-label="Language">
+      <button type="button" data-set-lang="ru">RU</button>
+      <button type="button" data-set-lang="en">EN</button>
+      <a class="account-link" href="/login.html">Войти</a>
+    </div>
+  </header>
 
-  <main class="wrap"><section class="panel hero reveal">
-  <p class="eyebrow">A QUIETER WAY TO LEARN</p>
-  <h1>Learn English<br><em>with AI.</em></h1>
-  <p class="lead">Персональный GPT-репетитор — 24/7, без расписания и стресса.</p>
-  <a class="button" href="/register.html">Создать план обучения <span>↗</span></a>
-  <div class="hero-meta"><span>01 — 05</span><span>ENGLISH, ON YOUR TERMS</span></div>
-</section>
-<section class="panel intro reveal">
-  <p class="eyebrow">THE IDEA</p><h2>More practice.<br>Less pressure.</h2>
-  <p class="copy">Практикуй английский в комфортном темпе. Обсуждай идеи, задавай вопросы и разбирай сложные темы вместе с AI-репетитором.</p>
-  <a class="text-link" href="/method.html">Узнать, как это работает <span>→</span></a>
-</section>
-<section class="panel reveal split">
-  <div><p class="eyebrow">YOUR NEXT STEP</p><h2>Start with<br>one sentence.</h2></div>
-  <div><p class="copy">Не нужно готовиться заранее. Выбери тему или просто начни диалог.</p><a class="button" href="/plan.html">Открыть план <span>↗</span></a></div>
-</section></main>
-  <footer class="footer wrap"><span>QUIET ENGLISH</span><span>Learn at your own pace · © 2026</span></footer>
+  <section class="wrap pwa-install-card" data-pwa-install-card hidden aria-live="polite">
+    <div>
+      <p class="eyebrow">QUIET ENGLISH APP</p>
+      <p data-pwa-install-message data-ru="Установи Quiet English на своё устройство для быстрого доступа." data-en="Install Quiet English on your device for quick access.">Установи Quiet English на своё устройство для быстрого доступа.</p>
+    </div>
+    <button class="button" type="button" data-pwa-install-button hidden data-ru="Установить приложение" data-en="Install app">Установить приложение</button>
+  </section>
+
+  <main class="wrap" id="main-content">
+    <section class="panel home-hero reveal">
+      <div class="home-hero-copy">
+        <p class="eyebrow">A QUIETER WAY TO LEARN</p>
+        <h1><span data-ru="Английский." data-en="English.">Английский.</span><br><em data-ru="В твоём темпе." data-en="At your pace.">В твоём темпе.</em></h1>
+        <p class="lead" data-ru="Персональная учебная среда: понятный план, практика с AI и обратная связь по твоим результатам." data-en="A personal learning space with a clear plan, AI-powered practice and feedback based on your progress.">Персональная учебная среда: понятный план, практика с AI и обратная связь по твоим результатам.</p>
+        <div class="home-actions">
+          <a class="button" href="/practice.html"><span data-ru="Начать практику" data-en="Start practising">Начать практику</span><span aria-hidden="true">↗</span></a>
+          <a class="text-link" href="/method.html" data-ru="Как устроено обучение →" data-en="How learning works →">Как устроено обучение →</a>
+        </div>
+      </div>
+      <div class="home-hero-note">
+        <span class="home-note-index">01 / 04</span>
+        <strong data-ru="Учебный маршрут, который развивается вместе с тобой." data-en="A learning path that adapts as you grow.">Учебный маршрут, который развивается вместе с тобой.</strong>
+        <span data-ru="Уровни CEFR · короткие занятия · реальные результаты" data-en="CEFR levels · focused sessions · real progress">Уровни CEFR · короткие занятия · реальные результаты</span>
+      </div>
+    </section>
+
+    <section class="home-intro reveal">
+      <div>
+        <p class="eyebrow">ONE LEARNING SPACE</p>
+        <h2><span data-ru="Все навыки —" data-en="Every skill.">Все навыки —</span><br><em data-ru="в одной системе." data-en="One learning system.">в одной системе.</em></h2>
+      </div>
+      <p class="copy" data-ru="Изучай грамматику и лексику, тренируй письмо, аудирование и устную речь. Quiet English сохраняет результаты и помогает понять, что лучше повторить дальше." data-en="Study grammar and vocabulary, practise writing, listening and speaking. Quiet English keeps track of your work and helps you choose what to review next.">Изучай грамматику и лексику, тренируй письмо, аудирование и устную речь. Quiet English сохраняет результаты и помогает понять, что лучше повторить дальше.</p>
+    </section>
+
+    <section class="home-feature-section reveal" aria-labelledby="home-features-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">EXPLORE QUIET ENGLISH</p>
+          <h2 id="home-features-title" data-ru="Выбери свой следующий шаг." data-en="Choose your next step.">Выбери свой следующий шаг.</h2>
+        </div>
+        <a class="text-link" href="/plan.html" data-ru="Открыть учебный план →" data-en="Open learning plan →">Открыть учебный план →</a>
+      </div>
+
+      <div class="home-feature-grid">
+        <a class="home-feature-card" href="/plan.html">
+          <span class="home-feature-number">01</span>
+          <span class="home-feature-tag">YOUR ROUTE</span>
+          <h3 data-ru="Личный план" data-en="Your learning plan">Личный план</h3>
+          <p data-ru="Определи уровень и двигайся по небольшим ежедневным заданиям." data-en="Find your level and follow focused daily tasks.">Определи уровень и двигайся по небольшим ежедневным заданиям.</p>
+          <span class="home-feature-link" data-ru="К плану ↗" data-en="Open plan ↗">К плану ↗</span>
+        </a>
+        <a class="home-feature-card" href="/practice.html">
+          <span class="home-feature-number">02</span>
+          <span class="home-feature-tag">AI PRACTICE</span>
+          <h3 data-ru="Упражнения с AI" data-en="AI-powered practice">Упражнения с AI</h3>
+          <p data-ru="Тренируй грамматику, лексику, чтение и другие навыки по уровню CEFR." data-en="Practise grammar, vocabulary, reading and more at your CEFR level.">Тренируй грамматику, лексику, чтение и другие навыки по уровню CEFR.</p>
+          <span class="home-feature-link" data-ru="К упражнениям ↗" data-en="Explore practice ↗">К упражнениям ↗</span>
+        </a>
+        <a class="home-feature-card" href="/pronunciation.html">
+          <span class="home-feature-number">03</span>
+          <span class="home-feature-tag">SPEAKING LAB</span>
+          <h3 data-ru="Устная речь" data-en="Speaking practice">Устная речь</h3>
+          <p data-ru="Произноси фразы, сравнивай распознанный текст и возвращайся к сложным словам." data-en="Read aloud, compare transcripts and revisit challenging words.">Произноси фразы, сравнивай распознанный текст и возвращайся к сложным словам.</p>
+          <span class="home-feature-link" data-ru="Тренировать речь ↗" data-en="Practise speaking ↗">Тренировать речь ↗</span>
+        </a>
+        <a class="home-feature-card" href="/listening.html">
+          <span class="home-feature-number">04</span>
+          <span class="home-feature-tag">LISTENING LAB</span>
+          <h3 data-ru="Аудирование" data-en="Listening practice">Аудирование</h3>
+          <p data-ru="Находи аудиоматериалы по уровню и теме, тренируй понимание английской речи." data-en="Find audio by level and topic and build listening comprehension.">Находи аудиоматериалы по уровню и теме, тренируй понимание английской речи.</p>
+          <span class="home-feature-link" data-ru="Слушать ↗" data-en="Start listening ↗">Слушать ↗</span>
+        </a>
+        <a class="home-feature-card" href="/writing.html">
+          <span class="home-feature-number">05</span>
+          <span class="home-feature-tag">WRITING LAB</span>
+          <h3 data-ru="Письменная речь" data-en="Writing practice">Письменная речь</h3>
+          <p data-ru="Получай разбор ошибок, исправленный вариант и идеи для дальнейшей работы." data-en="Get feedback on errors, a corrected version and suggestions for improvement.">Получай разбор ошибок, исправленный вариант и идеи для дальнейшей работы.</p>
+          <span class="home-feature-link" data-ru="Открыть Writing Lab ↗" data-en="Open Writing Lab ↗">Открыть Writing Lab ↗</span>
+        </a>
+        <a class="home-feature-card" href="/review.html">
+          <span class="home-feature-number">06</span>
+          <span class="home-feature-tag">SMART REVIEW</span>
+          <h3 data-ru="Повторение и словарь" data-en="Review and vocabulary">Повторение и словарь</h3>
+          <p data-ru="Сохраняй новые слова и возвращайся к ним в подходящее время." data-en="Save new words and revisit them at the right time.">Сохраняй новые слова и возвращайся к ним в подходящее время.</p>
+          <span class="home-feature-link" data-ru="Повторить ↗" data-en="Review words ↗">Повторить ↗</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="panel home-method reveal">
+      <div>
+        <p class="eyebrow">A SIMPLE ROUTINE</p>
+        <h2><span data-ru="Планируй." data-en="Plan.">Планируй.</span><br><span data-ru="Практикуйся." data-en="Practise.">Практикуйся.</span><br><em data-ru="Замечай прогресс." data-en="See your progress.">Замечай прогресс.</em></h2>
+      </div>
+      <div class="home-method-steps">
+        <article><span>01</span><strong data-ru="Выбери направление" data-en="Choose a focus">Выбери направление</strong><p data-ru="План и рекомендации подскажут, с чего начать." data-en="Your plan and recommendations help you get started.">План и рекомендации подскажут, с чего начать.</p></article>
+        <article><span>02</span><strong data-ru="Выполни короткое задание" data-en="Complete a short task">Выполни короткое задание</strong><p data-ru="Занимайся в комфортном темпе и получай обратную связь." data-en="Learn at a comfortable pace and get useful feedback.">Занимайся в комфортном темпе и получай обратную связь.</p></article>
+        <article><span>03</span><strong data-ru="Закрепи результат" data-en="Review what you learned">Закрепи результат</strong><p data-ru="История попыток и повторение помогут вернуться к сложным темам." data-en="Practice history and review help you revisit difficult topics.">История попыток и повторение помогут закрепить знания.</p></article>
+      </div>
+    </section>
+
+    <section class="home-final reveal">
+      <p class="eyebrow">YOUR NEXT STEP</p>
+      <h2><span data-ru="Начни с одного" data-en="Start with one">Начни с одного</span><br><em data-ru="небольшого шага." data-en="small step.">небольшого шага.</em></h2>
+      <p class="copy" data-ru="Открой практику или посмотри свой учебный план. Не нужно проходить всё сразу." data-en="Open a practice task or review your learning plan. There is no need to do everything at once.">Открой практику или посмотри свой учебный план. Не нужно проходить всё сразу.</p>
+      <a class="button" href="/practice.html"><span data-ru="Перейти к практике" data-en="Go to practice">Перейти к практике</span><span aria-hidden="true">↗</span></a>
+    </section>
+  </main>
+
+  <footer class="footer wrap">
+    <span>QUIET ENGLISH</span>
+    <span data-ru="Учись в своём темпе · © 2026" data-en="Learn at your own pace · © 2026">Учись в своём темпе · © 2026</span>
+  </footer>
 </body>
 </html>

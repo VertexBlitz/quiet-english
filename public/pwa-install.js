@@ -13,24 +13,42 @@
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   let deferredPrompt = null;
+  const t = (ru, en) => document.documentElement.lang === 'en' ? en : ru;
 
-  if (isAppleMobile) {
-    card.hidden = false;
-    if (message) {
-      message.textContent = 'На iPhone: нажми «Поделиться» в Safari, затем «На экран Домой».';
+  function renderInstallPrompt() {
+    if (isAppleMobile) {
+      card.hidden = false;
+      if (message) {
+        message.textContent = t(
+          'На iPhone: нажми «Поделиться» в Safari, затем «На экран Домой».',
+          'On iPhone: tap Share in Safari, then choose Add to Home Screen.'
+        );
+      }
+      if (button) button.hidden = true;
+      return;
     }
-    if (button) button.hidden = true;
+
+    if (deferredPrompt) {
+      card.hidden = false;
+      if (message) {
+        message.textContent = t(
+          'Установи Quiet English на устройство для быстрого доступа с главного экрана.',
+          'Install Quiet English for quick access from your home screen.'
+        );
+      }
+      if (button) {
+        button.hidden = false;
+        button.textContent = t('Установить приложение', 'Install app');
+      }
+    }
   }
+
+  window.addEventListener('quietenglish:languagechange', renderInstallPrompt);
 
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
     deferredPrompt = event;
-    card.hidden = false;
-
-    if (message) {
-      message.textContent = 'Установи Quiet English на устройство для быстрого доступа с главного экрана.';
-    }
-    if (button) button.hidden = false;
+    renderInstallPrompt();
   });
 
   button?.addEventListener('click', async () => {
@@ -53,4 +71,6 @@
     deferredPrompt = null;
     card.hidden = true;
   });
+
+  renderInstallPrompt();
 })();
