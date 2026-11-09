@@ -181,13 +181,13 @@ if (planPage) {
         [summary.completed_tasks, 'Выполнено заданий', 'Tasks completed'],
         [summary.active_days, 'Активных дней', 'Active days'],
         [summary.open_errors, 'Открытых ошибок', 'Open errors']
-      ].forEach(([value, label]) => {
+      ].forEach(([value, label, englishLabel]) => {
         const card = document.createElement('article');
         card.className = 'dashboard-metric';
         const number = document.createElement('strong');
         number.textContent = String(value ?? 0);
         const caption = document.createElement('span');
-        setLearningText(caption, label, arguments.length && label === 'Минут обучения' ? 'Learning minutes' : label === 'Выполнено заданий' ? 'Tasks completed' : label === 'Активных дней' ? 'Active days' : 'Open errors');
+        setLearningText(caption, label, englishLabel);
         card.append(number, caption);
         dashboardSummary.append(card);
       });
@@ -480,7 +480,7 @@ if (progressPage) {
       const row = document.createElement('div');
       row.className = 'skill-progress-row';
       const label = document.createElement('span');
-      label.textContent = learningSkill(skill.skill);
+      setLearningText(label, learningSkillLabels[skill.skill]?.[0] || skill.skill, learningSkillLabels[skill.skill]?.[1] || skill.skill);
       const value = document.createElement('strong');
       value.textContent = skill.accuracy == null ? '—' : skill.accuracy + '%';
       const track = document.createElement('div');
