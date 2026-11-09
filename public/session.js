@@ -3,6 +3,20 @@
   if (!header || window.__quietEnglishNavigationInstalled) return;
   window.__quietEnglishNavigationInstalled = true;
 
+  const main = document.querySelector('main');
+  if (main) {
+    if (!main.id) main.id = 'main-content';
+    if (!document.querySelector('.skip-link')) {
+      const skip = document.createElement('a');
+      skip.className = 'skip-link';
+      skip.href = '#main-content';
+      skip.dataset.ru = 'Перейти к содержимому';
+      skip.dataset.en = 'Skip to content';
+      skip.textContent = 'Перейти к содержимому';
+      header.parentNode.insertBefore(skip, header);
+    }
+  }
+
   const labels = {
     plan: ['План', 'Plan'],
     practice: ['Практика', 'Practice'],
