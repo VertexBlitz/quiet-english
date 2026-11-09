@@ -1601,3 +1601,14 @@ h2{font-size:clamp(34px,4.4vw,54px);line-height:1.04;letter-spacing:-.055em;font
   .panel{padding:28px 20px}
   .home-method{padding:30px 22px}
 }
+
+
+/* Accessible navigation helpers */
+.skip-link{
+  position:absolute;left:16px;top:8px;z-index:1000;
+  transform:translateY(-160%);padding:11px 16px;
+  border:1px solid var(--ink);border-radius:999px;
+  background:#fff;color:var(--ink);font-size:13px;
+}
+.skip-link:focus{transform:translateY(0);outline:3px solid #777;outline-offset:3px}
+:focus-visible{outline:2px solid #555;outline-offset:3px}
