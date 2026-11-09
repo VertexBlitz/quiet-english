@@ -29,7 +29,6 @@ function renderTasks(items){
  });
 }
 function renderReport(report){
- latestData=report;
  const summaryText=report?(document.documentElement.lang==='en'?(report.summary_en||report.summary||''):(report.summary_ru||report.summary||'')):'';
  summary.textContent=summaryText||t('Нажми «Обновить анализ», чтобы Quiet English AI изучил реальные учебные результаты.','Select “Refresh analysis” to let Quiet English AI review your actual learning results.');
  recommendations.replaceChildren();
@@ -50,6 +49,7 @@ function renderReport(report){
 }
 function renderAll(data){
  if(!data)return;
+ latestData=data;
  renderReport(data.report);
  renderTasks(data.tasks||[]);
 }
