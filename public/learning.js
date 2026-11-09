@@ -595,6 +595,7 @@ if (reviewPage) {
     items = data.items || [];
     renderCard();
   }).catch(error => learningMessage(status, error.message, true));
+  window.addEventListener('quietenglish:languagechange', renderCard);
 }
 
 const progressPage = $('[data-progress-page]');
