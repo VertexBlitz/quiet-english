@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-title-ru="Speaking Lab — Quiet English" data-title-en="Speaking Lab — Quiet English">
 <head>
-  <link rel="stylesheet" href="/styles.css?v=20261108-style-restore-1">
+  <link rel="stylesheet" href="/styles.css?v=20261109-phase1-2">
 
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Speaking practice — Quiet English</title>
@@ -24,7 +24,7 @@
   </div>
 </header>
 
-<main class="wrap" data-pronunciation-page>
+<main class="wrap" id="main-content" data-pronunciation-page>
   <section class="panel page-head">
     <p class="eyebrow">SPEAKING LAB · WHISPER</p>
     <h1 data-ru="Произнеси фразу. Сверь результат." data-en="Say the passage. Check the transcript.">Произнеси фразу. Сверь результат.</h1>
@@ -46,15 +46,15 @@
       </div>
       <label class="pron-topic-filter">
         <span data-ru="Тема" data-en="Topic">Тема</span>
-        <select data-pron-topic aria-label="Choose a speaking passage topic">
-          <option value="Everyday life">Everyday life</option>
-          <option value="Travel">Travel</option>
-          <option value="History and culture">History and culture</option>
-          <option value="Science">Science</option>
-          <option value="Technology">Technology</option>
-          <option value="Environment">Environment</option>
-          <option value="Education">Education</option>
-          <option value="Books and media">Books and media</option>
+        <select data-pron-topic data-aria-label-ru="Выбери тему текста" data-aria-label-en="Choose a speaking passage topic" aria-label="Выбери тему текста">
+          <option value="Everyday life" data-ru="Повседневная жизнь" data-en="Everyday life">Everyday life</option>
+          <option value="Travel" data-ru="Путешествия" data-en="Travel">Travel</option>
+          <option value="History and culture" data-ru="История и культура" data-en="History and culture">History and culture</option>
+          <option value="Science" data-ru="Наука" data-en="Science">Science</option>
+          <option value="Technology" data-ru="Технологии" data-en="Technology">Technology</option>
+          <option value="Environment" data-ru="Окружающая среда" data-en="Environment">Environment</option>
+          <option value="Education" data-ru="Образование" data-en="Education">Education</option>
+          <option value="Books and media" data-ru="Книги и медиа" data-en="Books and media">Books and media</option>
         </select>
       </label>
       <button class="button pron-generate-button" type="button" data-generate-passage data-ru="Сгенерировать ↗" data-en="Generate ↗">Сгенерировать ↗</button>
@@ -64,8 +64,8 @@
     <div class="pron-library-controls">
       <label class="pron-level-filter">
         <span data-ru="Уровень" data-en="Level">Уровень</span>
-        <select data-pron-level aria-label="Filter speaking passages by CEFR level">
-          <option value="ALL">A1–C1 · Все уровни</option>
+        <select data-pron-level data-aria-label-ru="Фильтр по уровню CEFR" data-aria-label-en="Filter speaking passages by CEFR level" aria-label="Фильтр по уровню CEFR">
+          <option value="ALL" data-ru="A1–C1 · Все уровни" data-en="A1–C1 · All levels">A1–C1 · Все уровни</option>
           <option value="A1">A1 · Beginner</option>
           <option value="A2">A2 · Elementary</option>
           <option value="B1">B1 · Intermediate</option>
@@ -76,7 +76,7 @@
       <span class="pron-passage-count" data-pron-count>15 заданий</span>
     </div>
     <div class="pron-prompt-list" data-pron-prompts></div>
-    <p class="pron-active-task" data-pron-active-task aria-live="polite">Выбери текст для чтения.</p>
+    <p class="pron-active-task" data-pron-active-task aria-live="polite" data-ru="Выбери текст для чтения." data-en="Choose a passage to read.">Выбери текст для чтения.</p>
 
     <div class="pron-record-box">
       <label class="consent-line"><input type="checkbox" data-pron-consent>
@@ -116,8 +116,8 @@
       <span class="pill" data-pron-progress-count>0 попыток</span>
     </div>
     <p class="copy" data-ru="Последние 8 попыток по совпадению слов. Новые результаты появляются справа." data-en="Your last 8 word-match results. New attempts appear on the right.">Последние 8 попыток по совпадению слов. Новые результаты появляются справа.</p>
-    <div class="pron-chart-empty" data-pron-chart-empty>График появится после первой попытки.</div>
-    <svg class="pron-progress-chart" data-pron-chart viewBox="0 0 340 190" role="img" aria-label="Speaking practice progress chart" hidden></svg>
+    <div class="pron-chart-empty" data-pron-chart-empty data-ru="График появится после первой попытки." data-en="The chart will appear after your first attempt.">График появится после первой попытки.</div>
+    <svg class="pron-progress-chart" data-pron-chart viewBox="0 0 340 190" role="img" data-aria-label-ru="График прогресса в устной практике" data-aria-label-en="Speaking practice progress chart" aria-label="График прогресса в устной практике" hidden></svg>
     <div class="pron-chart-legend"><span>0%</span><span>50%</span><span>100%</span></div>
   </section>
 
