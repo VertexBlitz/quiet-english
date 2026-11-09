@@ -242,7 +242,7 @@ test('PWA manifest, install metadata, and offline shell are configured', () => {
   assert.ok(index.includes('data-pwa-install-card'));
   assert.ok(installScript.includes('beforeinstallprompt'));
   assert.ok(installScript.includes('На экран Домой'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v5'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v6'"));
   assert.ok(serviceWorker.includes('"/manifest.webmanifest"'));
   assert.ok(serviceWorker.includes('"/library.html"'));
 });
