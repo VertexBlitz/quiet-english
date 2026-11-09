@@ -36,6 +36,20 @@ const learningSkill = value => {
   const pair = learningSkillLabels[String(value || '').toLowerCase()];
   return pair ? learningT(pair[0], pair[1]) : String(value || '');
 };
+const learningGoalLabels = {
+  general: ['Общий английский', 'General English'],
+  work: ['Для работы', 'Work'],
+  travel: ['Для путешествий', 'Travel'],
+  communication: ['Повседневное общение', 'Everyday communication'],
+  relocation: ['Переезд за границу', 'Moving abroad'],
+  study: ['Учёба', 'Study'],
+  exam: ['Подготовка к экзамену', 'Exam preparation']
+};
+const learningGoal = value => {
+  const raw = String(value || '').toLowerCase();
+  const pair = learningGoalLabels[raw];
+  return pair ? learningT(pair[0], pair[1]) : learningPick(value);
+};
 const learningMinutes = value => learningLanguage() === 'en' ? String(value) + ' min' : String(value) + ' мин';
 const setLearningText = (node, ru, en) => {
   if (!node) return;
@@ -311,7 +325,7 @@ if (planPage) {
     }
     if (!planState.plan) return;
     $('[data-plan-level]', planPage).textContent = planState.plan.level || '—';
-    $('[data-plan-goal]', planPage).textContent = learningPick(planState.plan.goal);
+    $('[data-plan-goal]', planPage).textContent = learningGoal(planState.plan.goal);
     renderToday();
     renderPlanWeeks();
     renderPlanCoachTasks();
@@ -321,7 +335,7 @@ if (planPage) {
     .then(({ summary }) => renderPlanSummary(summary))
     .catch(error => {
       if (dashboardStatus) {
-        dashboardStatus.textContent = error.message;
+        dashboardStatus.textContent = learningT('Не удалось загрузить аналитику. Попробуй ещё раз.', 'Could not load learning analytics. Please try again.');
         dashboardStatus.classList.add('error-text');
       }
     });
