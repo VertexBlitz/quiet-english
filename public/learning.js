@@ -540,7 +540,7 @@ if (reviewPage) {
   let showingAnswer = false;
   const renderCard = () => {
     deck.replaceChildren();
-    if (!items.length) {
+    if (!items.length || index >= items.length) {
       const empty = document.createElement('p');
       setLearningText(empty, 'Сейчас нет карточек для повторения. Новые карточки появятся после практики.', 'There are no cards due for review now. New cards will appear after you complete practice.');
       deck.appendChild(empty);
