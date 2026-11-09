@@ -36,6 +36,8 @@
   let lastCheckedResult = null;
   let lastTranslationPair = null;
   let lastStatusPair = null;
+  let variantHeadingPair = null;
+  let variantNotePair = null;
   try {
     const raw = sessionStorage.getItem('qe-knowledge-quiz');
     if (raw) { activeKnowledgeQuiz = JSON.parse(raw); sessionStorage.removeItem('qe-knowledge-quiz'); }
@@ -59,6 +61,25 @@
   const skillLabel = value => {
     const pair = skillLabels[String(value || '').toLowerCase()];
     return pair ? t(pair[0], pair[1]) : String(value || '');
+  };
+  const topicLabels = {
+    'Any topic': ['Любая тема', 'Any topic'], 'Everyday life': ['Повседневная жизнь', 'Everyday life'],
+    Travel: ['Путешествия', 'Travel'], Science: ['Наука', 'Science'],
+    'History and culture': ['История и культура', 'History and culture'],
+    Technology: ['Технологии', 'Technology'], Environment: ['Окружающая среда', 'Environment'],
+    Education: ['Образование', 'Education'], 'Books and media': ['Книги и медиа', 'Books and media']
+  };
+  const topicLabel = value => {
+    const pair = topicLabels[String(value || '')];
+    return pair ? t(pair[0], pair[1]) : String(value || '');
+  };
+  const setVariantHeading = (ru, en) => {
+    variantHeadingPair = [ru, en];
+    aiVariantHeading.textContent = t(ru, en);
+  };
+  const setVariantNote = (ru, en) => {
+    variantNotePair = [ru, en];
+    aiVariantNote.textContent = t(ru, en);
   };
   const setStatus = (text, error = false) => {
     lastStatusPair = lastTranslationPair && lastTranslationPair.includes(text) ? lastTranslationPair : null;
@@ -130,13 +151,15 @@
     pendingAiExercise = null;
     aiVariantWrap.hidden = true;
     aiVariantOpen.hidden = true;
+    variantHeadingPair = null;
+    variantNotePair = null;
     checked = false;
     lastMistakes = [];
     resultNode.hidden = true;
     resultNode.replaceChildren();
     workspace.hidden = false;
-    title.textContent = exercise.title;
-    meta.textContent = exercise.level + ' · ' + skillLabel(exercise.skill) + ' · ' + exercise.topic;
+    title.textContent = localizedValue(exercise.title);
+    meta.textContent = exercise.level + ' · ' + skillLabel(exercise.skill) + ' · ' + topicLabel(exercise.topic);
     instructions.textContent = localizedValue(exercise.instructions);
 
     passageWrap.hidden = !exercise.passage;
@@ -187,8 +210,8 @@
     const recent = readHistory().slice(0, 4).map(item => item.avoidText || item.title).filter(Boolean);
     aiVariantWrap.hidden = false;
     aiVariantOpen.hidden = true;
-    aiVariantHeading.textContent = t('ИИ готовит уникальный вариант…', 'AI is preparing a unique version…');
-    aiVariantNote.textContent = t(
+    setVariantHeading('ИИ готовит уникальный вариант…', 'AI is preparing a unique version…');
+    setVariantNote(
       'Можешь уже выполнять мгновенное задание. Уникальный вариант появится здесь, когда будет готов.',
       'Start the instant exercise now. The unique AI version will appear here when ready.'
     );
@@ -201,23 +224,23 @@
         body: JSON.stringify(Object.assign({}, request, { avoid: recent }))
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'AI version is temporarily unavailable.');
+      if (!response.ok) throw new Error(data.error || t('Дополнительный вариант ИИ временно недоступен.', 'The additional AI version is temporarily unavailable.'));
       if (!data.exercise_id || !data.exercise || !Array.isArray(data.exercise.questions)) {
-        throw new Error('AI returned an incomplete exercise.');
+        throw new Error(t('ИИ вернул неполное упражнение.', 'AI returned an incomplete exercise.'));
       }
       if (sequence !== generationSequence) return;
 
       pendingAiExercise = Object.assign({}, data.exercise, { id: data.exercise_id });
-      aiVariantHeading.textContent = t('Уникальный вариант ИИ готов.', 'Your unique AI version is ready.');
-      aiVariantNote.textContent = t(
+      setVariantHeading('Уникальный вариант ИИ готов.', 'Your unique AI version is ready.');
+      setVariantNote(
         'Мгновенное задание уже доступно. Можешь открыть и уникальную версию ИИ.',
         'The instant exercise is ready. You can also open the unique AI version.'
       );
       aiVariantOpen.hidden = false;
     } catch (error) {
       if (sequence !== generationSequence) return;
-      aiVariantHeading.textContent = t('Мгновенное задание готово.', 'Your instant exercise is ready.');
-      aiVariantNote.textContent = t(
+      setVariantHeading('Мгновенное задание готово.', 'Your instant exercise is ready.');
+      setVariantNote(
         'Дополнительный вариант ИИ пока недоступен. Ты можешь продолжить текущее упражнение.',
         'The additional AI version is unavailable for now. You can continue with the current exercise.'
       );
@@ -445,6 +468,8 @@
       });
       generateButton.textContent = t('Создать задание ↗', 'Generate exercise ↗');
       if (!checked) checkButton.textContent = t('Проверить ответы', 'Check answers');
+      if (variantHeadingPair) aiVariantHeading.textContent = t(variantHeadingPair[0], variantHeadingPair[1]);
+      if (variantNotePair) aiVariantNote.textContent = t(variantNotePair[0], variantNotePair[1]);
     }
     if (lastCheckedResult && checked) renderCheckedResults(lastCheckedResult, false);
     if (lastStatusPair) {
