@@ -273,8 +273,8 @@ test('Digital Asset Links are served explicitly from the public well-known path'
 test('Android release versions can be supplied from a unique GitHub Actions run', () => {
   const gradle = read('android/app/build.gradle');
   const workflow = read('.github/workflows/mobile-app.yml');
-  assert.ok(gradle.includes('findProperty("appVersionCode")'));
-  assert.ok(gradle.includes('findProperty("appVersionName")'));
+  assert.ok(gradle.includes('gradleProperty("appVersionCode")'));
+  assert.ok(gradle.includes('gradleProperty("appVersionName")'));
   assert.ok(workflow.includes('GITHUB_RUN_NUMBER'));
   assert.ok(workflow.includes('GITHUB_REF_NAME#quiet-english-preview-v'));
 });

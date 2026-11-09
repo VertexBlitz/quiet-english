@@ -3,6 +3,8 @@ plugins {
 }
 
 def releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+def appVersionCodeValue = providers.gradleProperty("appVersionCode").getOrElse("1").toInteger()
+def appVersionNameValue = providers.gradleProperty("appVersionName").getOrElse("1.0.0-preview")
 
 android {
     namespace "com.vertexblitz.quietenglish.preview"
@@ -13,8 +15,8 @@ android {
         minSdk 23
         targetSdk 36
         // Play requires a strictly increasing versionCode for each release.
-        versionCode (project.findProperty("appVersionCode") ?: "1").toInteger()
-        versionName (project.findProperty("appVersionName") ?: "1.0.0-preview")
+        versionCode appVersionCodeValue
+        versionName appVersionNameValue
     }
 
     signingConfigs {
