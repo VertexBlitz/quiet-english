@@ -25,6 +25,25 @@ for (const file of files) {
     process.stderr.write(`Syntax error in ${path.relative(root, file)}\n${result.stderr}`);
   }
 }
-JSON.parse(fs.readFileSync(path.join(root, 'content/seed-exercises.json'), 'utf8'));
+const englishExercises = JSON.parse(fs.readFileSync(path.join(root, 'content/seed-exercises.json'), 'utf8'));
+const germanExercises = JSON.parse(fs.readFileSync(path.join(root, 'content/seed-exercises.de.json'), 'utf8'));
+const germanPlans = JSON.parse(fs.readFileSync(path.join(root, 'content/plan-templates.de.json'), 'utf8'));
+const germanIds = new Set(germanExercises.map(exercise => exercise.id));
+if (germanExercises.some(exercise => exercise.language_code !== 'de')) {
+  throw new Error('Every German exercise must declare language_code=de.');
+}
+if (englishExercises.some(exercise => exercise.language_code && exercise.language_code !== 'en')) {
+  throw new Error('English seed contains a non-English exercise.');
+}
+if (new Set([...englishExercises, ...germanExercises].map(exercise => exercise.id)).size !== englishExercises.length + germanExercises.length) {
+  throw new Error('Exercise IDs must be unique across language catalogs.');
+}
+for (const plan of germanPlans) {
+  if (plan.language_code !== 'de' || plan.weekly_themes?.length !== 4 ||
+      plan.weekly_themes.some(week => week.tasks?.length !== 7 || week.tasks.some(id => !germanIds.has(id)))) {
+    throw new Error('Invalid German plan template: ' + plan.id);
+  }
+}
+
 if (failed) process.exit(1);
-console.log(`Syntax checked ${files.length} JavaScript files; seed JSON parsed successfully.`);
+console.log(`Syntax checked ${files.length} JavaScript files; English and German seed catalogs plus plan templates validated.`);
