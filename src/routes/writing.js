@@ -1,10 +1,11 @@
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { pool, requireDatabase, requireUser, recordActivity } from '../db.js';
+import { pool, requireDatabase, requireUser, loadActiveStudyLanguage, requireEnglishStudyLanguage, recordActivity } from '../db.js';
 import { isExternalPersonalDataProcessingAllowed } from '../region-config.js';
 import { consumeMonthlyQuota } from '../subscription-access.js';
 
 const router = express.Router();
+router.use(requireDatabase, requireUser, loadActiveStudyLanguage);
 router.use(requireDatabase, requireUser);
 const MODEL = process.env.CLOUDFLARE_MODEL || '@cf/google/gemma-4-26b-a4b-it';
 const TYPES = ['essay','email','story','article','exam'];
@@ -56,7 +57,7 @@ function handleAiError(res,error) {
   return false;
 }
 const writingLimiter = rateLimit({windowMs:3600000,limit:6,standardHeaders:'draft-8',legacyHeaders:false});
-router.post('/writing/review',writingLimiter,async function(req,res,next) {
+router.post('/writing/review',requireEnglishStudyLanguage,writingLimiter,async function(req,res,next) {
   const body = req.body || {};
   const text = multiline(body.text);
   const taskType = clean(body.task_type,20).toLowerCase();
@@ -66,7 +67,7 @@ router.post('/writing/review',writingLimiter,async function(req,res,next) {
   if (!TYPES.includes(taskType)) return res.status(400).json({error:'Выбери формат текста.'});
   if (!LEVELS.includes(level)) return res.status(400).json({error:'Выбери уровень CEFR.'});
   try {
-    const profile = await pool.query("SELECT COALESCE(assessed_level,self_assessed_level,$2) AS level FROM learner_profiles WHERE user_id=$1",[req.user.id,level]);
+    const profile = await pool.query("SELECT COALESCE(assessed_level,self_assessed_level,$2) AS level FROM learner_language_profiles WHERE user_id=$1 AND language_code=$3",[req.user.id,level,req.studyLanguageCode]);
     const actualLevel = profile.rows[0] && LEVELS.includes(profile.rows[0].level) ? profile.rows[0].level : level;
     const system = [
       'You are a careful, supportive English writing teacher for a general-audience learning service.',
@@ -109,17 +110,17 @@ router.post('/writing/review',writingLimiter,async function(req,res,next) {
     const natural = multiline(data.natural_version);
     const summary = clean(data.summary_ru,700);
     const inserted = await pool.query(
-      "INSERT INTO writing_submissions (user_id,task_type,level,topic,submitted_text,corrected_text,natural_version,summary_ru,grammar_score,naturalness_score,vocabulary_score,structure_score,overall_score,issues,strengths,next_steps,repeated_patterns) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15::jsonb,$16::jsonb,$17::jsonb) RETURNING id,created_at",
-      [req.user.id,taskType,actualLevel,topic,text,corrected,natural,summary,scores.grammar,scores.naturalness,scores.vocabulary,scores.structure,overall,JSON.stringify(issues),JSON.stringify(strengths),JSON.stringify(nextSteps),JSON.stringify(repeated)]
+      "INSERT INTO writing_submissions (user_id,language_code,task_type,level,topic,submitted_text,corrected_text,natural_version,summary_ru,grammar_score,naturalness_score,vocabulary_score,structure_score,overall_score,issues,strengths,next_steps,repeated_patterns) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16::jsonb,$17::jsonb,$18::jsonb) RETURNING id,created_at",
+      [req.user.id,req.studyLanguageCode,taskType,actualLevel,topic,text,corrected,natural,summary,scores.grammar,scores.naturalness,scores.vocabulary,scores.structure,overall,JSON.stringify(issues),JSON.stringify(strengths),JSON.stringify(nextSteps),JSON.stringify(repeated)]
     );
     for (const issue of issues) {
       const errorType = 'writing:' + issue.type;
-      const prior = await pool.query("SELECT id FROM error_journal WHERE user_id=$1 AND error_type=$2 AND incorrect_form=$3 AND resolved_at IS NULL ORDER BY updated_at DESC LIMIT 1",[req.user.id,errorType,issue.original]);
+      const prior = await pool.query("SELECT id FROM error_journal WHERE user_id=$1 AND language_code=$4 AND error_type=$2 AND incorrect_form=$3 AND resolved_at IS NULL ORDER BY updated_at DESC LIMIT 1",[req.user.id,errorType,issue.original,req.studyLanguageCode]);
       const explanation = issue.explanation_ru || issue.explanation_en || null;
       if (prior.rows[0]) {
         await pool.query("UPDATE error_journal SET occurrences=occurrences+1,correction=$2,explanation=$3,updated_at=NOW() WHERE id=$1",[prior.rows[0].id,issue.correction,explanation]);
       } else {
-        await pool.query("INSERT INTO error_journal (user_id,error_type,incorrect_form,correction,explanation) VALUES ($1,$2,$3,$4,$5)",[req.user.id,errorType,issue.original,issue.correction,explanation]);
+        await pool.query("INSERT INTO error_journal (user_id,language_code,error_type,incorrect_form,correction,explanation) VALUES ($1,$2,$3,$4,$5,$6)",[req.user.id,req.studyLanguageCode,errorType,issue.original,issue.correction,explanation]);
       }
     }
     await recordActivity(req.user.id,{minutes:5,completedTasks:1});
@@ -136,13 +137,13 @@ router.post('/writing/review',writingLimiter,async function(req,res,next) {
 });
 router.get('/writing/history',async function(req,res,next) {
   try {
-    const result = await pool.query("SELECT id,task_type,level,topic,summary_ru,grammar_score,naturalness_score,vocabulary_score,structure_score,overall_score,created_at FROM writing_submissions WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20",[req.user.id]);
+    const result = await pool.query("SELECT id,task_type,level,topic,summary_ru,grammar_score,naturalness_score,vocabulary_score,structure_score,overall_score,created_at FROM writing_submissions WHERE user_id=$1 AND language_code=$2 ORDER BY created_at DESC LIMIT 20",[req.user.id,req.studyLanguageCode]);
     res.json({submissions:result.rows});
   } catch(error) {next(error);}
 });
 router.get('/writing/:id',async function(req,res,next) {
   try {
-    const result = await pool.query("SELECT id,task_type,level,topic,submitted_text,corrected_text,natural_version,summary_ru,grammar_score,naturalness_score,vocabulary_score,structure_score,overall_score,issues,strengths,next_steps,repeated_patterns,created_at FROM writing_submissions WHERE id=$1 AND user_id=$2",[req.params.id,req.user.id]);
+    const result = await pool.query("SELECT id,task_type,level,topic,submitted_text,corrected_text,natural_version,summary_ru,grammar_score,naturalness_score,vocabulary_score,structure_score,overall_score,issues,strengths,next_steps,repeated_patterns,created_at FROM writing_submissions WHERE id=$1 AND user_id=$2 AND language_code=$3",[req.params.id,req.user.id,req.studyLanguageCode]);
     if (!result.rows[0]) return res.status(404).json({error:'Работа не найдена.'});
     res.json({submission:result.rows[0]});
   } catch(error) {next(error);}
