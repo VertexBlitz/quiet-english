@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { estimateLevel, publicQuestions, placementQuestions } from '../src/content/placement.js';
+import { estimateLevel, publicQuestions, placementQuestions, placementForLanguage } from '../src/content/placement.js';
 
 test('placement level mapping covers all CEFR bands used by the product', () => {
   assert.equal(estimateLevel(0), 'Pre-A1');
@@ -21,4 +21,12 @@ test('placement questions expose options but never expose answer keys', () => {
     assert.ok(Array.isArray(question.options));
     assert.equal(question.answer, undefined);
   }
+});
+
+
+test('placement content is selected by the active course language', () => {
+  assert.equal(placementForLanguage('en'), placementQuestions);
+  assert.equal(placementForLanguage('de').length, 14);
+  assert.equal(placementForLanguage('unknown'), placementQuestions);
+  assert.equal(publicQuestions(placementForLanguage('de')).some(question => 'answer' in question), false);
 });
