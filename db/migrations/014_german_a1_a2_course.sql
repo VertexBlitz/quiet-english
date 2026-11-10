@@ -62,3 +62,43 @@ UPDATE study_languages
 SET course_status='available', speech_supported=TRUE, content_version=1,
     updated_at=NOW()
 WHERE language_code='de';
+
+
+-- Objective labels are presented in the selected interface language.
+ALTER TABLE exercises
+  ADD COLUMN IF NOT EXISTS objective_i18n JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+UPDATE exercises
+SET objective_i18n = jsonb_build_object('ru', objective, 'en',
+  CASE id
+    WHEN 'DE-A1-01' THEN 'Use greetings at different times of day'
+    WHEN 'DE-A1-02' THEN 'Conjugate sein in the present tense'
+    WHEN 'DE-A1-03' THEN 'Choose the correct indefinite article'
+    WHEN 'DE-A1-04' THEN 'Ask about prices and understand a simple answer'
+    WHEN 'DE-A1-05' THEN 'Ask and answer where someone lives'
+    WHEN 'DE-A1-06' THEN 'Conjugate haben with wir'
+    WHEN 'DE-A1-07' THEN 'Form common German plurals'
+    WHEN 'DE-A1-08' THEN 'Use the accusative indefinite article'
+    WHEN 'DE-A1-09' THEN 'Place separable verb prefixes correctly'
+    WHEN 'DE-A1-10' THEN 'Name the days of the week'
+    WHEN 'DE-A1-11' THEN 'Choose the correct possessive determiner'
+    WHEN 'DE-A1-12' THEN 'Negate a noun with kein'
+    WHEN 'DE-A1-13' THEN 'Ask for and give simple directions'
+    WHEN 'DE-A1-14' THEN 'Use the Perfekt with haben'
+    WHEN 'DE-A2-01' THEN 'Choose the auxiliary verb in the Perfekt'
+    WHEN 'DE-A2-02' THEN 'Use the dative case after helfen'
+    WHEN 'DE-A2-03' THEN 'Put the verb at the end of a weil clause'
+    WHEN 'DE-A2-04' THEN 'Form the comparative of an adjective'
+    WHEN 'DE-A2-05' THEN 'Give advice with sollten'
+    WHEN 'DE-A2-06' THEN 'Apply an adjective ending after eine'
+    WHEN 'DE-A2-07' THEN 'Ask how long an ongoing period has lasted'
+    WHEN 'DE-A2-08' THEN 'Use the Präteritum form of sein'
+    WHEN 'DE-A2-09' THEN 'Use the dative for a static location with auf'
+    WHEN 'DE-A2-10' THEN 'Use zu plus an infinitive'
+    WHEN 'DE-A2-11' THEN 'Use the fixed phrase sich für etwas interessieren'
+    WHEN 'DE-A2-12' THEN 'Make a polite request with Konjunktiv II'
+    WHEN 'DE-A2-13' THEN 'Build a hypothetical sentence with wenn'
+    WHEN 'DE-A2-14' THEN 'Use verb-final word order in an indirect question'
+    ELSE objective
+  END)
+WHERE language_code='de' AND id LIKE 'DE-%';
