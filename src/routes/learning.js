@@ -1,9 +1,27 @@
 import express from 'express';
 import { pool, requireDatabase, requireUser, recordActivity } from '../db.js';
-import { estimateLevel, publicQuestions, placementQuestions } from '../content/placement.js';
+import { estimateLevel, publicQuestions, placementForLanguage } from '../content/placement.js';
+import { isAvailableLanguage, publicLanguageCatalog } from '../content/languages.js';
 
 const router = express.Router();
 router.use(requireDatabase, requireUser);
+router.use(async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT c.id, c.language_code, c.goal, c.self_assessed_level, c.assessed_level,
+              c.minutes_per_day, c.duration_weeks, c.interests, c.onboarding_completed_at,
+              l.name_en AS language_name, l.native_name, l.speech_locale
+       FROM users u
+       JOIN learner_courses c ON c.id=u.active_learner_course_id AND c.user_id=u.id
+       JOIN language_catalog l ON l.language_code=c.language_code
+       WHERE u.id=$1 AND c.status='active' AND l.status='active'`,
+      [req.user.id]
+    );
+    if (!rows[0]) return res.status(409).json({ error: 'Нет активного учебного курса. Выбери язык обучения в профиле.' });
+    req.course = rows[0];
+    next();
+  } catch (error) { next(error); }
+});
 
 const levelRank = { 'Pre-A1':0, 'A1':1, 'A2':2, 'B1':3, 'B2':4, 'C1':5, 'C2':6 };
 const weekThemes = [
@@ -35,22 +53,22 @@ function publicExercise(row) {
   return safe;
 }
 
-async function generatePlan(userId) {
+async function generatePlan(userId, course) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
-      'SELECT goal, COALESCE(assessed_level, self_assessed_level, \'A2\') AS level, minutes_per_day, timezone, onboarding_completed_at FROM learner_profiles WHERE user_id=$1 FOR UPDATE',
-      [userId]
+      'SELECT id, language_code, goal, COALESCE(assessed_level, self_assessed_level, \'A2\') AS level, minutes_per_day, onboarding_completed_at FROM learner_courses WHERE user_id=$1 AND id=$2 FOR UPDATE',
+      [userId, course.id]
     );
     const profile = rows[0];
     if (!profile) throw new Error('Learner profile is missing.');
     if (!profile.onboarding_completed_at) throw new Error('Сначала заверши настройку учебного профиля.');
     const templates = await client.query(
       `SELECT * FROM plan_templates
-       WHERE status='published' AND duration_weeks=4 AND goal IN ($1,'general')
-       ORDER BY (goal=$1) DESC, updated_at DESC`,
-      [profile.goal || 'general']
+       WHERE status='published' AND language_code=$1 AND duration_weeks=4 AND goal IN ($2,'general')
+       ORDER BY (goal=$2) DESC, updated_at DESC`,
+      [profile.language_code, profile.goal || 'general']
     );
     const selectedTemplate = templates.rows.find(template =>
       (levelRank[profile.level] ?? 2) >= (levelRank[template.level_min] ?? 0) &&
@@ -60,11 +78,11 @@ async function generatePlan(userId) {
       theme, objective,
       tasks: Array.from({ length: 7 }, (_, day) => chooseExercise(profile.level, index * 7 + day + 1))
     }));
-    await client.query('UPDATE learning_plans SET status=\'archived\' WHERE user_id=$1 AND status=\'active\'', [userId]);
+    await client.query('UPDATE learning_plans SET status=\'archived\' WHERE user_id=$1 AND learner_course_id=$2 AND status=\'active\'', [userId, course.id]);
     const planResult = await client.query(
-      `INSERT INTO learning_plans (user_id, goal, level, duration_weeks, minutes_per_day, starts_on, template_id)
-       VALUES ($1,$2,$3,4,$4,(NOW() AT TIME ZONE $5)::date,$6) RETURNING *`,
-      [userId, profile.goal || 'general', profile.level, profile.minutes_per_day || 10, profile.timezone || 'UTC', selectedTemplate?.id || null]
+      `INSERT INTO learning_plans (user_id, learner_course_id, goal, level, duration_weeks, minutes_per_day, starts_on, template_id)
+       VALUES ($1,$2,$3,$4,4,$5,CURRENT_DATE,$6) RETURNING *`,
+      [userId, course.id, profile.goal || 'general', profile.level, profile.minutes_per_day || 10, selectedTemplate?.id || null]
     );
     const plan = planResult.rows[0];
     for (let week = 1; week <= 4; week++) {
