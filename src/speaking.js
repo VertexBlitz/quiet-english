@@ -4,12 +4,15 @@ const ALLOWED_TOPICS = new Set([
   'Technology', 'Environment', 'Education', 'Books and media'
 ]);
 
-export function validateSpeakingGenerationRequest(body) {
+export function validateSpeakingGenerationRequest(body, languageCode = 'en') {
   const level = typeof body?.level === 'string' ? body.level.trim().toUpperCase() : '';
   const topic = typeof body?.topic === 'string' ? body.topic.trim() : '';
 
   if (!ALLOWED_LEVELS.has(level)) {
     return { ok: false, error: 'Выбери уровень от A1 до C1.' };
+  }
+  if (languageCode === 'de' && !['A1','A2'].includes(level)) {
+    return { ok: false, error: 'Немецкая голосовая практика сейчас поддерживает уровни A1–A2.' };
   }
   if (!ALLOWED_TOPICS.has(topic)) {
     return { ok: false, error: 'Выбери тему из списка.' };
@@ -23,10 +26,10 @@ export function validateSpeakingGenerationRequest(body) {
         .filter(Boolean)
     : [];
 
-  return { ok: true, value: { level, topic, avoid } };
+  return { ok: true, value: { level, topic, avoid, languageCode } };
 }
 
-export function buildSpeakingGenerationPrompt({ level, topic, avoid = [] }) {
+export function buildSpeakingGenerationPrompt({ level, topic, avoid = [], languageCode = 'en' }) {
   const wordGuide = {
     A1: '20–30 very common words, short simple sentences, present simple, familiar vocabulary',
     A2: '25–35 words, everyday vocabulary, simple past or future where useful',
@@ -39,8 +42,10 @@ export function buildSpeakingGenerationPrompt({ level, topic, avoid = [] }) {
     ? '\nDo not repeat or closely paraphrase these recent passages:\n' + avoid.map((item, index) => (index + 1) + '. ' + item).join('\n')
     : '';
 
+  const targetLanguage = languageCode === 'de' ? 'German' : 'English';
   return [
-    'Create one original English reading passage for a learner at CEFR ' + level + '.',
+    'Create one original ' + targetLanguage + ' reading passage for a learner at CEFR ' + level + '.',
+    languageCode === 'de' ? 'This is a German A1-A2 learning task. Use correct natural standard German, simple high-frequency structures and spelling with ä, ö, ü and ß where appropriate.' : 'Use natural standard English.',
     'Topic: ' + topic + '.',
     'Length and language: ' + wordGuide + '.',
     'The passage must be suitable for reading aloud in no more than 28 seconds.',
@@ -53,7 +58,7 @@ export function buildSpeakingGenerationPrompt({ level, topic, avoid = [] }) {
   ].join('\n');
 }
 
-export function parseGeneratedSpeakingPassage(content, { level, topic }) {
+export function parseGeneratedSpeakingPassage(content, { level, topic, languageCode = 'en' }) {
   if (typeof content !== 'string' || !content.trim()) {
     throw new Error('Модель не вернула текст задания.');
   }
@@ -79,13 +84,16 @@ export function parseGeneratedSpeakingPassage(content, { level, topic }) {
     ? parsed.passage.replace(/[\r\n]+/gu, ' ').replace(/\s+/gu, ' ').trim()
     : '';
 
-  const words = passage.match(/[A-Za-z]+(?:['’][A-Za-z]+)*/gu) || [];
-  const letterCount = (passage.match(/[A-Za-z]/gu) || []).length;
+  const words = passage.match(/[\p{L}]+(?:['’][\p{L}]+)*/gu) || [];
+  const letterCount = (passage.match(/[\p{L}]/gu) || []).length;
   if (!title || passage.length < 70 || passage.length > 900 || words.length < 15 || words.length > 65) {
     throw new Error('ИИ создал текст неподходящей длины. Попробуй сгенерировать ещё раз.');
   }
   if (!letterCount || letterCount / Math.max(1, passage.replace(/\s/gu, '').length) < 0.65) {
-    throw new Error('ИИ вернул текст не на английском языке. Попробуй ещё раз.');
+    throw new Error('ИИ вернул текст не на изучаемом языке. Попробуй ещё раз.');
+  }
+  if (languageCode === 'de' && /\b(the|and|is|are|you|your)\b/iu.test(passage)) {
+    throw new Error('ИИ вернул смешанный или английский текст вместо немецкого.');
   }
 
   return {
@@ -93,6 +101,7 @@ export function parseGeneratedSpeakingPassage(content, { level, topic }) {
     passage,
     level,
     topic,
+    languageCode,
     wordCount: words.length
   };
 }
