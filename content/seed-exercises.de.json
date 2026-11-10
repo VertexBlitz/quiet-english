@@ -1,0 +1,994 @@
+[
+  {
+    "id": "DE-G01",
+    "language_code": "de",
+    "skill": "grammar",
+    "level": "A1",
+    "objective": "Use the present tense of sein",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Er ___ heute müde.",
+      "options": [
+        {
+          "id": "a",
+          "text": "bin"
+        },
+        {
+          "id": "b",
+          "text": "bist"
+        },
+        {
+          "id": "c",
+          "text": "ist"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "c"
+    },
+    "explanation": {
+      "ru": "Для er используется форма ist.",
+      "en": "With er, use ist."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "grammar"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-G02",
+    "language_code": "de",
+    "skill": "grammar",
+    "level": "A1",
+    "objective": "Choose the correct indefinite article",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Das ist ___ Lehrerin.",
+      "options": [
+        {
+          "id": "a",
+          "text": "ein"
+        },
+        {
+          "id": "b",
+          "text": "eine"
+        },
+        {
+          "id": "c",
+          "text": "einen"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Lehrerin — существительное женского рода: eine Lehrerin.",
+      "en": "Lehrerin is feminine: eine Lehrerin."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "grammar"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-V01",
+    "language_code": "de",
+    "skill": "vocabulary",
+    "level": "A1",
+    "objective": "Recognise basic personal information",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Wie ___ du?",
+      "options": [
+        {
+          "id": "a",
+          "text": "heißt"
+        },
+        {
+          "id": "b",
+          "text": "wohnst"
+        },
+        {
+          "id": "c",
+          "text": "kommst"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Wie heißt du? — Как тебя зовут?",
+      "en": "Wie heißt du? means What is your name?"
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "vocabulary"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-V02",
+    "language_code": "de",
+    "skill": "vocabulary",
+    "level": "A1",
+    "objective": "Use everyday family vocabulary",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Die Schwester meines Vaters ist meine ___.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Tante"
+        },
+        {
+          "id": "b",
+          "text": "Cousine"
+        },
+        {
+          "id": "c",
+          "text": "Nichte"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Сестра отца — тётя (die Tante).",
+      "en": "Your father's sister is your aunt (die Tante)."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "vocabulary"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-R01",
+    "language_code": "de",
+    "skill": "reading",
+    "level": "A1",
+    "objective": "Find details in a simple German message",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "Hallo! Ich heiße Mia. Ich wohne in Berlin und lerne Deutsch. Am Montag habe ich einen Sprachkurs.",
+      "prompt": "Hallo! Ich heiße Mia. Ich wohne in Berlin und lerne Deutsch. Am Montag habe ich einen Sprachkurs.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Mia wohnt in Wien."
+        },
+        {
+          "id": "b",
+          "text": "Mia lernt Deutsch."
+        },
+        {
+          "id": "c",
+          "text": "Mia arbeitet am Montag."
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "В сообщении сказано: Ich lerne Deutsch.",
+      "en": "The message says: Ich lerne Deutsch."
+    },
+    "estimated_time": 5,
+    "tags": [
+      "german",
+      "reading"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": false,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-G03",
+    "language_code": "de",
+    "skill": "grammar",
+    "level": "A2",
+    "objective": "Use the accusative article",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Ich kaufe ___ Apfel.",
+      "options": [
+        {
+          "id": "a",
+          "text": "ein"
+        },
+        {
+          "id": "b",
+          "text": "einen"
+        },
+        {
+          "id": "c",
+          "text": "einem"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Apfel — мужского рода; в Akkusativ der меняется на den, ein — на einen.",
+      "en": "Apfel is masculine; ein becomes einen in the accusative."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "grammar"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-G04",
+    "language_code": "de",
+    "skill": "grammar",
+    "level": "A2",
+    "objective": "Use modal verbs with an infinitive",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Wir ___ heute länger arbeiten.",
+      "options": [
+        {
+          "id": "a",
+          "text": "müssen"
+        },
+        {
+          "id": "b",
+          "text": "müsst"
+        },
+        {
+          "id": "c",
+          "text": "muss"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "С wir используется müssen; смысловой глагол остаётся в инфинитиве в конце.",
+      "en": "Wir takes müssen; the main verb stays infinitive at the end."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "grammar"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-V03",
+    "language_code": "de",
+    "skill": "vocabulary",
+    "level": "A2",
+    "objective": "Understand common separable verbs",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Was bedeutet „aufstehen“?",
+      "options": [
+        {
+          "id": "a",
+          "text": "ложиться спать"
+        },
+        {
+          "id": "b",
+          "text": "вставать"
+        },
+        {
+          "id": "c",
+          "text": "покупать"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Aufstehen означает вставать.",
+      "en": "Aufstehen means to get up."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "vocabulary"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-R02",
+    "language_code": "de",
+    "skill": "reading",
+    "level": "A2",
+    "objective": "Understand a short practical notice",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "Der Zug nach Hamburg fährt heute von Gleis 7 ab. Die Abfahrt ist um 16:20 Uhr.",
+      "prompt": "Der Zug nach Hamburg fährt heute von Gleis 7 ab. Die Abfahrt ist um 16:20 Uhr.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Der Zug fährt von Gleis 5 ab."
+        },
+        {
+          "id": "b",
+          "text": "Der Zug fährt um 16:20 Uhr ab."
+        },
+        {
+          "id": "c",
+          "text": "Der Zug fährt nach München."
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "В объявлении указаны Gleis 7 и 16:20 Uhr.",
+      "en": "The notice gives platform 7 and 16:20."
+    },
+    "estimated_time": 5,
+    "tags": [
+      "german",
+      "reading"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": false,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-G05",
+    "language_code": "de",
+    "skill": "grammar",
+    "level": "B1",
+    "objective": "Place the verb correctly in a subordinate clause",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Ich bleibe zu Hause, weil ich heute viel ___.",
+      "options": [
+        {
+          "id": "a",
+          "text": "arbeite"
+        },
+        {
+          "id": "b",
+          "text": "arbeiten"
+        },
+        {
+          "id": "c",
+          "text": "arbeitet"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "В придаточном с weil спрягаемый глагол стоит в конце: weil ich ... arbeite.",
+      "en": "In a weil-clause, the conjugated verb goes at the end."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "grammar"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-G06",
+    "language_code": "de",
+    "skill": "grammar",
+    "level": "B1",
+    "objective": "Choose the correct Perfekt auxiliary",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Am Wochenende ___ wir nach Köln gefahren.",
+      "options": [
+        {
+          "id": "a",
+          "text": "haben"
+        },
+        {
+          "id": "b",
+          "text": "sind"
+        },
+        {
+          "id": "c",
+          "text": "werden"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "С глаголом движения fahren в значении перемещения обычно используется sein.",
+      "en": "Movement verb fahren takes sein in this Perfekt construction."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "grammar"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-V04",
+    "language_code": "de",
+    "skill": "vocabulary",
+    "level": "B1",
+    "objective": "Understand a common German expression",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "„Bescheid sagen“ bedeutet ...",
+      "options": [
+        {
+          "id": "a",
+          "text": "сообщить кому-либо"
+        },
+        {
+          "id": "b",
+          "text": "решить задачу"
+        },
+        {
+          "id": "c",
+          "text": "опоздать"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Bescheid sagen — сообщить, дать знать.",
+      "en": "Bescheid sagen means to let someone know."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "vocabulary"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-R03",
+    "language_code": "de",
+    "skill": "reading",
+    "level": "B1",
+    "objective": "Identify the main idea of a short article",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "Viele Städte bauen Radwege aus. Dadurch sollen mehr Menschen das Fahrrad nutzen. Das kann den Verkehr entlasten und die Luft sauberer machen.",
+      "prompt": "Viele Städte bauen Radwege aus. Dadurch sollen mehr Menschen das Fahrrad nutzen. Das kann den Verkehr entlasten und die Luft sauberer machen.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Radwege können Verkehr und Umwelt entlasten."
+        },
+        {
+          "id": "b",
+          "text": "Autos sollen kostenlos werden."
+        },
+        {
+          "id": "c",
+          "text": "Fahrräder sind in Städten verboten."
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Текст объясняет преимущества развития велосипедной инфраструктуры.",
+      "en": "The text describes benefits of expanding cycling infrastructure."
+    },
+    "estimated_time": 5,
+    "tags": [
+      "german",
+      "reading"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": false,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-G07",
+    "language_code": "de",
+    "skill": "grammar",
+    "level": "B2",
+    "objective": "Form the passive voice",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Der Vertrag ___ morgen unterschrieben.",
+      "options": [
+        {
+          "id": "a",
+          "text": "wird"
+        },
+        {
+          "id": "b",
+          "text": "wurde"
+        },
+        {
+          "id": "c",
+          "text": "hat"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Для Präsens Passiv используется werden + Partizip II: wird unterschrieben.",
+      "en": "Present passive uses werden + past participle."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "grammar"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-G08",
+    "language_code": "de",
+    "skill": "grammar",
+    "level": "B2",
+    "objective": "Use Konjunktiv II for a hypothetical situation",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "An deiner Stelle ___ ich das Angebot genauer prüfen.",
+      "options": [
+        {
+          "id": "a",
+          "text": "werde"
+        },
+        {
+          "id": "b",
+          "text": "würde"
+        },
+        {
+          "id": "c",
+          "text": "bin"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "An deiner Stelle würde ich... — типичная конструкция Konjunktiv II для совета.",
+      "en": "An deiner Stelle würde ich... is a common Konjunktiv II advice pattern."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "grammar"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-V05",
+    "language_code": "de",
+    "skill": "vocabulary",
+    "level": "B2",
+    "objective": "Choose a precise academic connector",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Die Daten sind unvollständig. ___ lässt sich keine sichere Schlussfolgerung ziehen.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Dennoch"
+        },
+        {
+          "id": "b",
+          "text": "Daher"
+        },
+        {
+          "id": "c",
+          "text": "Zunächst"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Daher выражает следствие: поэтому нельзя сделать надёжный вывод.",
+      "en": "Daher introduces a consequence: therefore no reliable conclusion can be drawn."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "vocabulary"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-R04",
+    "language_code": "de",
+    "skill": "reading",
+    "level": "B2",
+    "objective": "Infer an author's position",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "Die Digitalisierung erleichtert viele Arbeitsabläufe. Sie ersetzt jedoch keine klare Kommunikation; vielmehr macht sie transparente Absprachen wichtiger.",
+      "prompt": "Die Digitalisierung erleichtert viele Arbeitsabläufe. Sie ersetzt jedoch keine klare Kommunikation; vielmehr macht sie transparente Absprachen wichtiger.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Digitale Werkzeuge machen Kommunikation überflüssig."
+        },
+        {
+          "id": "b",
+          "text": "Digitale Werkzeuge erhöhen die Bedeutung klarer Absprachen."
+        },
+        {
+          "id": "c",
+          "text": "Der Autor lehnt Digitalisierung grundsätzlich ab."
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Автор указывает, что цифровизация делает ясную коммуникацию ещё важнее.",
+      "en": "The author argues that digitalisation makes clear communication more important."
+    },
+    "estimated_time": 5,
+    "tags": [
+      "german",
+      "reading"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": false,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-G09",
+    "language_code": "de",
+    "skill": "grammar",
+    "level": "C1",
+    "objective": "Recognise nominalisation in formal German",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Die Behörde prüft den Antrag. Welche Nominalisierung passt?",
+      "options": [
+        {
+          "id": "a",
+          "text": "die Prüfung des Antrags"
+        },
+        {
+          "id": "b",
+          "text": "der geprüfte Antrag"
+        },
+        {
+          "id": "c",
+          "text": "prüfend den Antrag"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Номинализация глагола prüfen — die Prüfung; дополнение оформляется как Genitiv.",
+      "en": "The nominalised form of prüfen is die Prüfung; the object appears in the genitive."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "grammar"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-V06",
+    "language_code": "de",
+    "skill": "vocabulary",
+    "level": "C1",
+    "objective": "Distinguish nuanced formal vocabulary",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "Welche Bedeutung hat „zunächst“ in einem argumentativen Text am ehesten?",
+      "options": [
+        {
+          "id": "a",
+          "text": "als erster Schritt"
+        },
+        {
+          "id": "b",
+          "text": "unter keinen Umständen"
+        },
+        {
+          "id": "c",
+          "text": "im Gegensatz dazu"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "a"
+    },
+    "explanation": {
+      "ru": "Zunächst обозначает первый этап или начальную последовательность.",
+      "en": "Zunächst signals an initial step or sequence."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "vocabulary"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "vocabulary"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-R05",
+    "language_code": "de",
+    "skill": "reading",
+    "level": "C2",
+    "objective": "Interpret a nuanced argumentative statement",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "reading_multiple_choice",
+      "passage": "Die Maßnahme ist keineswegs alternativlos; ihre Wirksamkeit hängt vielmehr davon ab, unter welchen Bedingungen sie umgesetzt wird.",
+      "prompt": "Die Maßnahme ist keineswegs alternativlos; ihre Wirksamkeit hängt vielmehr davon ab, unter welchen Bedingungen sie umgesetzt wird.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Die Maßnahme ist die einzige mögliche Lösung."
+        },
+        {
+          "id": "b",
+          "text": "Die Wirkung der Maßnahme hängt von den Umsetzungsbedingungen ab."
+        },
+        {
+          "id": "c",
+          "text": "Die Maßnahme ist grundsätzlich wirkungslos."
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "Автор отрицает безальтернативность меры и подчёркивает зависимость результата от условий реализации.",
+      "en": "The author rejects the idea that the measure is the only option and stresses implementation conditions."
+    },
+    "estimated_time": 5,
+    "tags": [
+      "german",
+      "reading"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": false,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  },
+  {
+    "id": "DE-G10",
+    "language_code": "de",
+    "skill": "grammar",
+    "level": "C2",
+    "objective": "Interpret a complex concessive construction",
+    "instructions": {
+      "ru": "Выбери правильный ответ.",
+      "en": "Choose the correct answer."
+    },
+    "content": {
+      "type": "multiple_choice",
+      "prompt": "So überzeugend die Argumentation auf den ersten Blick erscheinen mag, ___ sie einer genaueren Prüfung nicht stand.",
+      "options": [
+        {
+          "id": "a",
+          "text": "hält"
+        },
+        {
+          "id": "b",
+          "text": "hält sie"
+        },
+        {
+          "id": "c",
+          "text": "sie hält"
+        }
+      ]
+    },
+    "answer_key": {
+      "correct_option_id": "b"
+    },
+    "explanation": {
+      "ru": "В уступительной конструкции с So ... auch steht das finite Verb im Hauptsatz direkt nach dem vorangestellten Satzteil: ... mag, hält sie ...",
+      "en": "In this concessive construction, the finite verb follows the fronted clause: ... mag, hält sie ..."
+    },
+    "estimated_time": 3,
+    "tags": [
+      "german",
+      "grammar"
+    ],
+    "prerequisites": [],
+    "srs": {
+      "enabled": true,
+      "item_type": "grammar_rule"
+    },
+    "success_criteria": "Select the grammatically or contextually correct answer."
+  }
+]
