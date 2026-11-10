@@ -304,8 +304,8 @@ async function buildCommandReply(userId, command, course) {
         [userId, course.id]
       ),
       pool.query(
-        'SELECT COUNT(*)::int AS count FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL',
-        [userId]
+        'SELECT COUNT(*)::int AS count FROM error_journal WHERE user_id=$1 AND learner_course_id=$2 AND resolved_at IS NULL',
+        [userId, course.id]
       )
     ]);
     const item = summary.rows[0];
