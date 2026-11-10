@@ -445,13 +445,12 @@ async function getRequestStudyLanguage(req) {
   return rows[0] || null;
 }
 
-async function requireEnglishTargetCourse(req, res) {
+async function requireSupportedTargetCourse(req, res) {
   try {
     const language = await getRequestStudyLanguage(req);
-    if (!language || language.course_status !== 'available' || language.language_code.trim() !== 'en') {
-      res.status(409).json({
-        error: 'Генератор заданий для выбранного языка ещё готовится. Сейчас поддерживается английский.'
-      });
+    const code = language?.language_code?.trim();
+    if (!language || language.course_status !== 'available' || !['en','de'].includes(code)) {
+      res.status(409).json({ error: 'Генератор для выбранного языка пока не готов.' });
       return null;
     }
     return language;
@@ -473,7 +472,7 @@ const speakingGenerationLimiter = rateLimit({
 });
 
 app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) => {
-  const language = await requireEnglishTargetCourse(req, res);
+  const language = await requireSupportedTargetCourse(req, res);
   if (!language) return;
   const origin = req.get('origin');
   if (origin) {
@@ -486,7 +485,7 @@ app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) =
     }
   }
 
-  const validated = validateSpeakingGenerationRequest(req.body);
+  const validated = validateSpeakingGenerationRequest(req.body, language.language_code.trim());
   if (!validated.ok) {
     return res.status(400).json({ error: validated.error });
   }
@@ -498,6 +497,8 @@ app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) =
   }
 
   const { level, topic, avoid } = validated.value;
+  const languageCode = language.language_code.trim();
+  const targetLanguage = languageCode === 'de' ? 'German' : 'English';
   const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' +
     encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID) + '/ai/v1/chat/completions';
   const variation = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
@@ -516,11 +517,11 @@ app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) =
         messages: [
           {
             role: 'system',
-            content: 'You create original, age-appropriate English reading exercises. Follow the requested CEFR level and return only the required JSON object. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
+            content: 'You create original, age-appropriate ' + targetLanguage + ' reading exercises. Follow the requested CEFR level and return only the required JSON object. Use natural standard ' + targetLanguage + '. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
           },
           {
             role: 'user',
-            content: buildSpeakingGenerationPrompt({ level, topic, avoid }) +
+            content: buildSpeakingGenerationPrompt({ level, topic, avoid, languageCode }) +
               '\nVariation identifier: ' + variation + '. Create a genuinely new scenario, not a synonym replacement.'
           }
         ],
@@ -563,7 +564,7 @@ app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) =
     result?.result?.response ?? result?.response;
 
   try {
-    const passage = parseGeneratedSpeakingPassage(modelContent, { level, topic });
+    const passage = parseGeneratedSpeakingPassage(modelContent, { level, topic, languageCode });
     return res.json({ passage, source: 'cloudflare-workers-ai' });
   } catch (error) {
     console.error('Speaking generation response validation failed:', error?.message || 'unknown error');
@@ -615,7 +616,7 @@ function cleanGeneratedPracticeSessions() {
 }
 
 app.post('/api/practice/instant', async (req, res) => {
-  const language = await requireEnglishTargetCourse(req, res);
+  const language = await requireSupportedTargetCourse(req, res);
   if (!language) return;
   if (!sameRequestOrigin(req)) {
     return res.status(403).json({ error: 'Источник запроса не разрешён.' });
@@ -656,7 +657,7 @@ app.post('/api/practice/instant', async (req, res) => {
 });
 
 app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) => {
-  const language = await requireEnglishTargetCourse(req, res);
+  const language = await requireSupportedTargetCourse(req, res);
   if (!language) return;
   if (!sameRequestOrigin(req)) {
     return res.status(403).json({ error: 'Источник запроса не разрешён.' });
