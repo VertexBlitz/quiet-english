@@ -59,3 +59,20 @@ test('German four-week plans reference only German exercises', () => {
     }
   }
 });
+
+const germanSkillTasks = JSON.parse(readFileSync(new URL('../content/skill-practice-tasks.de.json', import.meta.url), 'utf8'));
+
+test('German Skills Lab task catalog covers all four practical skills', () => {
+  assert.equal(germanSkillTasks.length, 10);
+  assert.deepEqual(
+    [...new Set(germanSkillTasks.map(task => task.skill))].sort(),
+    ['listening', 'pronunciation', 'speaking', 'writing']
+  );
+  assert.ok(germanSkillTasks.every(task => task.language_code === 'de'));
+  assert.equal(new Set(germanSkillTasks.map(task => task.id)).size, germanSkillTasks.length);
+  for (const task of germanSkillTasks) {
+    assert.ok(task.title);
+    assert.ok(task.description);
+    assert.ok(task.content && typeof task.content === 'object');
+  }
+});
