@@ -1,14 +1,16 @@
 import express from 'express';
-import { pool, requireDatabase, requireUser } from '../db.js';
+import { pool, requireDatabase, requireUser, loadActiveStudyLanguage, requireSpeechSupport } from '../db.js';
 
 const router = express.Router();
-router.use(requireDatabase, requireUser);
+router.use(requireDatabase, requireUser, loadActiveStudyLanguage, requireSpeechSupport);
 
 const allowedWordStatuses = new Set(['match', 'different', 'missing', 'extra']);
 
-router.get('/status', (_req, res) => {
+router.get('/status', (req, res) => {
   res.json({
     configured: true,
+    language_code: req.studyLanguageCode,
+    locale: req.studyLanguage.locale,
     engine: 'whisper-browser',
     model: 'onnx-community/whisper-tiny.en',
     audioSentToServer: false
@@ -20,11 +22,11 @@ router.get('/history', async (req, res, next) => {
     const historySql = [
       'SELECT id, reference_text, recognized_text, word_match_score, word_results, created_at',
       'FROM pronunciation_attempts',
-      'WHERE user_id=$1',
+      'WHERE user_id=$1 AND language_code=$2',
       'ORDER BY created_at DESC',
       'LIMIT 8'
     ].join(' ');
-    const { rows } = await pool.query(historySql, [req.user.id]);
+    const { rows } = await pool.query(historySql, [req.user.id, req.studyLanguageCode]);
     res.json({ attempts: rows });
   } catch (error) { next(error); }
 });
@@ -58,12 +60,12 @@ router.post('/attempt', async (req, res, next) => {
   try {
     const insertSql = [
       'INSERT INTO pronunciation_attempts',
-      '(user_id, reference_text, recognized_text, word_match_score, word_results)',
-      'VALUES ($1,$2,$3,$4,$5::jsonb)',
+      '(user_id, language_code, reference_text, recognized_text, word_match_score, word_results)',
+      'VALUES ($1,$2,$3,$4,$5,$6::jsonb)',
       'RETURNING id, created_at'
     ].join(' ');
     const { rows } = await pool.query(insertSql, [
-      req.user.id, referenceText, recognizedText, wordMatchScore, JSON.stringify(safeWords)
+      req.user.id, req.studyLanguageCode, referenceText, recognizedText, wordMatchScore, JSON.stringify(safeWords)
     ]);
     res.json({ attempt: rows[0] });
   } catch (error) { next(error); }
