@@ -429,7 +429,7 @@ router.get('/today', async (req, res, next) => {
 });
 
 router.get('/exercises', async (req, res, next) => {
-  const skills = ['vocabulary','grammar','reading'];
+  const skills = ['vocabulary','grammar','reading','communication'];
   const skill = req.query.skill;
   try {
     const { rows } = await pool.query(
