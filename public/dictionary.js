@@ -5,10 +5,60 @@ function msg(x,error=false){status.textContent=x||'';status.classList.toggle('er
 async function api(path,opt={}){const r=await fetch('/api/knowledge'+path,{credentials:'same-origin',...opt,headers:{...(opt.body?{'Content-Type':'application/json'}:{}),...(opt.headers||{})}}),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Request failed.');return d;}
 function audioUrl(x){try{const u=new URL(x.startsWith('//')?'https:'+x:x);return u.protocol==='https:'?u.href:'';}catch{return '';}}
 function section(title,items,render){if(!items?.length)return null;const s=make('section','dictionary-detail-section');s.append(make('h3','',title));const list=make('div','dictionary-detail-list');items.forEach(x=>list.append(render(x)));s.append(list);return s;}
-async function search(word){word=word.trim().toLowerCase();if(!/^\p{L}[\p{L}' -]{0,58}$/iu.test(word))return msg(t('Введи слово или короткую фразу на изучаемом языке.','Enter a word or short phrase in your study language.'),true);msg(t('Ищем слово и дополняем статью…','Looking up and enriching the entry…'));entryNode.hidden=true;const submit=form.querySelector('button[type=submit]');submit.disabled=true;
-try{const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/'+activeLanguageCode+'/'+encodeURIComponent(word)),d=await r.json();if(!r.ok||!Array.isArray(d)||!d.length)throw Error(t('Слово не найдено. Проверь написание.','Word not found. Check spelling.'));const first=d[0],meanings=first.meanings||[],defs=meanings.flatMap(m=>(m.definitions||[]).slice(0,3).map(x=>x.definition).filter(Boolean)).slice(0,8),syn=[...new Set(meanings.flatMap(m=>[...(m.synonyms||[]),...(m.definitions||[]).flatMap(x=>x.synonyms||[])]))].slice(0,12),ant=[...new Set(meanings.flatMap(m=>[...(m.antonyms||[]),...(m.definitions||[]).flatMap(x=>x.antonyms||[])]))].slice(0,12),phon=first.phonetics||[],ipa=first.phonetic||phon.find(x=>x.text)?.text||'',audio=audioUrl(phon.find(x=>x.audio)?.audio||'');let ai={};try{ai=await api('/dictionary-enrich/'+encodeURIComponent(word),{method:'POST',body:JSON.stringify({definitions:defs})});}catch(e){console.info('Dictionary AI enrichment unavailable:',e.message);}
-const data={word,ipa,audio,translation:ai.translation_ru||'',definition:defs[0]||'',definitions:defs,synonyms:syn,antonyms:ant,collocations:ai.collocations||[],phrasal_verbs:ai.phrasal_verbs||[],examples:ai.examples||[]};render(data);msg(data.translation?t('Словарная статья готова.','Dictionary entry is ready.'):t('Базовое определение загружено; расширенный перевод временно недоступен.','Basic definition loaded; extended translation is temporarily unavailable.'));
-}catch(e){msg(e.message||t('Не удалось найти слово.','Lookup failed.'),true);}finally{submit.disabled=false;}}
+async function search(word){
+ word=word.trim().toLowerCase();
+ if(!/^\p{L}[\p{L}' -]{0,58}$/iu.test(word))return msg(t('Введи слово или короткую фразу на изучаемом языке.','Enter a word or short phrase in your study language.'),true);
+ msg(t('Ищем слово и дополняем статью…','Looking up and enriching the entry…'));
+ entryNode.hidden=true;
+ const submit=form.querySelector('button[type=submit]');
+ submit.disabled=true;
+ try{
+  let ipa='',audio='',definitions=[],synonyms=[],antonyms=[];
+  try{
+   const response=await fetch('https://api.dictionaryapi.dev/api/v2/entries/'+activeLanguageCode+'/'+encodeURIComponent(word));
+   const dictionary=await response.json();
+   if(response.ok&&Array.isArray(dictionary)&&dictionary.length){
+    const first=dictionary[0],meanings=first.meanings||[],phonetics=first.phonetics||[];
+    definitions=meanings.flatMap(m=>(m.definitions||[]).slice(0,3).map(x=>x.definition).filter(Boolean)).slice(0,8);
+    synonyms=[...new Set(meanings.flatMap(m=>[...(m.synonyms||[]),...(m.definitions||[]).flatMap(x=>x.synonyms||[])]))].slice(0,12);
+    antonyms=[...new Set(meanings.flatMap(m=>[...(m.antonyms||[]),...(m.definitions||[]).flatMap(x=>x.antonyms||[])]))].slice(0,12);
+    ipa=first.phonetic||phonetics.find(x=>x.text)?.text||'';
+    audio=audioUrl(phonetics.find(x=>x.audio)?.audio||'');
+   }
+  }catch(error){
+   console.info('External dictionary unavailable; using AI enrichment:',error.message);
+  }
+
+  let ai={};
+  try{
+   ai=await api('/dictionary-enrich/'+encodeURIComponent(word),{
+    method:'POST',
+    body:JSON.stringify({definitions:definitions.slice(0,3)})
+   });
+  }catch(error){
+   if(!definitions.length)throw Error(t('Не удалось получить статью для этого слова. Попробуй позже.','Could not retrieve an entry for this word. Please try again later.'));
+   console.info('Dictionary AI enrichment unavailable:',error.message);
+  }
+  const translation=document.documentElement.lang==='en'
+    ? (ai.translation_en||ai.translation_ru||'')
+    : (ai.translation_ru||'');
+  const definition=definitions[0]||ai.examples?.[0]?.en||'';
+  if(!definitions.length&&!translation&&!definition){
+   throw Error(t('Не удалось найти надёжное объяснение. Попробуй другое слово.','No reliable explanation was found. Try another word.'));
+  }
+  render({
+   word,ipa,audio,translation,definition,definitions,synonyms,antonyms,
+   collocations:ai.collocations||[],phrasal_verbs:ai.phrasal_verbs||[],examples:ai.examples||[]
+  });
+  msg(translation
+   ? t('Словарная статья готова.','Dictionary entry is ready.')
+   : t('Определение загружено; перевод временно недоступен.','The definition is ready; translation is temporarily unavailable.'));
+ }catch(error){
+  msg(error.message||t('Не удалось найти слово.','Lookup failed.'),true);
+ }finally{
+  submit.disabled=false;
+ }
+}
 function render(d){activeEntry=d;entryNode.replaceChildren();entryNode.hidden=false;const head=make('div','dictionary-entry-head');head.append(make('h2','',d.word),make('span','dictionary-ipa',d.ipa||''));const listen=make('button','knowledge-print-button',t('▶ Произношение','▶ Pronunciation'));listen.type='button';listen.onclick=async()=>{if(d.audio){try{await new Audio(d.audio).play();return;}catch{}}if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(d.word);u.lang=activeLanguageCode==='de'?'de-DE':'en-US';window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}};head.append(listen);const translation=make('p','dictionary-translation',d.translation||t('Перевод не найден.','Translation unavailable.')),definition=make('p','knowledge-muted',d.definition||''),save=make('button','button',t('Сохранить в мой словарь +','Save to my dictionary +'));save.type='button';save.onclick=async()=>{save.disabled=true;try{await api('/vocabulary',{method:'POST',body:JSON.stringify({word:d.word,ipa:d.ipa,translation:d.translation,definition:d.definition,metadata:{synonyms:d.synonyms,antonyms:d.antonyms,collocations:d.collocations,phrasal_verbs:d.phrasal_verbs,examples:d.examples,audio:d.audio},source:new URLSearchParams(location.search).get('source')==='listening'?'listening':'dictionary'})});msg(t('Слово сохранено.','Word saved.'));loadSaved();}catch(e){msg(e.message,true);}finally{save.disabled=false;}};entryNode.append(head,translation,definition,save);
 const synonyms=section(t('Синонимы','Synonyms'),d.synonyms,x=>make('span','dictionary-tag',x)),antonyms=section(t('Антонимы','Antonyms'),d.antonyms,x=>make('span','dictionary-tag',x));
 const coll=section(t('Collocations','Collocations'),d.collocations,x=>{const c=make('article','dictionary-detail-card');c.append(make('strong','',x.phrase),make('p','',x.meaning_ru||''),make('p','dictionary-example',x.example||''));return c;});
