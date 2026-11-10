@@ -64,6 +64,9 @@ async function generatePlan(userId) {
       (levelRank[profile.level] ?? 2) >= (levelRank[template.level_min] ?? 0) &&
       (levelRank[profile.level] ?? 2) <= (levelRank[template.level_max] ?? 6)
     );
+    if (!selectedTemplate && profile.language_code !== 'en') {
+      throw new Error('Для выбранного языка ещё не подготовлена программа обучения.');
+    }
     const weeklyPlan = selectedTemplate?.weekly_themes || weekThemes.map(([theme, objective], index) => ({
       theme, objective,
       tasks: Array.from({ length: 7 }, (_, day) => chooseExercise(profile.level, index * 7 + day + 1))
