@@ -80,7 +80,7 @@ async function loadStudyLanguageOptions() {
       languages.forEach(item => {
         const option = document.createElement('option');
         option.value = item.language_code;
-        option.textContent = item.native_name + ' · ' + item.english_name;
+        option.textContent = item.native_name + ' · ' + item.english_name + (item.course_status === 'available' ? '' : learningT(' — скоро', ' — coming soon'));
         option.disabled = item.course_status !== 'available';
         option.selected = item.language_code === active;
         select.append(option);
