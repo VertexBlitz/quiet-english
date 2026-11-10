@@ -59,9 +59,6 @@ router.post('/listening/prepare',listeningLimiter,async function(req,res,next) {
   const level=clean(body.level,3).toUpperCase();
   if (transcript.length<80) return res.status(400).json({error:'Добавь расшифровку минимум из 80 символов.'});
   if (!LEVELS.includes(level)) return res.status(400).json({error:'Выбери уровень CEFR.'});
-  if (req.studyLanguageCode === 'de' && !['A1','A2'].includes(level)) {
-    return res.status(400).json({error:'Немецкое аудирование сейчас поддерживает уровни A1–A2.'});
-  }
   const sentences=transcript.split(/(?<=[.!?])\s+|\n+/u).map(function(x){return x.trim();}).filter(Boolean).slice(0,16);
   if (sentences.length<2) return res.status(400).json({error:'Нужно хотя бы два предложения для тренажёра.'});
   try {
