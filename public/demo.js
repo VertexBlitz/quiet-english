@@ -105,6 +105,47 @@
   const isActive = () => active;
   const getState = () => readState();
   const getProfile = () => readState().profile;
+  const getActiveLanguage = () => readState().activeLanguage || 'en';
+
+  const languageOptions = [
+    { language_code: 'en', name_en: 'English', native_name: 'English', speech_locale: 'en-GB', availability: 'active' },
+    { language_code: 'de', name_en: 'German', native_name: 'Deutsch', speech_locale: 'de-DE', availability: 'active' },
+    { language_code: 'es', name_en: 'Spanish', native_name: 'Español', speech_locale: 'es-ES', availability: 'coming_soon' },
+    { language_code: 'fr', name_en: 'French', native_name: 'Français', speech_locale: 'fr-FR', availability: 'coming_soon' }
+  ];
+
+  function switchCourse(languageCode, create = false) {
+    if (!['en', 'de'].includes(languageCode)) throw new Error('Этот язык пока недоступен.');
+    const state = readState();
+    const courses = { ...(state.courses || {}) };
+    let target = { ...emptyCourseState(), ...(courses[languageCode] || {}) };
+    if (create && !target.profile) {
+      target.profile = {
+        name: 'Demo Learner', language_code: languageCode, goal: 'general',
+        self_assessed_level: null, assessed_level: null, minutes_per_day: 10,
+        duration_weeks: 4, interests: [], preferred_language: 'ru',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        onboarding_completed_at: null
+      };
+    }
+    courses[languageCode] = target;
+    writeState({ ...target, activeLanguage: languageCode, courses });
+    return target;
+  }
+
+  function listCourses() {
+    const state = readState();
+    return languageOptions.map(language => {
+      const exists = Boolean(state.courses?.[language.language_code]);
+      return {
+        ...language,
+        course_id: exists ? language.language_code : null,
+        course_status: exists ? 'active' : null,
+        is_active: state.activeLanguage === language.language_code,
+        has_course: exists
+      };
+    });
+  }
 
   async function apiFetch(path, options = {}) {
     const response = await fetch('/api/demo' + path, {
@@ -112,6 +153,7 @@
       ...options,
       headers: {
         ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+        'X-QE-Language': getActiveLanguage(),
         ...(options.headers || {})
       }
     });
@@ -210,6 +252,18 @@
     const body = options.body ? JSON.parse(options.body) : {};
     const state = readState();
 
+    if (path === '/languages' && method === 'GET') return { languages: languageOptions };
+    if (path === '/courses' && method === 'GET') return { courses: listCourses() };
+    if (path === '/courses' && method === 'POST') {
+      const course = switchCourse(body.language_code, true);
+      return { course: { ...course.profile, id: body.language_code }, message: 'Учебный курс выбран. Настрой его и пройди тест уровня.' };
+    }
+    const activationMatch = path.match(/^\/courses\/([^/]+)\/activate$/);
+    if (activationMatch && method === 'PUT') {
+      switchCourse(decodeURIComponent(activationMatch[1]), true);
+      return { ok: true, course: { language_code: getActiveLanguage() } };
+    }
+
     if (path === '/profile' && method === 'GET') {
       return { profile: state.profile };
     }
@@ -225,6 +279,7 @@
       if (!['ru', 'en'].includes(body.preferred_language)) throw new Error('Выбери язык интерфейса.');
       state.profile = {
         name: 'Demo Learner',
+        language_code: state.activeLanguage || 'en',
         goal: body.goal,
         self_assessed_level: body.self_assessed_level || null,
         assessed_level: state.placementResult?.level || null,
@@ -246,7 +301,7 @@
     if (path === '/placement/submit' && method === 'POST') {
       const data = await apiFetch('/placement/submit', {
         method: 'POST',
-        body: JSON.stringify({ answers: body.answers })
+        body: JSON.stringify({ answers: body.answers, language_code: state.activeLanguage || 'en' })
       });
       state.placementResult = data.result;
       buildPlan(state, data.result.level);
