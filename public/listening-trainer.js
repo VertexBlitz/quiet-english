@@ -132,29 +132,37 @@ async function addWord(word,button){
  button.disabled=true;
  const original=button.textContent;
  try{
-  const response=await fetch('https://api.dictionaryapi.dev/api/v2/entries/'+activeLanguageCode+'/'+encodeURIComponent(word));
-  const entries=await response.json();
-  if(!response.ok||!Array.isArray(entries)||!entries.length)throw Error('Не удалось получить карточку слова. Открой его в словаре.');
-  const first=entries[0],meanings=first.meanings||[],phonetics=first.phonetics||[];
-  const ipa=first.phonetic||(phonetics.find(item=>item.text)||{}).text||'';
-  const audio=(phonetics.find(item=>item.audio&&item.audio.startsWith('https://'))||{}).audio||'';
-  const definitions=meanings.flatMap(item=>(item.definitions||[]).slice(0,2).map(def=>def.definition).filter(Boolean)).slice(0,6);
+  let ipa='',audio='',definitions=[],synonyms=[],antonyms=[];
+  if(activeLanguageCode!=='de'){
+   try{
+    const response=await fetch('https://api.dictionaryapi.dev/api/v2/entries/'+activeLanguageCode+'/'+encodeURIComponent(word));
+    const entries=await response.json();
+    if(response.ok&&Array.isArray(entries)&&entries.length){
+     const first=entries[0],meanings=first.meanings||[],phonetics=first.phonetics||[];
+     ipa=first.phonetic||(phonetics.find(item=>item.text)||{}).text||'';
+     audio=(phonetics.find(item=>item.audio&&item.audio.startsWith('https://'))||{}).audio||'';
+     definitions=meanings.flatMap(item=>(item.definitions||[]).slice(0,2).map(def=>def.definition).filter(Boolean)).slice(0,6);
+     synonyms=[...new Set(meanings.flatMap(item=>item.synonyms||[]))].slice(0,10);
+     antonyms=[...new Set(meanings.flatMap(item=>item.antonyms||[]))].slice(0,10);
+    }
+   }catch(error){console.info('External word dictionary unavailable:',error.message);}
+  }
   let enrichment={};
-  try{
-   const enriched=await fetch('/api/knowledge/dictionary-enrich/'+encodeURIComponent(word),{
-    method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({definitions:definitions.slice(0,3)})
-   });
-   if(enriched.ok)enrichment=await enriched.json();
-  }catch{}
+  const enriched=await fetch('/api/knowledge/dictionary-enrich/'+encodeURIComponent(word),{
+   method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({definitions:definitions.slice(0,3)})
+  });
+  enrichment=await enriched.json().catch(()=>({}));
+  if(!enriched.ok)throw Error(enrichment.error||'Не удалось дополнить словарную статью.');
+  const translation=document.documentElement.lang==='en'
+    ? (enrichment.translation_en||enrichment.translation_ru||'')
+    : (enrichment.translation_ru||'');
   const payload={
-   word:word,ipa:ipa,translation:enrichment.translation_ru||'',
-   definition:definitions[0]||'',
+   word:word,ipa:ipa,translation:translation,
+   definition:definitions[0]||enrichment.examples?.[0]?.en||'',
    source:'listening',
    metadata:{
-    audio:audio,definitions:definitions,
-    synonyms:[...new Set(meanings.flatMap(item=>item.synonyms||[]))].slice(0,10),
-    antonyms:[...new Set(meanings.flatMap(item=>item.antonyms||[]))].slice(0,10),
+    audio:audio,definitions:definitions,synonyms:synonyms,antonyms:antonyms,
     collocations:enrichment.collocations||[],
     phrasal_verbs:enrichment.phrasal_verbs||[],
     examples:enrichment.examples||[]
