@@ -102,6 +102,17 @@ router.post('/register', async (req, res, next) => {
       'INSERT INTO learner_profiles (user_id, preferred_language) VALUES ($1,$2)',
       [userId, preferred_language]
     );
+    const courseResult = await client.query(
+      `INSERT INTO learner_courses (user_id, language_code)
+       VALUES ($1,'en')
+       ON CONFLICT (user_id, language_code) DO UPDATE SET status='active'
+       RETURNING id`,
+      [userId]
+    );
+    await client.query(
+      'UPDATE users SET active_learner_course_id=$2 WHERE id=$1',
+      [userId, courseResult.rows[0].id]
+    );
     await client.query(
       `INSERT INTO consent_records (user_id, consent_type, policy_version, metadata)
        VALUES ($1,'terms','2026-11-06',$2::jsonb),($1,'privacy','2026-11-06',$2::jsonb)`,
@@ -263,10 +274,15 @@ router.get('/me', async (req, res, next) => {
   if (!req.session?.userId) return res.status(401).json({ error: 'Необходимо войти в аккаунт.' });
   try {
     const { rows } = await pool.query(
-      `SELECT u.id, u.email, u.role, u.age_band, p.preferred_language, p.goal,
-              p.assessed_level, p.minutes_per_day, p.onboarding_completed_at
-       FROM users u JOIN learner_profiles p ON p.user_id=u.id
-       WHERE u.id=$1 AND u.account_status='active'`,
+      `SELECT u.id, u.email, u.role, u.age_band, p.preferred_language, p.timezone,
+              c.id AS learner_course_id, c.language_code, c.goal, c.self_assessed_level,
+              c.assessed_level, c.minutes_per_day, c.duration_weeks, c.onboarding_completed_at,
+              l.name_en AS language_name, l.native_name, l.speech_locale
+       FROM users u
+       JOIN learner_profiles p ON p.user_id=u.id
+       JOIN learner_courses c ON c.id=u.active_learner_course_id AND c.user_id=u.id
+       JOIN language_catalog l ON l.language_code=c.language_code
+       WHERE u.id=$1 AND u.account_status='active' AND c.status='active' AND l.status='active'`,
       [req.session.userId]
     );
     if (!rows[0]) return res.status(401).json({ error: 'Аккаунт недоступен.' });
