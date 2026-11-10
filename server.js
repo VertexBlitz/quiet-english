@@ -253,7 +253,7 @@ app.get('/api/registration-status', (_req, res) => {
   });
 });
 
-async function buildCommandReply(userId, command) {
+async function buildCommandReply(userId, command, languageCode = 'en') {
   if (!userId || !pool) {
     return 'Войди в личный кабинет и создай учебный план, чтобы использовать эту команду.';
   }
@@ -264,9 +264,9 @@ async function buildCommandReply(userId, command) {
               w.week_number, w.theme, w.objective
        FROM learning_plans p
        LEFT JOIN plan_weeks w ON w.plan_id=p.id
-       WHERE p.user_id=$1 AND p.status='active'
+       WHERE p.user_id=$1 AND p.status='active' AND p.language_code=$2
        ORDER BY w.week_number`,
-      [userId]
+      [userId, languageCode]
     );
     if (!rows.length) return 'У тебя пока нет активного плана. Сначала заверши онбординг и тест уровня.';
     const first = rows[0];
@@ -281,21 +281,21 @@ async function buildCommandReply(userId, command) {
   if (command === '/today') {
     const { rows } = await pool.query(
       `SELECT d.day_index, d.main_task_id, d.mini_prompt, w.week_number, w.theme,
-              e.objective AS task_objective, e.skill, e.level, e.estimated_time
+              COALESCE(e.objective_i18n->>'ru',e.objective) AS task_objective, e.skill, e.level, e.estimated_time
        FROM learning_plans p
        JOIN plan_days d ON d.plan_id=p.id
        JOIN plan_weeks w ON w.id=d.week_id
        LEFT JOIN exercises e ON e.id=d.main_task_id
-       WHERE p.user_id=$1 AND p.status='active'
+       WHERE p.user_id=$1 AND p.status='active' AND p.language_code=$2
          AND d.day_index=LEAST(GREATEST(((NOW() AT TIME ZONE
            (SELECT timezone FROM learner_profiles WHERE user_id=$1))::date-p.starts_on+1),1),28)
        LIMIT 1`,
-      [userId]
+      [userId, languageCode]
     );
     if (!rows[0]) return 'Не нашёл сегодняшнюю задачу. Проверь, что у тебя есть активный план.';
     const due = await pool.query(
-      'SELECT COUNT(*)::int AS count FROM srs_items WHERE user_id=$1 AND due_at<=NOW()',
-      [userId]
+      'SELECT COUNT(*)::int AS count FROM srs_items WHERE user_id=$1 AND language_code=$2 AND due_at<=NOW()',
+      [userId, languageCode]
     );
     const today = rows[0];
     return [
@@ -310,15 +310,16 @@ async function buildCommandReply(userId, command) {
 
   if (command === '/practice') {
     const profile = await pool.query(
-      'SELECT COALESCE(assessed_level,self_assessed_level,\'A2\') AS level FROM learner_profiles WHERE user_id=$1',
-      [userId]
+      'SELECT COALESCE(assessed_level,self_assessed_level,\'A2\') AS level FROM learner_language_profiles WHERE user_id=$1 AND language_code=$2',
+      [userId, languageCode]
     );
     const level = profile.rows[0]?.level || 'A2';
     const { rows } = await pool.query(
       `SELECT id, skill, level, objective, estimated_time
-       FROM exercises WHERE status='published' AND skill IN ('vocabulary','grammar','reading')
+       FROM exercises WHERE status='published' AND language_code=$2
+         AND skill IN ('vocabulary','grammar','reading','communication')
        ORDER BY (level=$1) DESC, skill, id LIMIT 5`,
-      [level]
+      [level, languageCode]
     );
     if (!rows.length) return 'В библиотеке пока нет опубликованных заданий.';
     return ['Подходящая практика для тебя:', ...rows.map(item =>
@@ -329,8 +330,8 @@ async function buildCommandReply(userId, command) {
   if (command === '/review') {
     const { rows } = await pool.query(
       `SELECT COUNT(*)::int AS count FROM srs_items
-       WHERE user_id=$1 AND due_at<=NOW()`,
-      [userId]
+       WHERE user_id=$1 AND language_code=$2 AND due_at<=NOW()`,
+      [userId, languageCode]
     );
     return rows[0].count
       ? 'У тебя ' + rows[0].count + ' карточек для повторения. Открой раздел «Повторение» и сначала попробуй вспомнить ответ, прежде чем раскрывать его.'
@@ -343,12 +344,12 @@ async function buildCommandReply(userId, command) {
         `SELECT COALESCE(SUM(minutes),0)::int AS minutes,
                 COALESCE(SUM(completed_tasks),0)::int AS tasks,
                 COUNT(*) FILTER (WHERE completed_tasks>0)::int AS active_days
-         FROM daily_activity WHERE user_id=$1`,
-        [userId]
+         FROM daily_activity WHERE user_id=$1 AND language_code=$2`,
+        [userId, languageCode]
       ),
       pool.query(
-        'SELECT COUNT(*)::int AS count FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL',
-        [userId]
+        'SELECT COUNT(*)::int AS count FROM error_journal WHERE user_id=$1 AND language_code=$2 AND resolved_at IS NULL',
+        [userId, languageCode]
       )
     ]);
     const item = summary.rows[0];
@@ -365,26 +366,26 @@ async function buildCommandReply(userId, command) {
   return null;
 }
 
-async function buildLearnerContext(userId, exerciseRef) {
+async function buildLearnerContext(userId, exerciseRef, languageCode = 'en') {
   if (!pool || !userId) return '';
   try {
     const [profileResult, planResult, errorsResult] = await Promise.all([
       pool.query(
-        'SELECT goal, COALESCE(assessed_level,self_assessed_level) AS level FROM learner_profiles WHERE user_id=$1',
-        [userId]
+        'SELECT goal, COALESCE(assessed_level,self_assessed_level) AS level FROM learner_language_profiles WHERE user_id=$1 AND language_code=$2',
+        [userId, languageCode]
       ),
       pool.query(
         `SELECT p.level, p.goal, w.week_number, w.theme, w.objective
          FROM learning_plans p LEFT JOIN plan_weeks w ON w.plan_id=p.id
-         WHERE p.user_id=$1 AND p.status='active'
+         WHERE p.user_id=$1 AND p.status='active' AND p.language_code=$2
          ORDER BY w.week_number LIMIT 1`,
-        [userId]
+        [userId, languageCode]
       ),
       pool.query(
         `SELECT error_type, incorrect_form, correction, explanation
-         FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL
+         FROM error_journal WHERE user_id=$1 AND language_code=$2 AND resolved_at IS NULL
          ORDER BY updated_at DESC LIMIT 3`,
-        [userId]
+        [userId, languageCode]
       )
     ]);
     const profile = profileResult.rows[0];
@@ -406,11 +407,11 @@ async function buildLearnerContext(userId, exerciseRef) {
          FROM exercises e
          LEFT JOIN LATERAL (
            SELECT answer, is_correct, feedback FROM exercise_attempts
-           WHERE user_id=$1 AND exercise_id=e.id
+           WHERE user_id=$1 AND language_code=$3 AND exercise_id=e.id
            ORDER BY created_at DESC LIMIT 1
          ) a ON TRUE
-         WHERE e.id=$2 AND e.status='published'`,
-        [userId, exerciseRef]
+         WHERE e.id=$2 AND e.status='published' AND e.language_code=$3`,
+        [userId, exerciseRef, languageCode]
       );
       if (exerciseResult.rows[0]) {
         const exercise = exerciseResult.rows[0];
