@@ -223,3 +223,10 @@ CREATE INDEX IF NOT EXISTS skill_practice_tasks_language_skill_idx
 
 -- Backward-compatibility note: learner_profiles remains the account-level
 -- locale/timezone record. Course-specific preferences now live in learner_courses.
+
+-- German pronunciation tasks are stored as a separate practice skill.
+ALTER TABLE skill_practice_attempts
+  DROP CONSTRAINT IF EXISTS skill_practice_attempts_skill_check;
+ALTER TABLE skill_practice_attempts
+  ADD CONSTRAINT skill_practice_attempts_skill_check
+  CHECK (skill IN ('listening','writing','speaking','pronunciation'));
