@@ -83,12 +83,14 @@ export function requireSpeechSupport(req, res, next) {
   next();
 }
 
-export async function recordActivity(userId, { minutes = 0, completedTasks = 0 } = {}) {
+export async function recordActivity(userId, {
+  minutes = 0, completedTasks = 0, languageCode = null
+} = {}) {
   if (!pool) return;
   await pool.query(
     `INSERT INTO daily_activity
        (user_id, language_code, activity_date, minutes, completed_tasks)
-     SELECT $1, active_learning_language_code,
+     SELECT $1, COALESCE($4, active_learning_language_code),
        (NOW() AT TIME ZONE COALESCE(timezone, 'UTC'))::date,
        $2, $3
      FROM learner_profiles WHERE user_id=$1
@@ -97,6 +99,6 @@ export async function recordActivity(userId, { minutes = 0, completedTasks = 0 }
        minutes = daily_activity.minutes + EXCLUDED.minutes,
        completed_tasks = daily_activity.completed_tasks + EXCLUDED.completed_tasks,
        updated_at = NOW()`,
-    [userId, minutes, completedTasks]
+    [userId, minutes, completedTasks, languageCode]
   );
 }
