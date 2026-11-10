@@ -13,6 +13,8 @@
   let recognition = null;
   let finalTranscript = '';
   let demoMode = false;
+  let currentLanguage = 'en';
+  let speechLocale = 'en-GB';
 
   const tasks = {
     listening: [
@@ -239,6 +241,7 @@
     if (currentSkill === 'listening') renderListening(task);
     if (currentSkill === 'writing') renderWriting(task);
     if (currentSkill === 'speaking') renderSpeaking(task);
+    if (currentSkill === 'pronunciation') renderPronunciation(task);
     workspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -271,7 +274,7 @@
       }
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(task.transcript);
-      utterance.lang = 'en-GB';
+      utterance.lang = speechLocale;
       utterance.rate = Number(rate.value);
       utterance.onstart = () => { audioMessage.textContent = 'Воспроизводится английский текст…'; };
       utterance.onend = () => { audioMessage.textContent = 'Прослушивание завершено. Можно ответить на вопросы.'; };
@@ -407,7 +410,7 @@
       if (!SpeechRecognition) return;
       stopRecognition();
       recognition = new SpeechRecognition();
-      recognition.lang = 'en-GB';
+      recognition.lang = speechLocale;
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
@@ -472,15 +475,19 @@
   }
 
   async function requestFeedback(task, answer, skill) {
+    const languageName = currentLanguage === 'de' ? 'German' : 'English';
     const taskText = skill === 'writing'
-      ? 'Writing task: ' + task.prompt
-      : 'Speaking prompt: ' + task.prompt;
+      ? languageName + ' writing task: ' + task.prompt
+      : skill === 'pronunciation'
+        ? 'German pronunciation practice. Target text: ' + task.target + '. Speech-recognition transcript: ' + answer
+        : languageName + ' speaking prompt: ' + task.prompt;
     const directions = [
-      'You are an encouraging English teacher. Review the learner response for a general audience and keep the feedback age-appropriate.',
+      'You are an encouraging ' + languageName + ' teacher. Keep feedback age-appropriate and constructive.',
       'Assess task completion, grammar, vocabulary and clarity. Correct up to three important errors with short explanations.',
       'Give one improved version that preserves the learner meaning. End with one practical next step.',
-      'Start with exactly: Estimated score: NN/100. The score is approximate and should reflect task completion, grammar, vocabulary and clarity.',
-      'Do not ask for or repeat personal contact details. Keep the review constructive.'
+      'Start with exactly: Estimated score: NN/100. The score is approximate and must not be presented as an official CEFR result.',
+      skill === 'pronunciation' ? 'For pronunciation practice, compare only the target text with the supplied speech-recognition transcript. Do not claim to assess phonetic accuracy, accent or sound quality from text.' : 'Do not claim to hear audio or assess speech sounds from a text transcript.',
+      'Do not ask for or repeat personal contact details.'
     ].join(' ');
     const content = directions + '\n' + taskText + '\nLearner response:\n' + answer.slice(0,1000);
     if (content.length > 1800) throw new Error('Ответ слишком длинный. Сократи текст и отправь ещё раз.');
@@ -488,7 +495,7 @@
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: [{ role:'user', content }] })
+      body: JSON.stringify({ messages: [{ role:'user', content }], language_code: currentLanguage })
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'AI-репетитор временно недоступен.');
@@ -529,7 +536,7 @@
         const response = await fetch('/api/learning/skill-practice', { credentials:'same-origin' });
         if (response.ok) skills = (await response.json()).skills || [];
       }
-      const summary = skills.filter(item => ['listening','writing','speaking'].includes(item.skill))
+      const summary = skills.filter(item => ['listening','writing','speaking','pronunciation'].includes(item.skill))
         .map(item => item.skill + ': ' + item.attempts + ' · ' + (item.accuracy == null ? 'без оценки' : item.accuracy + '%'));
       statusSummary.textContent = summary.length ? 'Твои результаты — ' + summary.join(' · ') : 'Пока нет завершённых заданий по этим навыкам.';
     } catch {}
@@ -546,14 +553,28 @@
   });
 
   (async () => {
+    let profile = null;
     try {
       const response = await fetch('/api/auth/me', { credentials:'same-origin' });
       const data = response.ok ? await response.json() : null;
-      if (data?.user) demoMode = false;
-      else if (window.QEDemo) demoMode = await window.QEDemo.ensure();
+      if (data?.user) {
+        demoMode = false;
+        profile = data.user;
+      } else if (window.QEDemo) {
+        demoMode = await window.QEDemo.ensure();
+        if (demoMode) profile = window.QEDemo.getProfile?.();
+      }
     } catch {
-      if (window.QEDemo) demoMode = await window.QEDemo.ensure();
+      if (window.QEDemo) {
+        demoMode = await window.QEDemo.ensure();
+        if (demoMode) profile = window.QEDemo.getProfile?.();
+      }
     }
+    currentLanguage = profile?.language_code || window.QEDemo?.getActiveLanguage?.() || 'en';
+    speechLocale = currentLanguage === 'de' ? 'de-DE' : 'en-GB';
+    if (currentLanguage === 'de') Object.assign(tasks, germanTasks);
+    const pronunciationTab = tabs.find(tab => tab.dataset.skill === 'pronunciation');
+    if (pronunciationTab) pronunciationTab.hidden = currentLanguage !== 'de';
     chooseSkill('listening');
   })();
 
