@@ -97,6 +97,7 @@
   }
 
   if (user) {
+    window.QEActiveLanguage = user.language_code || 'en';
     const lang = document.documentElement.lang;
     accountLink.href = '/account.html';
     accountLink.textContent = lang === 'en' ? 'My account' : 'Мой аккаунт';
@@ -123,6 +124,7 @@
   }
 
   if (window.QEDemo?.isActive()) {
+    window.QEActiveLanguage = window.QEDemo.getActiveLanguage?.() || 'en';
     const lang = document.documentElement.lang;
     accountLink.href = '/plan.html';
     accountLink.textContent = lang === 'en' ? 'Demo Learner' : 'Демо-профиль';
