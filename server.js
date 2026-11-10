@@ -170,22 +170,48 @@ if (sessionsConfigured) {
 }
 
 const MODEL = process.env.CLOUDFLARE_MODEL || '@cf/google/gemma-4-26b-a4b-it';
-const SYSTEM_PROMPT = [
-  'You are a kind, patient English tutor for a general-audience learning website.',
-  'Help with natural English conversation, grammar, vocabulary, reading and writing.',
-  'Keep every response age-appropriate, respectful and safe.',
-  'Use English by default. If a learner writes in Russian or seems confused, explain briefly in Russian and give one simple English example.',
-  'When correcting English, first respond to the meaning, then show a natural correction and one short explanation.',
-  'Keep answers focused and ask at most one follow-up question at a time.',
-  'Do not claim to hear audio or see files unless they were actually supplied.'
-].join(' ');
+const SYSTEM_PROMPTS = {
+  en: [
+    'You are a kind, patient English tutor for a general-audience learning website.',
+    'Help with natural English conversation, grammar, vocabulary, reading and writing.',
+    'Keep every response age-appropriate, respectful and safe.',
+    'Use English by default. If a learner writes in Russian or seems confused, explain briefly in Russian and give one simple English example.',
+    'When correcting English, first respond to the meaning, then show a natural correction and one short explanation.',
+    'Keep answers focused and ask at most one follow-up question at a time.',
+    'Do not claim to hear audio or see files unless they were actually supplied.'
+  ].join(' '),
+  de: [
+    'Du bist ein freundlicher, geduldiger Deutschlehrer für eine Lernplattform für ein allgemeines Publikum.',
+    'Hilf beim natürlichen deutschen Sprachgebrauch, bei Grammatik, Wortschatz, Lesen und Schreiben.',
+    'Antworte standardmäßig auf Deutsch. Wenn Lernende auf Russisch schreiben oder etwas nicht verstehen, erkläre es kurz auf Russisch und gib ein einfaches deutsches Beispiel.',
+    'Achte besonders auf Artikel und Genus, Kasus, Deklination, Verbposition, trennbare Verben, Zeiten und idiomatische Formulierungen.',
+    'Bei Korrekturen reagiere zuerst auf die Aussage, zeige dann eine natürliche deutsche Formulierung und erkläre einen wichtigen Punkt kurz.',
+    'Bleibe respektvoll, altersgerecht und konzentriert. Stelle höchstens eine Rückfrage gleichzeitig.',
+    'Behaupte nicht, Audio gehört oder Dateien gesehen zu haben, wenn sie nicht tatsächlich übermittelt wurden.'
+  ].join(' ')
+};
+
+async function getActiveCourse(userId) {
+  if (!userId || !pool) return null;
+  const { rows } = await pool.query(
+    `SELECT c.id, c.language_code, c.goal,
+            COALESCE(c.assessed_level,c.self_assessed_level,'A2') AS level,
+            l.name_en, l.native_name, l.speech_locale
+     FROM users u
+     JOIN learner_courses c ON c.id=u.active_learner_course_id AND c.user_id=u.id
+     JOIN language_catalog l ON l.language_code=c.language_code
+     WHERE u.id=$1 AND c.status='active' AND l.status='active'`,
+    [userId]
+  );
+  return rows[0] || null;
+}
 
 function isAiConfigured() {
   return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
 }
 
-async function buildCommandReply(userId, command) {
-  if (!userId || !pool) {
+async function buildCommandReply(userId, command, course) {
+  if (!userId || !pool || !course?.id) {
     return 'Войди в личный кабинет и создай учебный план, чтобы использовать эту команду.';
   }
 
@@ -195,9 +221,9 @@ async function buildCommandReply(userId, command) {
               w.week_number, w.theme, w.objective
        FROM learning_plans p
        LEFT JOIN plan_weeks w ON w.plan_id=p.id
-       WHERE p.user_id=$1 AND p.status='active'
+       WHERE p.user_id=$1 AND p.learner_course_id=$2 AND p.status='active'
        ORDER BY w.week_number`,
-      [userId]
+      [userId, course.id]
     );
     if (!rows.length) return 'У тебя пока нет активного плана. Сначала заверши онбординг и тест уровня.';
     const first = rows[0];
@@ -217,16 +243,16 @@ async function buildCommandReply(userId, command) {
        JOIN plan_days d ON d.plan_id=p.id
        JOIN plan_weeks w ON w.id=d.week_id
        LEFT JOIN exercises e ON e.id=d.main_task_id
-       WHERE p.user_id=$1 AND p.status='active'
+       WHERE p.user_id=$1 AND p.learner_course_id=$2 AND p.status='active'
          AND d.day_index=LEAST(GREATEST(((NOW() AT TIME ZONE
            (SELECT timezone FROM learner_profiles WHERE user_id=$1))::date-p.starts_on+1),1),28)
        LIMIT 1`,
-      [userId]
+      [userId, course.id]
     );
     if (!rows[0]) return 'Не нашёл сегодняшнюю задачу. Проверь, что у тебя есть активный план.';
     const due = await pool.query(
-      'SELECT COUNT(*)::int AS count FROM srs_items WHERE user_id=$1 AND due_at<=NOW()',
-      [userId]
+      'SELECT COUNT(*)::int AS count FROM srs_items WHERE user_id=$1 AND learner_course_id=$2 AND due_at<=NOW()',
+      [userId, course.id]
     );
     const today = rows[0];
     return [
@@ -241,15 +267,15 @@ async function buildCommandReply(userId, command) {
 
   if (command === '/practice') {
     const profile = await pool.query(
-      'SELECT COALESCE(assessed_level,self_assessed_level,\'A2\') AS level FROM learner_profiles WHERE user_id=$1',
-      [userId]
+      'SELECT COALESCE(assessed_level,self_assessed_level,\'A2\') AS level FROM learner_courses WHERE user_id=$1 AND id=$2',
+      [userId, course.id]
     );
     const level = profile.rows[0]?.level || 'A2';
     const { rows } = await pool.query(
       `SELECT id, skill, level, objective, estimated_time
-       FROM exercises WHERE status='published' AND skill IN ('vocabulary','grammar','reading')
-       ORDER BY (level=$1) DESC, skill, id LIMIT 5`,
-      [level]
+       FROM exercises WHERE language_code=$1 AND status='published' AND skill IN ('vocabulary','grammar','reading')
+       ORDER BY (level=$2) DESC, skill, id LIMIT 5`,
+      [course.language_code, level]
     );
     if (!rows.length) return 'В библиотеке пока нет опубликованных заданий.';
     return ['Подходящая практика для тебя:', ...rows.map(item =>
@@ -260,8 +286,8 @@ async function buildCommandReply(userId, command) {
   if (command === '/review') {
     const { rows } = await pool.query(
       `SELECT COUNT(*)::int AS count FROM srs_items
-       WHERE user_id=$1 AND due_at<=NOW()`,
-      [userId]
+       WHERE user_id=$1 AND learner_course_id=$2 AND due_at<=NOW()`,
+      [userId, course.id]
     );
     return rows[0].count
       ? 'У тебя ' + rows[0].count + ' карточек для повторения. Открой раздел «Повторение» и сначала попробуй вспомнить ответ, прежде чем раскрывать его.'
@@ -274,8 +300,8 @@ async function buildCommandReply(userId, command) {
         `SELECT COALESCE(SUM(minutes),0)::int AS minutes,
                 COALESCE(SUM(completed_tasks),0)::int AS tasks,
                 COUNT(*) FILTER (WHERE completed_tasks>0)::int AS active_days
-         FROM daily_activity WHERE user_id=$1`,
-        [userId]
+         FROM daily_activity WHERE user_id=$1 AND learner_course_id=$2`,
+        [userId, course.id]
       ),
       pool.query(
         'SELECT COUNT(*)::int AS count FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL',
