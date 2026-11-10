@@ -37,7 +37,7 @@ const learningSkill = value => {
   return pair ? learningT(pair[0], pair[1]) : String(value || '');
 };
 const learningGoalLabels = {
-  general: ['Общий английский', 'General English'],
+  general: ['Общее изучение языка', 'General language'],
   work: ['Для работы', 'Work'],
   travel: ['Для путешествий', 'Travel'],
   communication: ['Повседневное общение', 'Everyday communication'],
