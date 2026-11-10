@@ -122,7 +122,7 @@ router.post('/writing/review',requireEnglishStudyLanguage,writingLimiter,async f
         await pool.query("INSERT INTO error_journal (user_id,language_code,error_type,incorrect_form,correction,explanation) VALUES ($1,$2,$3,$4,$5,$6)",[req.user.id,req.studyLanguageCode,errorType,issue.original,issue.correction,explanation]);
       }
     }
-    await recordActivity(req.user.id,{minutes:5,completedTasks:1});
+    await recordActivity(req.user.id,{minutes:5,completedTasks:1,languageCode:req.studyLanguageCode});
     res.status(201).json({submission:{
       id:inserted.rows[0].id,created_at:inserted.rows[0].created_at,task_type:taskType,level:actualLevel,
       scores:scores,overall_score:overall,corrected_text:corrected,natural_version:natural,
