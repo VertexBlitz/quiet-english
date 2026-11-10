@@ -154,6 +154,7 @@
         course_id: exists ? language.language_code : null,
         course_status: exists ? 'active' : null,
         is_active: state.activeLanguage === language.language_code,
+        onboarding_completed_at: state.courses?.[language.language_code]?.profile?.onboarding_completed_at || null,
         has_course: exists
       };
     });
