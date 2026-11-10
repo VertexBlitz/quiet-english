@@ -48,11 +48,13 @@ export async function requireUser(req, res, next) {
 export async function recordActivity(userId, { minutes = 0, completedTasks = 0 } = {}) {
   if (!pool) return;
   await pool.query(
-    `INSERT INTO daily_activity (user_id, activity_date, minutes, completed_tasks)
-     SELECT $1,
-       (NOW() AT TIME ZONE COALESCE((SELECT timezone FROM learner_profiles WHERE user_id=$1), 'UTC'))::date,
+    `INSERT INTO daily_activity
+       (user_id, language_code, activity_date, minutes, completed_tasks)
+     SELECT $1, active_learning_language_code,
+       (NOW() AT TIME ZONE COALESCE(timezone, 'UTC'))::date,
        $2, $3
-     ON CONFLICT (user_id, activity_date)
+     FROM learner_profiles WHERE user_id=$1
+     ON CONFLICT (user_id, language_code, activity_date)
      DO UPDATE SET
        minutes = daily_activity.minutes + EXCLUDED.minutes,
        completed_tasks = daily_activity.completed_tasks + EXCLUDED.completed_tasks,
