@@ -296,26 +296,39 @@ router.get('/me', async (req, res, next) => {
 router.get('/export', requireUser, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const [profile, placements, plans, attempts, reviews, errors, activity, consents] = await Promise.all([
-      pool.query('SELECT preferred_language, goal, self_assessed_level, assessed_level, minutes_per_day, duration_weeks, interests, timezone, created_at FROM learner_profiles WHERE user_id=$1',[userId]),
-      pool.query('SELECT answers, correct_count, total_questions, estimated_level, completed_at FROM placement_attempts WHERE user_id=$1 ORDER BY completed_at',[userId]),
-      pool.query('SELECT id, goal, level, duration_weeks, minutes_per_day, status, starts_on, created_at, completed_at FROM learning_plans WHERE user_id=$1 ORDER BY created_at',[userId]),
-      pool.query('SELECT exercise_id, exercise_version, answer, is_correct, score, feedback, created_at FROM exercise_attempts WHERE user_id=$1 ORDER BY created_at',[userId]),
-      pool.query('SELECT item_type, item_ref, prompt, answer, interval_days, repetitions, due_at, last_rating FROM srs_items WHERE user_id=$1',[userId]),
-      pool.query('SELECT error_type, incorrect_form, correction, explanation, occurrences, resolved_at, created_at FROM error_journal WHERE user_id=$1 ORDER BY created_at',[userId]),
-      pool.query('SELECT activity_date, minutes, completed_tasks FROM daily_activity WHERE user_id=$1 ORDER BY activity_date',[userId]),
+    const [profile, courses, placements, plans, attempts, reviews, errors, activity, skillPractice, vocabulary, consents] = await Promise.all([
+      pool.query('SELECT preferred_language, timezone, created_at FROM learner_profiles WHERE user_id=$1',[userId]),
+      pool.query(
+        `SELECT c.id, c.language_code, l.name_en, l.native_name, c.goal, c.self_assessed_level,
+                c.assessed_level, c.minutes_per_day, c.duration_weeks, c.interests,
+                c.status, c.onboarding_completed_at, c.created_at
+         FROM learner_courses c JOIN language_catalog l ON l.language_code=c.language_code
+         WHERE c.user_id=$1 ORDER BY c.created_at`,
+        [userId]
+      ),
+      pool.query('SELECT learner_course_id, answers, correct_count, total_questions, estimated_level, completed_at FROM placement_attempts WHERE user_id=$1 ORDER BY completed_at',[userId]),
+      pool.query('SELECT id, learner_course_id, goal, level, duration_weeks, minutes_per_day, status, starts_on, created_at, completed_at FROM learning_plans WHERE user_id=$1 ORDER BY created_at',[userId]),
+      pool.query('SELECT learner_course_id, exercise_id, exercise_version, answer, is_correct, score, feedback, created_at FROM exercise_attempts WHERE user_id=$1 ORDER BY created_at',[userId]),
+      pool.query('SELECT learner_course_id, item_type, item_ref, prompt, answer, interval_days, repetitions, due_at, last_rating FROM srs_items WHERE user_id=$1',[userId]),
+      pool.query('SELECT learner_course_id, error_type, incorrect_form, correction, explanation, occurrences, resolved_at, created_at FROM error_journal WHERE user_id=$1 ORDER BY created_at',[userId]),
+      pool.query('SELECT learner_course_id, activity_date, minutes, completed_tasks FROM daily_activity WHERE user_id=$1 ORDER BY activity_date',[userId]),
+      pool.query('SELECT learner_course_id, skill, task_id, score, word_count, duration_seconds, created_at FROM skill_practice_attempts WHERE user_id=$1 ORDER BY created_at',[userId]),
+      pool.query('SELECT learner_course_id, term, translation, part_of_speech, grammatical_gender, plural_form, example_sentence, notes, source, created_at FROM learner_vocabulary WHERE user_id=$1 ORDER BY created_at',[userId]),
       pool.query('SELECT consent_type, policy_version, accepted_at FROM consent_records WHERE user_id=$1 ORDER BY accepted_at',[userId])
     ]);
     res.json({
       exported_at: new Date().toISOString(),
       account: { email: req.user.email, age_band: req.user.age_band, created_at: req.user.created_at },
       profile: profile.rows[0] || null,
+      courses: courses.rows,
       placements: placements.rows,
       plans: plans.rows,
       exercise_attempts: attempts.rows,
       review_items: reviews.rows,
       errors: errors.rows,
       activity: activity.rows,
+      skill_practice_attempts: skillPractice.rows,
+      vocabulary: vocabulary.rows,
       consents: consents.rows
     });
   } catch (error) { next(error); }
