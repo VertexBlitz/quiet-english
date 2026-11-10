@@ -1,0 +1,392 @@
+[
+  {
+    "id": "de-a1-4-week",
+    "language_code": "de",
+    "title": "Deutsch A1–A1 · 4 Wochen",
+    "goal": "general",
+    "level_min": "Pre-A1",
+    "level_max": "A1",
+    "duration_weeks": 4,
+    "minutes_per_day": 10,
+    "status": "published",
+    "weekly_themes": [
+      {
+        "theme": "Alltag und persönliche Informationen",
+        "objective": "Представляться, рассказывать о себе и понимать простые бытовые сообщения.",
+        "tasks": [
+          "DE-V01",
+          "DE-G01",
+          "DE-G02",
+          "DE-R01",
+          "DE-V02",
+          "DE-G01",
+          "DE-R01"
+        ]
+      },
+      {
+        "theme": "Unterwegs und im Alltag",
+        "objective": "Использовать немецкий в повседневных ситуациях, транспорте и покупках.",
+        "tasks": [
+          "DE-G02",
+          "DE-V01",
+          "DE-V02",
+          "DE-G01",
+          "DE-R01",
+          "DE-V01",
+          "DE-G02"
+        ]
+      },
+      {
+        "theme": "Lernen, Arbeit und Kommunikation",
+        "objective": "Строить более сложные высказывания и объяснять причины.",
+        "tasks": [
+          "DE-V02",
+          "DE-R01",
+          "DE-G01",
+          "DE-V01",
+          "DE-G02",
+          "DE-V02",
+          "DE-R01"
+        ]
+      },
+      {
+        "theme": "Sicher und differenziert kommunizieren",
+        "objective": "Закреплять навыки и точнее выражать мысли на выбранном уровне.",
+        "tasks": [
+          "DE-G01",
+          "DE-G02",
+          "DE-V01",
+          "DE-R01",
+          "DE-V02",
+          "DE-G01",
+          "DE-R01"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "de-a2-4-week",
+    "language_code": "de",
+    "title": "Deutsch A2–A2 · 4 Wochen",
+    "goal": "general",
+    "level_min": "A2",
+    "level_max": "A2",
+    "duration_weeks": 4,
+    "minutes_per_day": 10,
+    "status": "published",
+    "weekly_themes": [
+      {
+        "theme": "Alltag und persönliche Informationen",
+        "objective": "Introduce yourself, share personal information and understand simple everyday messages.",
+        "tasks": [
+          "DE-G03",
+          "DE-G04",
+          "DE-V03",
+          "DE-R02",
+          "DE-G03",
+          "DE-V03",
+          "DE-G04"
+        ]
+      },
+      {
+        "theme": "Unterwegs und im Alltag",
+        "objective": "Use German in everyday situations, transport and shopping.",
+        "tasks": [
+          "DE-G04",
+          "DE-V03",
+          "DE-R02",
+          "DE-G03",
+          "DE-V03",
+          "DE-G04",
+          "DE-R02"
+        ]
+      },
+      {
+        "theme": "Lernen, Arbeit und Kommunikation",
+        "objective": "Build more complex statements and explain reasons.",
+        "tasks": [
+          "DE-V03",
+          "DE-G03",
+          "DE-G04",
+          "DE-R02",
+          "DE-V03",
+          "DE-G03",
+          "DE-G04"
+        ]
+      },
+      {
+        "theme": "Sicher und differenziert kommunizieren",
+        "objective": "Consolidate skills and express ideas more precisely at the selected level.",
+        "tasks": [
+          "DE-G03",
+          "DE-R02",
+          "DE-V03",
+          "DE-G04",
+          "DE-G03",
+          "DE-V03",
+          "DE-R02"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "de-b1-4-week",
+    "language_code": "de",
+    "title": "Deutsch B1–B1 · 4 Wochen",
+    "goal": "general",
+    "level_min": "B1",
+    "level_max": "B1",
+    "duration_weeks": 4,
+    "minutes_per_day": 10,
+    "status": "published",
+    "weekly_themes": [
+      {
+        "theme": "Alltag und persönliche Informationen",
+        "objective": "Introduce yourself, share personal information and understand simple everyday messages.",
+        "tasks": [
+          "DE-G05",
+          "DE-G06",
+          "DE-V04",
+          "DE-R03",
+          "DE-G05",
+          "DE-V04",
+          "DE-G06"
+        ]
+      },
+      {
+        "theme": "Unterwegs und im Alltag",
+        "objective": "Use German in everyday situations, transport and shopping.",
+        "tasks": [
+          "DE-G06",
+          "DE-V04",
+          "DE-R03",
+          "DE-G05",
+          "DE-V04",
+          "DE-G06",
+          "DE-R03"
+        ]
+      },
+      {
+        "theme": "Lernen, Arbeit und Kommunikation",
+        "objective": "Build more complex statements and explain reasons.",
+        "tasks": [
+          "DE-V04",
+          "DE-G05",
+          "DE-G06",
+          "DE-R03",
+          "DE-V04",
+          "DE-G05",
+          "DE-G06"
+        ]
+      },
+      {
+        "theme": "Sicher und differenziert kommunizieren",
+        "objective": "Consolidate skills and express ideas more precisely at the selected level.",
+        "tasks": [
+          "DE-G05",
+          "DE-R03",
+          "DE-V04",
+          "DE-G06",
+          "DE-G05",
+          "DE-V04",
+          "DE-R03"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "de-b2-4-week",
+    "language_code": "de",
+    "title": "Deutsch B2–B2 · 4 Wochen",
+    "goal": "general",
+    "level_min": "B2",
+    "level_max": "B2",
+    "duration_weeks": 4,
+    "minutes_per_day": 10,
+    "status": "published",
+    "weekly_themes": [
+      {
+        "theme": "Alltag und persönliche Informationen",
+        "objective": "Introduce yourself, share personal information and understand simple everyday messages.",
+        "tasks": [
+          "DE-G07",
+          "DE-G08",
+          "DE-V05",
+          "DE-R04",
+          "DE-G07",
+          "DE-V05",
+          "DE-G08"
+        ]
+      },
+      {
+        "theme": "Unterwegs und im Alltag",
+        "objective": "Use German in everyday situations, transport and shopping.",
+        "tasks": [
+          "DE-G08",
+          "DE-V05",
+          "DE-R04",
+          "DE-G07",
+          "DE-V05",
+          "DE-G08",
+          "DE-R04"
+        ]
+      },
+      {
+        "theme": "Lernen, Arbeit und Kommunikation",
+        "objective": "Build more complex statements and explain reasons.",
+        "tasks": [
+          "DE-V05",
+          "DE-G07",
+          "DE-G08",
+          "DE-R04",
+          "DE-V05",
+          "DE-G07",
+          "DE-G08"
+        ]
+      },
+      {
+        "theme": "Sicher und differenziert kommunizieren",
+        "objective": "Consolidate skills and express ideas more precisely at the selected level.",
+        "tasks": [
+          "DE-G07",
+          "DE-R04",
+          "DE-V05",
+          "DE-G08",
+          "DE-G07",
+          "DE-V05",
+          "DE-R04"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "de-c1-4-week",
+    "language_code": "de",
+    "title": "Deutsch C1–C1 · 4 Wochen",
+    "goal": "general",
+    "level_min": "C1",
+    "level_max": "C1",
+    "duration_weeks": 4,
+    "minutes_per_day": 10,
+    "status": "published",
+    "weekly_themes": [
+      {
+        "theme": "Alltag und persönliche Informationen",
+        "objective": "Introduce yourself, share personal information and understand simple everyday messages.",
+        "tasks": [
+          "DE-G09",
+          "DE-V06",
+          "DE-R05",
+          "DE-G09",
+          "DE-V06",
+          "DE-R05",
+          "DE-G09"
+        ]
+      },
+      {
+        "theme": "Unterwegs und im Alltag",
+        "objective": "Use German in everyday situations, transport and shopping.",
+        "tasks": [
+          "DE-V06",
+          "DE-G09",
+          "DE-R05",
+          "DE-V06",
+          "DE-G09",
+          "DE-R05",
+          "DE-V06"
+        ]
+      },
+      {
+        "theme": "Lernen, Arbeit und Kommunikation",
+        "objective": "Build more complex statements and explain reasons.",
+        "tasks": [
+          "DE-G09",
+          "DE-R05",
+          "DE-V06",
+          "DE-G09",
+          "DE-R05",
+          "DE-V06",
+          "DE-G09"
+        ]
+      },
+      {
+        "theme": "Sicher und differenziert kommunizieren",
+        "objective": "Consolidate skills and express ideas more precisely at the selected level.",
+        "tasks": [
+          "DE-R05",
+          "DE-V06",
+          "DE-G09",
+          "DE-R05",
+          "DE-V06",
+          "DE-G09",
+          "DE-R05"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "de-c2-4-week",
+    "language_code": "de",
+    "title": "Deutsch C2–C2 · 4 Wochen",
+    "goal": "general",
+    "level_min": "C2",
+    "level_max": "C2",
+    "duration_weeks": 4,
+    "minutes_per_day": 10,
+    "status": "published",
+    "weekly_themes": [
+      {
+        "theme": "Alltag und persönliche Informationen",
+        "objective": "Introduce yourself, share personal information and understand simple everyday messages.",
+        "tasks": [
+          "DE-G10",
+          "DE-V06",
+          "DE-R05",
+          "DE-G09",
+          "DE-V06",
+          "DE-R05",
+          "DE-G10"
+        ]
+      },
+      {
+        "theme": "Unterwegs und im Alltag",
+        "objective": "Use German in everyday situations, transport and shopping.",
+        "tasks": [
+          "DE-V06",
+          "DE-G10",
+          "DE-R05",
+          "DE-V06",
+          "DE-G09",
+          "DE-R05",
+          "DE-G10"
+        ]
+      },
+      {
+        "theme": "Lernen, Arbeit und Kommunikation",
+        "objective": "Build more complex statements and explain reasons.",
+        "tasks": [
+          "DE-G09",
+          "DE-R05",
+          "DE-V06",
+          "DE-G10",
+          "DE-R05",
+          "DE-V06",
+          "DE-G09"
+        ]
+      },
+      {
+        "theme": "Sicher und differenziert kommunizieren",
+        "objective": "Consolidate skills and express ideas more precisely at the selected level.",
+        "tasks": [
+          "DE-G10",
+          "DE-R05",
+          "DE-V06",
+          "DE-G09",
+          "DE-R05",
+          "DE-V06",
+          "DE-G10"
+        ]
+      }
+    ]
+  }
+]
