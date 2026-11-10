@@ -884,7 +884,7 @@ app.post('/api/practice/:id/check', practiceCheckLimiter, async (req, res) => {
         client.release();
       }
       try {
-        await recordActivity(req.session.userId, { minutes: 4, completedTasks: 1 });
+        await recordActivity(req.session.userId, { minutes: 4, completedTasks: 1, languageCode: session.languageCode });
       } catch (error) {
         console.error('Knowledge quiz activity update failed:', error?.message || 'unknown error');
       }
