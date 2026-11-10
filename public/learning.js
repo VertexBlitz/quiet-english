@@ -67,7 +67,7 @@ window.addEventListener('quietenglish:languagechange', refreshLearningText);
 
 async function loadStudyLanguageOptions() {
   const controls = [...new Set([
-    ...$('[data-study-language-select]'),
+    ...Array.from(document.querySelectorAll('[data-study-language-select]')),
     $('select[name="language_code"]')
   ].filter(Boolean))];
   if (!controls.length) return;
