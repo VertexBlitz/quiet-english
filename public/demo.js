@@ -14,6 +14,18 @@
     'Give one reason for an opinion using “because”.',
     'Summarise one useful thing you learned this week.'
   ];
+  const germanWeekThemes = [
+    ['Alltag und persönliche Informationen', 'Stelle dich vor und verstehe einfache Mitteilungen.'],
+    ['Unterwegs und im Alltag', 'Nutze Deutsch in Alltagssituationen, beim Einkaufen und unterwegs.'],
+    ['Lernen, Arbeit und Kommunikation', 'Bilde komplexere Sätze und erkläre deine Gründe.'],
+    ['Sicher und differenziert kommunizieren', 'Festige deine Kenntnisse und drücke dich präziser aus.']
+  ];
+  const germanMiniPrompts = [
+    'Schreibe einen Satz über deinen heutigen Tag.',
+    'Formuliere eine höfliche Bitte für eine Alltagssituation.',
+    'Begründe deine Meinung mit „weil“.',
+    'Fasse zusammen, was du diese Woche gelernt hast.'
+  ];
   const levelRank = { 'Pre-A1': 0, A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
   let active = false;
   let memoryState = null;
@@ -167,8 +179,22 @@
     return state.plan;
   }
 
-  function chooseExercise(level, day) {
+  function chooseExercise(level, day, languageCode = 'en') {
     const rank = levelRank[level] ?? 2;
+    if (languageCode === 'de') {
+      const cycle = rank <= 1
+        ? ['DE-V01','DE-G01','DE-G02','DE-R01','DE-V02','DE-G01','DE-R01']
+        : rank === 2
+          ? ['DE-G03','DE-G04','DE-V03','DE-R02','DE-G03','DE-V03','DE-G04']
+          : rank === 3
+            ? ['DE-G05','DE-G06','DE-V04','DE-R03','DE-G05','DE-V04','DE-G06']
+            : rank === 4
+              ? ['DE-G07','DE-G08','DE-V05','DE-R04','DE-G07','DE-V05','DE-G08']
+              : rank === 5
+                ? ['DE-G09','DE-V06','DE-R05','DE-G09','DE-V06','DE-R05','DE-G09']
+                : ['DE-G10','DE-V06','DE-R05','DE-G09','DE-V06','DE-R05','DE-G10'];
+      return cycle[(day - 1) % cycle.length];
+    }
     const cycle = rank <= 1
       ? ['V04', 'G01', 'R04', 'V01', 'G06', 'R01', 'V05']
       : rank <= 3
@@ -179,6 +205,9 @@
 
   function buildPlan(state, level) {
     const profile = state.profile;
+    const languageCode = state.activeLanguage || 'en';
+    const selectedWeekThemes = languageCode === 'de' ? germanWeekThemes : weekThemes;
+    const selectedMiniPrompts = languageCode === 'de' ? germanMiniPrompts : miniPrompts;
     const startedAt = new Date().toISOString();
     const days = [];
     for (let week = 1; week <= 4; week++) {
@@ -187,10 +216,10 @@
         days.push({
           day_index: day,
           week_number: week,
-          theme: weekThemes[week - 1][0],
-          objective: weekThemes[week - 1][1],
-          main_task_id: chooseExercise(level, day),
-          mini_prompt: miniPrompts[(day - 1) % miniPrompts.length],
+          theme: selectedWeekThemes[week - 1][0],
+          objective: selectedWeekThemes[week - 1][1],
+          main_task_id: chooseExercise(level, day, languageCode),
+          mini_prompt: selectedMiniPrompts[(day - 1) % selectedMiniPrompts.length],
           completed: false
         });
       }
@@ -203,7 +232,8 @@
       minutes_per_day: Number(profile.minutes_per_day || 10),
       starts_on: startedAt.slice(0, 10),
       started_at: startedAt,
-      weeks: weekThemes.map(([theme, objective], index) => ({
+      language_code: languageCode,
+      weeks: selectedWeekThemes.map(([theme, objective], index) => ({
         week_number: index + 1, theme, objective
       })),
       days
