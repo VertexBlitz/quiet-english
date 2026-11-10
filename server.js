@@ -322,31 +322,35 @@ async function buildCommandReply(userId, command, course) {
   return null;
 }
 
-async function buildLearnerContext(userId, exerciseRef) {
-  if (!pool || !userId) return '';
+async function buildLearnerContext(userId, exerciseRef, course) {
+  if (!pool || !userId || !course?.id) return '';
   try {
     const [profileResult, planResult, errorsResult] = await Promise.all([
       pool.query(
-        'SELECT goal, COALESCE(assessed_level,self_assessed_level) AS level FROM learner_profiles WHERE user_id=$1',
-        [userId]
+        'SELECT goal, COALESCE(assessed_level,self_assessed_level) AS level FROM learner_courses WHERE user_id=$1 AND id=$2',
+        [userId, course.id]
       ),
       pool.query(
         `SELECT p.level, p.goal, w.week_number, w.theme, w.objective
          FROM learning_plans p LEFT JOIN plan_weeks w ON w.plan_id=p.id
-         WHERE p.user_id=$1 AND p.status='active'
+         WHERE p.user_id=$1 AND p.learner_course_id=$2 AND p.status='active'
          ORDER BY w.week_number LIMIT 1`,
-        [userId]
+        [userId, course.id]
       ),
       pool.query(
         `SELECT error_type, incorrect_form, correction, explanation
-         FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL
+         FROM error_journal WHERE user_id=$1 AND learner_course_id=$2 AND resolved_at IS NULL
          ORDER BY updated_at DESC LIMIT 3`,
-        [userId]
+        [userId, course.id]
       )
     ]);
     const profile = profileResult.rows[0];
     const plan = planResult.rows[0];
-    const lines = ['Learner context from the Quiet English account. Use it only to personalise teaching; do not repeat private account details.'];
+    const courseName = course.language_code === 'de' ? 'German (Deutsch)' : 'English';
+    const lines = [
+      'Learner course context: ' + courseName + '. Use only this course context; do not mix it with other languages or repeat private account details.',
+      'The language being learned is ' + courseName + '. Provide corrections and examples in that language.'
+    ];
     if (profile?.level) lines.push('Estimated CEFR level: ' + profile.level + '.');
     if (profile?.goal) lines.push('Learning goal: ' + profile.goal + '.');
     if (plan?.theme) lines.push('Current plan topic: week ' + plan.week_number + ', ' + plan.theme + '. Objective: ' + plan.objective);
@@ -363,11 +367,11 @@ async function buildLearnerContext(userId, exerciseRef) {
          FROM exercises e
          LEFT JOIN LATERAL (
            SELECT answer, is_correct, feedback FROM exercise_attempts
-           WHERE user_id=$1 AND exercise_id=e.id
+           WHERE user_id=$1 AND learner_course_id=$2 AND exercise_id=e.id
            ORDER BY created_at DESC LIMIT 1
          ) a ON TRUE
-         WHERE e.id=$2 AND e.status='published'`,
-        [userId, exerciseRef]
+         WHERE e.id=$4 AND e.language_code=$3 AND e.status='published'`,
+        [userId, course.id, course.language_code, exerciseRef]
       );
       if (exerciseResult.rows[0]) {
         const exercise = exerciseResult.rows[0];
