@@ -102,7 +102,7 @@ async function loadStudyLanguageOptions() {
         : learningT('Выбери доступный учебный курс.', 'Choose an available course.');
     });
 
-    const planSelect = $('[data-study-language-select]');
+    const planSelect = $('[data-active-language-switch]');
     if (planSelect && !planSelect.dataset.bound) {
       planSelect.dataset.bound = 'true';
       planSelect.addEventListener('change', async () => {
