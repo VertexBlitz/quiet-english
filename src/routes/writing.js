@@ -65,9 +65,6 @@ router.post('/writing/review',writingLimiter,async function(req,res,next) {
   if (text.length < 30) return res.status(400).json({error:'Добавь текст минимум из 30 символов.'});
   if (!TYPES.includes(taskType)) return res.status(400).json({error:'Выбери формат текста.'});
   if (!LEVELS.includes(level)) return res.status(400).json({error:'Выбери уровень CEFR.'});
-  if (req.studyLanguageCode === 'de' && !['A1','A2'].includes(level)) {
-    return res.status(400).json({error:'Немецкий Writing Lab сейчас поддерживает уровни A1–A2.'});
-  }
   try {
     const profile = await pool.query("SELECT COALESCE(assessed_level,self_assessed_level,$2) AS level FROM learner_language_profiles WHERE user_id=$1 AND language_code=$3",[req.user.id,level,req.studyLanguageCode]);
     const actualLevel = profile.rows[0] && LEVELS.includes(profile.rows[0].level) ? profile.rows[0].level : level;
@@ -81,7 +78,7 @@ router.post('/writing/review',writingLimiter,async function(req,res,next) {
       'Write summary_ru, explanation_ru, strengths, next_steps and repeated-pattern explanations in Russian. Write explanation_en in English.',
       'scores must contain grammar, naturalness, vocabulary, structure as integers 0-100.',
       'issues are objects with type, original, correction, explanation_ru, explanation_en. type is grammar, naturalness, vocabulary, punctuation, or structure.',
-      'Use exact short spans. Do not invent errors. Keep feedback supportive, concise and suitable for A1-A2 learners when the target language is German.',
+      'Use exact short spans. Do not invent errors. Keep feedback supportive and calibrate complexity to the requested CEFR level, from A1 through C2.',
       'repeated_patterns are objects with label, explanation_ru, example_wrong, example_correct. No Markdown.'
     ].join(' ');
     const quota = await consumeMonthlyQuota(req.user.id,'writing_review',3,30);

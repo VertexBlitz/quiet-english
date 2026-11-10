@@ -638,10 +638,50 @@ async function buildGermanInstantPracticeExercise(request) {
           { prompt:'Was haben sie am Ufer gemacht?', options:['Gefrühstückt','Fußball gespielt','Ein Museum besucht','Einkäufe gemacht'], correct_option_id:'a', explanation:'Am Ufer haben sie gefrühstückt.' },
           { prompt:'Warum sind sie in ein Café gegangen?', options:['Weil es windig wurde','Weil es zu warm war','Weil der See geschlossen war','Weil sie den Zug verpasst hatten'], correct_option_id:'a', explanation:'Gegen Mittag wurde es windig.' }
         ]
+      },
+      B1: {
+        title: 'Ein neues Projekt im Stadtteil',
+        passage: 'Seit einigen Monaten engagiert sich Lena in einer Initiative, die einen ungenutzten Platz im Stadtteil in einen Gemeinschaftsgarten verwandeln möchte. Anfangs waren viele Nachbarn skeptisch, weil sie befürchteten, dass die Pflege zu viel Zeit kosten würde. Die Gruppe organisierte deshalb ein Treffen und verteilte die Aufgaben. Inzwischen kümmern sich Familien, Studierende und ältere Menschen gemeinsam um die Beete. Neben Gemüse wachsen dort auch Kräuter und Blumen. Für Lena ist besonders wichtig, dass Menschen miteinander ins Gespräch kommen, die sich vorher kaum kannten.',
+        questions: [
+          { prompt:'Was möchte die Initiative verändern?', options:['Einen ungenutzten Platz in einen Garten verwandeln','Eine neue Straße bauen','Ein Einkaufszentrum eröffnen','Einen Parkplatz vergrößern'], correct_option_id:'a', explanation:'Die Initiative plant einen Gemeinschaftsgarten auf einem ungenutzten Platz.' },
+          { prompt:'Warum waren einige Nachbarn zunächst skeptisch?', options:['Sie sorgten sich um den Zeitaufwand','Sie mochten keine Pflanzen','Sie wollten umziehen','Sie kannten Lena persönlich nicht'], correct_option_id:'a', explanation:'Sie befürchteten, dass die Pflege zu viel Zeit kosten würde.' },
+          { prompt:'Wie löste die Gruppe das Problem?', options:['Sie organisierte ein Treffen und verteilte Aufgaben','Sie gab das Projekt auf','Sie stellte eine Firma ein','Sie schloss den Platz'], correct_option_id:'a', explanation:'Die Aufgaben wurden bei einem Treffen verteilt.' },
+          { prompt:'Was ist Lena besonders wichtig?', options:['Dass Nachbarn miteinander ins Gespräch kommen','Dass der Garten möglichst groß wird','Dass nur Familien teilnehmen','Dass das Gemüse verkauft wird'], correct_option_id:'a', explanation:'Lena betont den Austausch zwischen Menschen, die sich vorher kaum kannten.' }
+        ]
+      },
+      B2: {
+        title: 'Arbeiten außerhalb des Büros',
+        passage: 'Viele Unternehmen betrachten mobiles Arbeiten inzwischen nicht mehr als vorübergehende Ausnahme, sondern als festen Bestandteil ihrer Organisation. Die größere Flexibilität kann die Zufriedenheit erhöhen, setzt jedoch voraus, dass Aufgaben und Zuständigkeiten klar geregelt sind. Wo Absprachen fehlen, entstehen leicht Missverständnisse oder unnötige Verzögerungen. Einige Teams vereinbaren deshalb feste Zeiten für gemeinsame Besprechungen und halten Entscheidungen schriftlich fest. Gleichzeitig achten sie darauf, dass Beschäftigte nicht ständig erreichbar sein müssen. Entscheidend ist weniger der Ort, an dem gearbeitet wird, als die Fähigkeit, Zusammenarbeit bewusst zu gestalten.',
+        questions: [
+          { prompt:'Wie wird mobiles Arbeiten im Text beschrieben?', options:['Als festen Bestandteil vieler Organisationen','Als seltene Ausnahme','Als kurzfristiges Experiment','Als Ersatz für jede Besprechung'], correct_option_id:'a', explanation:'Der Text sagt, dass mobiles Arbeiten zunehmend fest integriert ist.' },
+          { prompt:'Welche Voraussetzung wird für Flexibilität genannt?', options:['Klare Aufgaben und Zuständigkeiten','Längere tägliche Arbeitszeiten','Ein gemeinsamer Bürostandort','Ständige Erreichbarkeit'], correct_option_id:'a', explanation:'Ohne klare Absprachen können Missverständnisse und Verzögerungen entstehen.' },
+          { prompt:'Warum halten manche Teams Entscheidungen schriftlich fest?', options:['Um Missverständnisse zu vermeiden','Um Besprechungen zu verlängern','Um Aufgaben geheim zu halten','Um die Arbeitszeit zu verkürzen'], correct_option_id:'a', explanation:'Schriftliche Entscheidungen machen Absprachen nachvollziehbar.' },
+          { prompt:'Was bezeichnet der Schluss als entscheidend?', options:['Die bewusste Gestaltung der Zusammenarbeit','Der genaue Arbeitsplatz','Die Zahl der Besprechungen','Die dauernde Verfügbarkeit'], correct_option_id:'a', explanation:'Entscheidend sei, Zusammenarbeit bewusst zu gestalten.' }
+        ]
+      },
+      C1: {
+        title: 'Offene Daten und öffentliche Entscheidungen',
+        passage: 'Die Veröffentlichung öffentlicher Datensätze wird häufig als unmittelbarer Gewinn an Transparenz verstanden. Dieser Schluss greift jedoch zu kurz: Daten entfalten ihren gesellschaftlichen Nutzen erst dann, wenn sie verständlich dokumentiert, regelmäßig aktualisiert und in ihrem Entstehungskontext erläutert werden. Andernfalls können Zahlen zwar zugänglich sein, ohne tatsächlich überprüfbare Erkenntnisse zu ermöglichen. Besonders wichtig ist daher, methodische Grenzen offenzulegen und Unsicherheiten nicht hinter scheinbar präzisen Kennzahlen verschwinden zu lassen. Eine verantwortungsvolle Datenpolitik verbindet technische Offenheit mit verständlicher Vermittlung und institutioneller Rechenschaft. Erst dieses Zusammenspiel schafft eine Grundlage für eine sachkundige öffentliche Debatte.',
+        questions: [
+          { prompt:'Welche Einschränkung macht der Text an der Idee von Transparenz?', options:['Veröffentlichte Daten allein schaffen noch keinen gesellschaftlichen Nutzen','Öffentliche Daten sollten grundsätzlich geheim bleiben','Kennzahlen sind immer unzuverlässig','Daten können nicht aktualisiert werden'], correct_option_id:'a', explanation:'Der Text betont, dass Dokumentation, Aktualisierung und Kontext entscheidend sind.' },
+          { prompt:'Was kann passieren, wenn methodische Grenzen verschwiegen werden?', options:['Zahlen wirken präziser, als sie tatsächlich sind','Datensätze werden automatisch verständlicher','Öffentliche Debatten werden überflüssig','Unsicherheiten verschwinden wirklich'], correct_option_id:'a', explanation:'Der Text warnt vor scheinbar präzisen Kennzahlen.' },
+          { prompt:'Welche Verbindung hält der Text für notwendig?', options:['Technische Offenheit und verständliche Vermittlung','Mehr Daten und weniger Dokumentation','Kennzahlen und Werbesprache','Geheimhaltung und institutionelle Kontrolle'], correct_option_id:'a', explanation:'Eine verantwortungsvolle Datenpolitik kombiniert technische Offenheit, Vermittlung und Rechenschaft.' },
+          { prompt:'Was soll das Zusammenspiel letztlich ermöglichen?', options:['Eine sachkundige öffentliche Debatte','Eine automatische politische Entscheidung','Eine vollständige Beseitigung von Unsicherheit','Eine Reduzierung aller Datensätze'], correct_option_id:'a', explanation:'Der letzte Satz nennt die sachkundige öffentliche Debatte als Ziel.' }
+        ]
+      },
+      C2: {
+        title: 'Die Grenzen eindeutiger Begriffe',
+        passage: 'In öffentlichen Auseinandersetzungen wird nicht selten so argumentiert, als ließen sich komplexe Sachverhalte durch eine einzige, vermeintlich neutrale Definition abschließend ordnen. Gerade diese Annahme verdient jedoch Prüfung. Begriffe strukturieren Wahrnehmung, indem sie bestimmte Merkmale hervorheben und andere in den Hintergrund treten lassen. Wer eine Definition als alternativlos ausgibt, verschleiert mitunter die Auswahlentscheidungen, die ihr zugrunde liegen. Daraus folgt keineswegs, dass jede Beschreibung beliebig wäre. Vielmehr kommt es darauf an, Kriterien offenzulegen, Gegenbeispiele ernst zu nehmen und die Reichweite einer Aussage kenntlich zu machen. Präzision zeigt sich somit nicht in demonstrativer Eindeutigkeit, sondern in der Fähigkeit, begründete Unterscheidungen samt ihren Grenzen zu formulieren.',
+        questions: [
+          { prompt:'Welche Annahme wird im Text kritisch hinterfragt?', options:['Dass eine einzige neutrale Definition komplexe Sachverhalte abschließend ordnen kann','Dass Begriffe Wahrnehmung beeinflussen','Dass Gegenbeispiele berücksichtigt werden sollten','Dass Aussagen Grenzen haben'], correct_option_id:'a', explanation:'Der Text hinterfragt den Anspruch, komplexe Sachverhalte durch eine einzige neutrale Definition abschließend zu ordnen.' },
+          { prompt:'Was kann eine alternativlos dargestellte Definition verschleiern?', options:['Die Auswahlentscheidungen hinter ihr','Die grammatische Form eines Begriffs','Die Länge eines Textes','Die Existenz jeder Gegenposition'], correct_option_id:'a', explanation:'Eine Definition beruht auf Auswahlentscheidungen, die sichtbar gemacht werden sollten.' },
+          { prompt:'Welche Schlussfolgerung weist der Text ausdrücklich zurück?', options:['Dass jede Beschreibung beliebig sei','Dass Kriterien offengelegt werden sollten','Dass Gegenbeispiele ernst zu nehmen sind','Dass Aussagen eine Reichweite haben'], correct_option_id:'a', explanation:'Der Text sagt ausdrücklich, dass daraus nicht folgt, jede Beschreibung sei beliebig.' },
+          { prompt:'Woran zeigt sich Präzision laut Schlussfolgerung?', options:['An begründeten Unterscheidungen und dem Bewusstsein ihrer Grenzen','An demonstrativer Eindeutigkeit','An möglichst kurzen Definitionen','Am Verzicht auf Gegenbeispiele'], correct_option_id:'a', explanation:'Der letzte Satz definiert Präzision als begründete Unterscheidung unter Berücksichtigung ihrer Grenzen.' }
+        ]
       }
     };
     const item = passages[request.level];
-    if (!item) throw new Error('Для немецкого курса доступны только A1 и A2.');
+    if (!item) throw new Error('Для выбранного уровня пока не подготовлен текст для чтения и аудирования.');
     return {
       title: item.title,
       instructions: request.interfaceLanguage === 'en'
@@ -666,7 +706,7 @@ async function buildGermanInstantPracticeExercise(request) {
     `SELECT id, skill, level, objective, content, answer_key, explanation
      FROM exercises
      WHERE language_code='de' AND status='published' AND level=$1
-       AND skill IN ('grammar','vocabulary','communication')
+       AND skill IN ('grammar','vocabulary','speaking')
      ORDER BY RANDOM() LIMIT 14`,
     [request.level]
   );

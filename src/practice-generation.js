@@ -1,4 +1,4 @@
-const LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1']);
+const LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
 const SKILLS = new Set(['grammar', 'vocabulary', 'reading', 'listening', 'mixed']);
 const TOPICS = new Set([
   'Any topic', 'Everyday life', 'Travel', 'Science', 'History and culture',
@@ -10,10 +10,7 @@ export function validatePracticeGenerationRequest(body, languageCode = 'en') {
   const skill = typeof body?.skill === 'string' ? body.skill.trim().toLowerCase() : '';
   const topic = typeof body?.topic === 'string' ? body.topic.trim() : 'Any topic';
 
-  if (!LEVELS.has(level)) return { ok: false, error: 'Выбери уровень от A1 до C1.' };
-  if (languageCode === 'de' && !['A1','A2'].includes(level)) {
-    return { ok: false, error: 'Немецкая AI-практика сейчас поддерживает уровни A1–A2.' };
-  }
+  if (!LEVELS.has(level)) return { ok: false, error: 'Выбери уровень от A1 до C2.' };
   if (!SKILLS.has(skill)) return { ok: false, error: 'Выбери тип задания.' };
   if (!TOPICS.has(topic)) return { ok: false, error: 'Выбери тему из списка.' };
 
@@ -40,7 +37,8 @@ export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [],
     A2: 'elementary: everyday vocabulary, past and future basics, simple comparisons and requests',
     B1: 'intermediate: connected ideas, common linking words, everyday phrasal verbs and clear explanations',
     B2: 'upper-intermediate: varied grammar, precise vocabulary, natural collocations and nuanced meaning',
-    C1: 'advanced: sophisticated but natural vocabulary, complex structures, inference and register awareness'
+    C1: 'advanced: sophisticated but natural vocabulary, complex structures, inference and register awareness',
+    C2: 'mastery: precise idiom, subtle semantic distinctions, flexible syntax and full register control'
   }[level];
 
   const taskGuide = {
@@ -69,7 +67,7 @@ export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [],
   const explanationLanguage = interfaceLanguage === 'en' ? 'English' : 'Russian';
   return [
     'Create an original ' + targetLanguage + '-learning exercise for CEFR ' + level + ' (' + levelGuide + ').',
-    languageCode === 'de' ? 'All passage text, prompts, answer options and correct answers must be natural standard German. This is a beginner course: use high-frequency A1-A2 vocabulary and accurate German spelling, including ä, ö, ü and ß.' : 'All learner-facing exercise text must be natural standard English.',
+    languageCode === 'de' ? 'All passage text, prompts, answer options and correct answers must be natural standard German calibrated to CEFR ' + level + '. Use the grammar, vocabulary, idioms and register expected at this level, with accurate ä, ö, ü and ß.' : 'All learner-facing exercise text must be natural standard English.',
     'Write explanations in ' + explanationLanguage + '.',
     'Type: ' + skill + '. Topic: ' + topic + '.',
     taskGuide,

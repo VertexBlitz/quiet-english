@@ -43,11 +43,45 @@ export const germanPlacementQuestions = [
   { id: 'DE-P11', level: 'A2', prompt: 'Der Zug ist ___ als der Bus.', options: [{id:'a',text:'schneller'},{id:'b',text:'am schnellsten'},{id:'c',text:'schnell'}], answer: 'a' },
   { id: 'DE-P12', level: 'A2', prompt: 'Als Kind ___ ich oft bei meiner Oma.', options: [{id:'a',text:'war'},{id:'b',text:'bin'},{id:'c',text:'gewesen'}], answer: 'a' },
   { id: 'DE-P13', level: 'A2', prompt: 'Könnten Sie mir bitte ___?', options: [{id:'a',text:'helfen'},{id:'b',text:'hilft'},{id:'c',text:'geholfen'}], answer: 'a' },
-  { id: 'DE-P14', level: 'A2', prompt: 'Kannst du mir sagen, wann der Bus ___?', options: [{id:'a',text:'ankommt'},{id:'b',text:'kommt an'},{id:'c',text:'ankommen'}], answer: 'a' }
+  { id: 'DE-P14', level: 'A2', prompt: 'Kannst du mir sagen, wann der Bus ___?', options: [{id:'a',text:'ankommt'},{id:'b',text:'kommt an'},{id:'c',text:'ankommen'}], answer: 'a' },
+  { id: 'DE-P15', level: 'B1', prompt: 'Wenn ich mehr Zeit ___, würde ich ein Instrument lernen.', options: [{id:'a',text:'hätte'},{id:'b',text:'habe'},{id:'c',text:'hatte'}], answer: 'a' },
+  { id: 'DE-P16', level: 'B1', prompt: 'Der Bericht muss bis Freitag ___ werden.', options: [{id:'a',text:'eingereicht'},{id:'b',text:'einreichen'},{id:'c',text:'einreicht'}], answer: 'a' },
+  { id: 'DE-P17', level: 'B1', prompt: 'Das ist die Kollegin, mit ___ ich arbeite.', options: [{id:'a',text:'der'},{id:'b',text:'die'},{id:'c',text:'den'}], answer: 'a' },
+  { id: 'DE-P18', level: 'B1', prompt: 'Er lernt viel, damit er die Prüfung ___.', options: [{id:'a',text:'besteht'},{id:'b',text:'bestehen'},{id:'c',text:'bestanden'}], answer: 'a' },
+  { id: 'DE-P19', level: 'B2', prompt: 'Die Entscheidung wurde getroffen, ___ alle Beteiligten angehört worden waren.', options: [{id:'a',text:'nachdem'},{id:'b',text:'obwohl'},{id:'c',text:'solange'}], answer: 'a' },
+  { id: 'DE-P20', level: 'B2', prompt: 'Der Antrag muss bis morgen ___ werden.', options: [{id:'a',text:'eingereicht'},{id:'b',text:'einreichen'},{id:'c',text:'eingereichte'}], answer: 'a' },
+  { id: 'DE-P21', level: 'B2', prompt: 'Es wäre sinnvoll, die Ergebnisse erneut zu ___.', options: [{id:'a',text:'überprüfen'},{id:'b',text:'überprüft'},{id:'c',text:'überprüfen werden'}], answer: 'a' },
+  { id: 'DE-P22', level: 'B2', prompt: 'Die Maßnahme, ___ Wirksamkeit noch untersucht wird, bleibt umstritten.', options: [{id:'a',text:'deren'},{id:'b',text:'der'},{id:'c',text:'die'}], answer: 'a' },
+  { id: 'DE-P23', level: 'C1', prompt: 'Die Daten legen nahe, dass die Entwicklung ___ ist.', options: [{id:'a',text:'unumkehrbar'},{id:'b',text:'umkehren'},{id:'c',text:'Umkehr'}], answer: 'a' },
+  { id: 'DE-P24', level: 'C1', prompt: 'Angesichts ___ Lage wurde die Sitzung vertagt.', options: [{id:'a',text:'der'},{id:'b',text:'die'},{id:'c',text:'den'}], answer: 'a' },
+  { id: 'DE-P25', level: 'C1', prompt: 'Er erklärte, der Bericht ___ noch nicht fertig.', options: [{id:'a',text:'sei'},{id:'b',text:'ist'},{id:'c',text:'wäre'}], answer: 'a' },
+  { id: 'DE-P26', level: 'C1', prompt: 'Die Ergebnisse sind insofern relevant, ___ sie einen Trend zeigen.', options: [{id:'a',text:'als'},{id:'b',text:'dass'},{id:'c',text:'wie'}], answer: 'a' },
+  { id: 'DE-P27', level: 'C2', prompt: 'Die Zeugenaussage steht in ___ zu den dokumentierten Fakten.', options: [{id:'a',text:'Widerspruch'},{id:'b',text:'Verfügung'},{id:'c',text:'Aussicht'}], answer: 'a' },
+  { id: 'DE-P28', level: 'C2', prompt: '___ seiner Tragweite wurde der Vorschlag nur am Rande erörtert.', options: [{id:'a',text:'Ungeachtet'},{id:'b',text:'Angesichts'},{id:'c',text:'Bezüglich'}], answer: 'a' },
+  { id: 'DE-P29', level: 'C2', prompt: 'Sie stellte die Behauptung entschieden in ___.', options: [{id:'a',text:'Abrede'},{id:'b',text:'Aussicht'},{id:'c',text:'Frage'}], answer: 'a' },
+  { id: 'DE-P30', level: 'C2', prompt: 'Als ___ gilt, dass jede Entscheidung nachvollziehbar begründet werden muss.', options: [{id:'a',text:'Prämisse'},{id:'b',text:'Prämie'},{id:'c',text:'Präambel'}], answer: 'a' }
 ];
 
-export function estimateGermanLevel(correct) {
-  return correct <= 7 ? 'A1' : 'A2';
+export function estimateGermanLevel(correct, answers = []) {
+  if (!Array.isArray(answers) || answers.length === 0) {
+    if (correct <= 7) return 'A1';
+    if (correct <= 14) return 'A2';
+    if (correct <= 18) return 'B1';
+    if (correct <= 22) return 'B2';
+    if (correct <= 26) return 'C1';
+    return 'C2';
+  }
+
+  const answerMap = new Map(answers.map(item => [item?.id, item?.option_id]));
+  const thresholds = { A1: 5, A2: 5, B1: 3, B2: 3, C1: 3, C2: 3 };
+  let estimated = 'A1';
+  for (const level of ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']) {
+    const band = germanPlacementQuestions.filter(question => question.level === level);
+    const bandCorrect = band.filter(question => answerMap.get(question.id) === question.answer).length;
+    if (bandCorrect < thresholds[level]) break;
+    estimated = level;
+  }
+  return estimated;
 }
 
 export function publicGermanQuestions() {

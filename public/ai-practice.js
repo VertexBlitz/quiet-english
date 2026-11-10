@@ -462,9 +462,9 @@
     const note = activeKnowledgeQuiz;
     if (!note) return;
     const skillByCategory = { grammar:'grammar', vocabulary:'vocabulary', reading:'reading', listening:'listening', speaking:'mixed', writing:'mixed' };
-    const requestedLevel = note.level === 'C2' ? 'C1' : note.level;
+    const requestedLevel = note.level;
     const request = {
-      level: ['A1','A2','B1','B2','C1'].includes(requestedLevel) ? requestedLevel : 'B1',
+      level: ['A1','A2','B1','B2','C1','C2'].includes(requestedLevel) ? requestedLevel : 'B1',
       skill: skillByCategory[note.category] || 'mixed', topic: 'Any topic', focus,
       knowledge_note_id: note.note_id,
       knowledge_note_meta: { title: note.title, summary: note.summary, category: note.category, level: note.level }
@@ -506,7 +506,7 @@
     }
   });
   if (activeKnowledgeQuiz) {
-    const levelForQuiz = activeKnowledgeQuiz.level === 'C2' ? 'C1' : activeKnowledgeQuiz.level;
+    const levelForQuiz = activeKnowledgeQuiz.level;
     if (level) level.value = levelForQuiz;
     if (skill) skill.value = ({grammar:'grammar',vocabulary:'vocabulary',reading:'reading',listening:'listening',speaking:'mixed',writing:'mixed'})[activeKnowledgeQuiz.category] || 'mixed';
     generateKnowledgeQuiz();

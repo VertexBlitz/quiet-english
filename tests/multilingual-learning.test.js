@@ -91,7 +91,8 @@ test('only supported study languages can reach language-specific generators', ()
   assert.ok(db.includes('export function requireEnglishStudyLanguage'));
   assert.ok(db.includes('export function requireSpeechSupport'));
   assert.ok(writing.includes("req.studyLanguageCode === 'de'"));
-  assert.ok(studyTools.includes("req.studyLanguageCode === 'de'"));
+  assert.ok(studyTools.includes('const LEVELS = [\'A1\',\'A2\',\'B1\',\'B2\',\'C1\',\'C2\']'));
+  assert.ok(studyTools.includes('loadActiveStudyLanguage'));
   assert.ok(pronunciation.includes('loadActiveStudyLanguage, requireSpeechSupport'));
   assert.ok(server.includes("app.post('/api/practice/instant'"));
   assert.ok(server.includes("app.post('/api/practice/generate'"));
@@ -153,7 +154,7 @@ test('activity tracking keeps the originating study language even after a profil
 });
 
 
-test('German A1-A2 course release includes its own 4-week curriculum and 28 published tasks', () => {
+test('German A1-A2 course remains available with its own 4-week curriculum and 28 published tasks', () => {
   const migration = read('db/migrations/014_german_a1_a2_course.sql');
   const learning = read('src/routes/learning.js');
   const ids = migration.match(/\('DE-A[12]-\d{2}'/g) || [];
@@ -164,27 +165,48 @@ test('German A1-A2 course release includes its own 4-week curriculum and 28 publ
   assert.ok(migration.includes('mini_prompt_ru TEXT'));
   assert.ok(migration.includes('mini_prompt_en TEXT'));
   assert.ok(learning.includes('germanPlacementQuestions'));
-  assert.ok(learning.includes('estimateGermanLevel(correct)'));
-  assert.ok(learning.includes('немецкий курс рассчитан на уровни A1–A2'));
-  assert.ok(learning.includes('mini_prompt_ru'));
+  assert.ok(learning.includes('estimateGermanLevel(correct, answers)'));
+  assert.ok(learning.includes('Предварительная оценка немецкого A1–C2'));
+  assert.ok(learning.includes('germanMiniPrompts[profile.level]'));
 });
 
-test('German placement, AI practice, writing and speaking are constrained to A1-A2', () => {
+test('German B1-C2 release includes four independent curricula and 112 published tasks', () => {
+  const migration = read('db/migrations/015_german_b1_c2_course.sql');
+  for (const level of ['B1','B2','C1','C2']) {
+    const ids = migration.match(new RegExp("\\('DE-" + level + "-\\d{2}'", 'g')) || [];
+    assert.equal(ids.length, 28, level + ' must have 28 exercises');
+    assert.ok(migration.includes("'german-" + level.toLowerCase() + "-4-week'"));
+    assert.ok(migration.includes("'" + level + "','" + level + "',4,10"));
+  }
+  assert.ok(migration.includes('content_version=2'));
+  assert.equal((migration.match(/INSERT INTO plan_templates/g) || []).length, 1);
+});
+
+test('German placement and learning modules support the full CEFR range A1-C2', () => {
   const placement = read('src/content/placement.js');
+  const learning = read('src/routes/learning.js');
   const practice = read('src/practice-generation.js');
   const speaking = read('src/speaking.js');
   const server = read('server.js');
   const writing = read('src/routes/writing.js');
   const listening = read('src/routes/study-tools.js');
+  const pronunciationContent = read('public/pronunciation-content.js');
 
-  assert.ok(placement.includes('export const germanPlacementQuestions'));
-  assert.ok(placement.includes('export function estimateGermanLevel'));
-  assert.ok(practice.includes("languageCode === 'de' && !['A1','A2'].includes(level)"));
-  assert.ok(speaking.includes("languageCode === 'de' && !['A1','A2'].includes(level)"));
-  assert.ok(server.includes('buildGermanInstantPracticeExercise'));
-  assert.ok(read('public/pronunciation.js').includes("language: activeLanguageCode === 'de' ? 'german' : 'english'"));
-  assert.ok(writing.includes("req.studyLanguageCode === 'de'"));
-  assert.ok(listening.includes("req.studyLanguageCode === 'de'"));
+  assert.ok(placement.includes("id: 'DE-P30'"));
+  assert.ok(placement.includes("'B1', 'B2', 'C1', 'C2'"));
+  assert.ok(learning.includes("'C2':6"));
+  assert.ok(learning.includes("'B1','B2','C1','C2'"));
+  assert.ok(practice.includes("new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'])"));
+  assert.ok(speaking.includes("new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'])"));
+  assert.ok(!practice.includes("languageCode === 'de' && !['A1','A2'].includes(level)"));
+  assert.ok(!speaking.includes("languageCode === 'de' && !['A1','A2'].includes(level)"));
+  assert.ok(!writing.includes("!['A1','A2'].includes(level)"));
+  assert.ok(!listening.includes("!['A1','A2'].includes(level)"));
+  assert.ok(server.includes("C2: {"));
+  assert.ok(server.includes("AND skill IN ('grammar','vocabulary','speaking')"));
+  assert.ok(pronunciationContent.includes('de-c2-public-discourse'));
+  assert.ok(read('public/practice.html').includes('value="C2"'));
+  assert.ok(read('public/pronunciation.html').includes('value="C2"'));
 });
 
 test('German Speaking Lab uses a multilingual local model, German passages and Unicode tokenization', () => {
