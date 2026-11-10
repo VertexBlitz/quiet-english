@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool, requireDatabase, requireUser, loadActiveStudyLanguage, requireEnglishStudyLanguage } from '../db.js';
+import { pool, requireDatabase, requireUser, loadActiveStudyLanguage } from '../db.js';
 import { isExternalPersonalDataProcessingAllowed } from '../region-config.js';
 import { rateLimit } from 'express-rate-limit';
 
@@ -321,10 +321,10 @@ router.get('/vocabulary', studyAuth, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.post('/vocabulary', studyAuth, requireEnglishStudyLanguage, async (req, res, next) => {
+router.post('/vocabulary', studyAuth, async (req, res, next) => {
   const word = cleanText(req.body?.word, 80);
-  if (!word || !/^[a-z][a-z' -]{0,78}$/iu.test(word)) {
-    return res.status(400).json({ error: 'Введи английское слово или фразовый глагол.' });
+  if (!word || !/^\p{L}[\p{L}' -]{0,78}$/iu.test(word)) {
+    return res.status(400).json({ error: 'Введи слово или короткое выражение на изучаемом языке.' });
   }
   const ipa = cleanText(req.body?.ipa, 100);
   const translation = cleanText(req.body?.translation, 240);
@@ -367,9 +367,9 @@ router.delete('/vocabulary/:id', studyAuth, async (req, res, next) => {
 });
 
 const dictionaryEnrichLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
-router.post('/dictionary-enrich/:word', studyAuth, requireEnglishStudyLanguage, dictionaryEnrichLimiter, async (req, res) => {
+router.post('/dictionary-enrich/:word', studyAuth, dictionaryEnrichLimiter, async (req, res) => {
   const word = cleanText(req.params.word, 60);
-  if (!/^[a-z][a-z' -]{0,58}$/iu.test(word)) return res.status(400).json({ error: 'Введи одно английское слово или короткую фразу.' });
+  if (!/^\p{L}[\p{L}' -]{0,58}$/iu.test(word)) return res.status(400).json({ error: 'Введи одно слово или короткую фразу на изучаемом языке.' });
   const definitions = Array.isArray(req.body?.definitions)
     ? req.body.definitions.slice(0, 3).map(value => cleanText(value, 220)).filter(Boolean)
     : [];
@@ -388,9 +388,9 @@ router.post('/dictionary-enrich/:word', studyAuth, requireEnglishStudyLanguage, 
       body: JSON.stringify({
         model: process.env.CLOUDFLARE_MODEL || '@cf/google/gemma-4-26b-a4b-it',
         messages: [
-          { role: 'system', content: 'You are an accurate, age-appropriate English dictionary tutor. Return one JSON object only. Do not invent IPA or audio URLs. Keep translations concise and examples original.' },
+          { role: 'system', content: 'You are an accurate, age-appropriate ' + req.studyLanguage.english_name + ' dictionary tutor. Return one JSON object only. Do not invent IPA or audio URLs. Keep translations concise and examples original.' },
           { role: 'user', content:
-            'Explain the English item "' + word + '" for a Russian-speaking learner. Dictionary definitions for context: ' +
+            'Explain the ' + req.studyLanguage.english_name + ' item "' + word + '" for a learner. Give translations in ' + (req.interfaceLanguage === 'en' ? 'English' : 'Russian') + '. Dictionary definitions for context: ' +
             JSON.stringify(definitions) +
             '. Return JSON keys translation_ru, collocations (3 objects with phrase, meaning_ru, example), phrasal_verbs (up to 3 objects with phrase, meaning_ru, example), and examples (3 objects with en, ru). If the item is not a word that naturally forms phrasal verbs, return an empty phrasal_verbs array. Keep examples original, natural and concise. No Markdown.'
           }
