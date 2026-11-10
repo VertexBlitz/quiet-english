@@ -162,17 +162,31 @@ router.post('/languages/activate', async (req, res, next) => {
   if (!/^[a-z]{2}$/.test(code)) return res.status(400).json({ error: 'Выбери изучаемый язык.' });
   try {
     const { rows } = await pool.query(
-      `SELECT l.course_status
-       FROM learner_language_profiles p
-       JOIN study_languages l ON l.language_code=p.language_code
-       WHERE p.user_id=$1 AND p.language_code=$2`,
-      [req.user.id, code]
+      `SELECT course_status FROM study_languages WHERE language_code=$1`,
+      [code]
     );
     if (!rows[0] || rows[0].course_status !== 'available') {
       return res.status(409).json({ error: 'Для этого языка учебный курс пока недоступен.' });
     }
     await pool.query(
-      'UPDATE learner_profiles SET active_learning_language_code=$2, updated_at=NOW() WHERE user_id=$1',
+      `INSERT INTO learner_language_profiles (user_id,language_code,goal,learning_status)
+       VALUES ($1,$2,'general','not_started')
+       ON CONFLICT (user_id,language_code) DO NOTHING`,
+      [req.user.id, code]
+    );
+    await pool.query(
+      `UPDATE learner_profiles p SET
+         active_learning_language_code=$2,
+         goal=llp.goal,
+         self_assessed_level=llp.self_assessed_level,
+         assessed_level=llp.assessed_level,
+         minutes_per_day=llp.minutes_per_day,
+         duration_weeks=llp.duration_weeks,
+         interests=llp.interests,
+         onboarding_completed_at=llp.onboarding_completed_at,
+         updated_at=NOW()
+       FROM learner_language_profiles llp
+       WHERE p.user_id=$1 AND llp.user_id=p.user_id AND llp.language_code=$2`,
       [req.user.id, code]
     );
     res.json({ ok: true, active_language_code: code });
