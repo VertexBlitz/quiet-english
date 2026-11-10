@@ -18,7 +18,7 @@
   let active = false;
   let memoryState = null;
 
-  const freshState = () => ({
+  const emptyCourseState = () => ({
     profile: null,
     placementResult: null,
     plan: null,
@@ -29,17 +29,47 @@
     skillPractice: []
   });
 
+  const freshState = () => ({
+    ...emptyCourseState(),
+    activeLanguage: 'en',
+    courses: { en: emptyCourseState() }
+  });
+
   function readState() {
     try {
       const raw = localStorage.getItem(STATE_KEY);
-      if (raw) return { ...freshState(), ...JSON.parse(raw) };
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved && saved.courses && typeof saved.courses === 'object') {
+          const activeLanguage = saved.activeLanguage || 'en';
+          const course = { ...emptyCourseState(), ...(saved.courses[activeLanguage] || {}) };
+          return { ...course, activeLanguage, courses: saved.courses };
+        }
+        // Migrate the previous single-course demo state to an English course.
+        const english = { ...emptyCourseState(), ...(saved || {}) };
+        return { ...english, activeLanguage: 'en', courses: { en: english } };
+      }
     } catch {}
     return memoryState || freshState();
   }
 
   function writeState(state) {
-    memoryState = state;
-    try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch {}
+    const activeLanguage = state.activeLanguage || 'en';
+    const courseState = {
+      profile: state.profile ?? null,
+      placementResult: state.placementResult ?? null,
+      plan: state.plan ?? null,
+      attempts: Array.isArray(state.attempts) ? state.attempts : [],
+      srsItems: Array.isArray(state.srsItems) ? state.srsItems : [],
+      errors: Array.isArray(state.errors) ? state.errors : [],
+      activity: Array.isArray(state.activity) ? state.activity : [],
+      skillPractice: Array.isArray(state.skillPractice) ? state.skillPractice : []
+    };
+    const courses = { ...(state.courses || {}), [activeLanguage]: courseState };
+    memoryState = { ...courseState, activeLanguage, courses };
+    try {
+      localStorage.setItem(STATE_KEY, JSON.stringify({ version: 2, activeLanguage, courses }));
+    } catch {}
   }
 
   function start() {
