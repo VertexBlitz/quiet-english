@@ -298,6 +298,8 @@
       return { ok: true, course: { language_code: getActiveLanguage() } };
     }
 
+    if (path === '/skill-tasks' && method === 'GET') return apiFetch('/skill-tasks');
+
     if (path === '/profile' && method === 'GET') {
       return { profile: state.profile };
     }
