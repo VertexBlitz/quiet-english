@@ -1,3 +1,5 @@
+import { germanPlacementQuestions } from './placement/de.js';
+
 export const placementQuestions = [
   { id: 'P01', level: 'A1', prompt: 'She ___ a student.', options: [{id:'a',text:'am'},{id:'b',text:'is'},{id:'c',text:'are'}], answer: 'b' },
   { id: 'P02', level: 'A1', prompt: 'I have ___ apple.', options: [{id:'a',text:'a'},{id:'b',text:'an'},{id:'c',text:'the'}], answer: 'b' },
@@ -25,6 +27,11 @@ export function estimateLevel(correct) {
   return 'C2';
 }
 
-export function publicQuestions() {
-  return placementQuestions.map(({ id, level, prompt, options }) => ({ id, level, prompt, options }));
+export function placementForLanguage(languageCode = 'en') {
+  if (languageCode === 'de') return germanPlacementQuestions;
+  return placementQuestions;
+}
+
+export function publicQuestions(questions = placementQuestions) {
+  return questions.map(({ id, level, prompt, options }) => ({ id, level, prompt, options }));
 }
