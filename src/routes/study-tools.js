@@ -126,7 +126,7 @@ router.post('/listening/attempts',async function(req,res,next) {
     );
     await client.query('UPDATE listening_quiz_sessions SET completed_at=NOW() WHERE id=$1 AND user_id=$2 AND language_code=$3',[sessionId,req.user.id,req.studyLanguageCode]);
     await client.query('COMMIT');
-    await recordActivity(req.user.id,{minutes:Math.max(1,Math.round(duration/60)),completedTasks:1});
+    await recordActivity(req.user.id,{minutes:Math.max(1,Math.round(duration/60)),completedTasks:1,languageCode:found.rows[0].language_code});
     res.json({attempt_id:stored.rows[0].id,score:resultScore,correct_count:correct,question_count:questions.length,details:details});
   } catch(error) {
     await client.query('ROLLBACK');next(error);
@@ -269,7 +269,7 @@ router.patch('/coach/tasks/:id',async function(req,res,next) {
   try {
     const result=await pool.query("UPDATE learner_focus_tasks SET completed_at=CASE WHEN $3 THEN COALESCE(completed_at,NOW()) ELSE NULL END WHERE id=$1 AND user_id=$2 AND language_code=$4 RETURNING id,title,completed_at",[req.params.id,req.user.id,req.body.completed,req.studyLanguageCode]);
     if (!result.rows[0]) return res.status(404).json({error:'Задача не найдена.'});
-    if (req.body.completed) await recordActivity(req.user.id,{minutes:3,completedTasks:1});
+    if (req.body.completed) await recordActivity(req.user.id,{minutes:3,completedTasks:1,languageCode:req.studyLanguageCode});
     res.json({task:result.rows[0]});
   } catch(error){next(error);}
 });
@@ -303,7 +303,7 @@ router.patch('/calendar/events/:id',async function(req,res,next) {
   try {
     const result=await pool.query("UPDATE study_calendar_events SET completed_at=CASE WHEN $3 THEN COALESCE(completed_at,NOW()) ELSE NULL END WHERE id=$1 AND user_id=$2 AND language_code=$4 RETURNING id,title,completed_at",[req.params.id,req.user.id,req.body.completed,req.studyLanguageCode]);
     if (!result.rows[0]) return res.status(404).json({error:'Занятие не найдено.'});
-    if (req.body.completed) await recordActivity(req.user.id,{minutes:1,completedTasks:0});
+    if (req.body.completed) await recordActivity(req.user.id,{minutes:1,completedTasks:0,languageCode:req.studyLanguageCode});
     res.json({event:result.rows[0]});
   } catch(error){next(error);}
 });
