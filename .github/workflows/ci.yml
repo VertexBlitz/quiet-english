@@ -1,9 +1,9 @@
 name: Quiet English 2.0 checks
 on:
   push:
-    branches: [quiet-english-2-mvp, main, feat/pronunciation-and-listening-library, feat/adult-signup-turnstile-audit, feat/phase-1-learning-localization, fix/mobile-pwa-refresh, feat/multilingual-learning-foundation]
+    branches: [quiet-english-2-mvp, main, feat/pronunciation-and-listening-library, feat/adult-signup-turnstile-audit, feat/phase-1-learning-localization, fix/mobile-pwa-refresh, feat/multilingual-learning-foundation, feat/german-course-a1-a2]
   pull_request:
-    branches: [quiet-english-2-mvp, main, feat/pronunciation-and-listening-library, feat/phase-1-learning-localization, fix/mobile-pwa-refresh, feat/multilingual-learning-foundation]
+    branches: [quiet-english-2-mvp, main, feat/pronunciation-and-listening-library, feat/phase-1-learning-localization, fix/mobile-pwa-refresh, feat/multilingual-learning-foundation, feat/german-course-a1-a2]
 jobs:
   test:
     runs-on: ubuntu-latest
