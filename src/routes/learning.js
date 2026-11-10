@@ -356,11 +356,11 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
       const prompt = exercise.content.prompt || exercise.objective;
       const correctAnswer = correctOption?.text || exercise.answer_key.correct_option_id;
       await pool.query(
-        `INSERT INTO srs_items (user_id, item_type, item_ref, prompt, answer, explanation, due_at)
-         VALUES ($1,$2,$3,$4,$5,$6,NOW() + INTERVAL '1 day')
-         ON CONFLICT (user_id,item_type,item_ref) DO UPDATE SET
+        `INSERT INTO srs_items (user_id, learner_course_id, item_type, item_ref, prompt, answer, explanation, due_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,NOW() + INTERVAL '1 day')
+         ON CONFLICT (user_id,learner_course_id,item_type,item_ref) DO UPDATE SET
            prompt=EXCLUDED.prompt, answer=EXCLUDED.answer, explanation=EXCLUDED.explanation, due_at=LEAST(srs_items.due_at, NOW())`,
-        [req.user.id, exercise.srs.item_type || exercise.skill, exercise.id, prompt, correctAnswer, exercise.explanation?.en || exercise.explanation?.ru || null]
+        [req.user.id, req.course.id, exercise.srs.item_type || exercise.skill, exercise.id, prompt, correctAnswer, exercise.explanation?.ru || exercise.explanation?.en || null]
       );
     }
 
@@ -369,9 +369,9 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
       const explanation = exercise.explanation?.en || exercise.explanation?.ru || null;
       const prior = await pool.query(
         `SELECT id FROM error_journal
-         WHERE user_id=$1 AND error_type=$2 AND incorrect_form=$3 AND resolved_at IS NULL
+         WHERE user_id=$1 AND learner_course_id=$2 AND error_type=$3 AND incorrect_form=$4 AND resolved_at IS NULL
          ORDER BY updated_at DESC LIMIT 1`,
-        [req.user.id, exercise.skill, selectedOption.text]
+        [req.user.id, req.course.id, exercise.skill, selectedOption.text]
       );
       if (prior.rows[0]) {
         await pool.query(
@@ -381,9 +381,9 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
         );
       } else {
         await pool.query(
-          `INSERT INTO error_journal (user_id, attempt_id, error_type, incorrect_form, correction, explanation)
-           VALUES ($1,$2,$3,$4,$5,$6)`,
-          [req.user.id, result.rows[0].id, exercise.skill, selectedOption.text, correction, explanation]
+          `INSERT INTO error_journal (user_id, learner_course_id, attempt_id, error_type, incorrect_form, correction, explanation)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [req.user.id, req.course.id, result.rows[0].id, exercise.skill, selectedOption.text, correction, explanation]
         );
       }
     }
@@ -391,25 +391,24 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
     await pool.query(
       `UPDATE plan_days d SET completed_at=COALESCE(d.completed_at,NOW())
        FROM learning_plans p
-       WHERE d.plan_id=p.id AND p.user_id=$1 AND p.status='active'
+       WHERE d.plan_id=p.id AND p.user_id=$1 AND p.learner_course_id=$3 AND p.status='active'
          AND d.main_task_id=$2
          AND d.day_index=LEAST(GREATEST(((NOW() AT TIME ZONE (SELECT timezone FROM learner_profiles WHERE user_id=$1))::date-p.starts_on+1),1),28)`,
-      [req.user.id, exercise.id]
+      [req.user.id, exercise.id, req.course.id]
     );
-    await recordActivity(req.user.id, { minutes: exercise.estimated_time, completedTasks: 1 });
+    await recordActivity(req.user.id, { courseId: req.course.id, minutes: exercise.estimated_time, completedTasks: 1 });
     res.json({ attempt_id: result.rows[0].id, is_correct: isCorrect, score: isCorrect ? 100 : 0, feedback });
   } catch (error) { next(error); }
 });
 
-const skillTaskIds = new Set([
-  'listen_cafe_01','listen_station_01','listen_weekend_01',
-  'write_invitation_01','write_opinion_01','write_summary_01',
-  'speak_hobby_01','speak_place_01','speak_technology_01'
-]);
+const skillTaskIds = {
+  en: new Set(['listen_cafe_01','listen_station_01','listen_weekend_01','write_invitation_01','write_opinion_01','write_summary_01','speak_hobby_01','speak_place_01','speak_technology_01']),
+  de: new Set(['de_listen_cafe_01','de_listen_station_01','de_listen_weekend_01','de_write_invitation_01','de_write_opinion_01','de_write_summary_01','de_speak_hobby_01','de_speak_place_01','de_speak_technology_01','de_pronunciation_01'])
+};
 
 router.post('/skill-practice', async (req, res, next) => {
   const { skill, task_id, score = null, word_count = 0, duration_seconds = 0 } = req.body || {};
-  if (!['listening','writing','speaking'].includes(skill) || !skillTaskIds.has(task_id)) {
+  if (!['listening','writing','speaking','pronunciation'].includes(skill) || !skillTaskIds[req.course.language_code]?.has(task_id) || (skill === 'pronunciation' && req.course.language_code !== 'de')) {
     return res.status(400).json({ error: 'Неизвестный тип или идентификатор задания.' });
   }
   if (score !== null && (!Number.isInteger(score) || score < 0 || score > 100)) {
@@ -423,10 +422,10 @@ router.post('/skill-practice', async (req, res, next) => {
   }
   try {
     const result = await pool.query(
-      'INSERT INTO skill_practice_attempts (user_id, skill, task_id, score, word_count, duration_seconds) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
-      [req.user.id, skill, task_id, score, word_count, duration_seconds]
+      'INSERT INTO skill_practice_attempts (user_id, learner_course_id, skill, task_id, score, word_count, duration_seconds) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id',
+      [req.user.id, req.course.id, skill, task_id, score, word_count, duration_seconds]
     );
-    await recordActivity(req.user.id, { minutes: Math.max(1, Math.round(duration_seconds / 60)), completedTasks: 1 });
+    await recordActivity(req.user.id, { courseId: req.course.id, minutes: Math.max(1, Math.round(duration_seconds / 60)), completedTasks: 1 });
     res.status(201).json({ ok: true, attempt_id: result.rows[0].id });
   } catch (error) { next(error); }
 });
