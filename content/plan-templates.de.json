@@ -12,7 +12,7 @@
     "weekly_themes": [
       {
         "theme": "Alltag und persönliche Informationen",
-        "objective": "Представляться, рассказывать о себе и понимать простые бытовые сообщения.",
+        "objective": "Introduce yourself, share personal information and understand simple everyday messages.",
         "tasks": [
           "DE-V01",
           "DE-G01",
@@ -25,7 +25,7 @@
       },
       {
         "theme": "Unterwegs und im Alltag",
-        "objective": "Использовать немецкий в повседневных ситуациях, транспорте и покупках.",
+        "objective": "Use German in everyday situations, transport and shopping.",
         "tasks": [
           "DE-G02",
           "DE-V01",
@@ -38,7 +38,7 @@
       },
       {
         "theme": "Lernen, Arbeit und Kommunikation",
-        "objective": "Строить более сложные высказывания и объяснять причины.",
+        "objective": "Build more complex statements and explain reasons.",
         "tasks": [
           "DE-V02",
           "DE-R01",
@@ -51,7 +51,7 @@
       },
       {
         "theme": "Sicher und differenziert kommunizieren",
-        "objective": "Закреплять навыки и точнее выражать мысли на выбранном уровне.",
+        "objective": "Consolidate skills and express ideas more precisely at the selected level.",
         "tasks": [
           "DE-G01",
           "DE-G02",
