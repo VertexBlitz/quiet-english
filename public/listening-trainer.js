@@ -12,10 +12,25 @@ const questionsNode=$('[data-listening-questions]');
 const resultNode=$('[data-listening-result]');
 const transcribeButton=$('[data-listening-transcribe]');
 let objectUrl='',sessionId='',startedAt=0,preparedSentences=[],preparedQuestions=[],localAudio=null;
-let transcriberPromise=null,repeatEnd=null;
-const MODEL_ID='onnx-community/whisper-tiny.en';
+let transcriberPromise=null,repeatEnd=null,activeLanguageCode='en';
+const MODEL_ID='onnx-community/whisper-tiny';
 const TRANSFORMERS_URL='https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2';
 const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;};
+async function loadActiveStudyLanguage(){
+ try{
+  const response=await fetch('/api/learning/languages',{credentials:'same-origin'});
+  const data=await response.json().catch(()=>({}));
+  const active=Array.isArray(data.languages)?data.languages.find(item=>item.is_active):null;
+  if(active&&['en','de'].includes(String(active.language_code).trim()))activeLanguageCode=String(active.language_code).trim();
+ }catch{}
+ if(activeLanguageCode==='de'){
+  const accent=$('[data-listening-accent]');
+  if(accent){accent.value='de-DE';accent.disabled=true;}
+  const level=$('[data-listening-level]');
+  if(level){[...level.options].forEach(option=>option.disabled=!['A1','A2'].includes(option.value));level.value='A1';}
+ }
+}
+void loadActiveStudyLanguage();
 function message(text,error){status.textContent=text||'';status.classList.toggle('error-text',!!error);status.classList.toggle('success-text',!error);}
 function setAudio(source){
  if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl='';}
@@ -40,10 +55,10 @@ $('[data-listening-speed]').addEventListener('change',event=>{player.playbackRat
 function speak(text){
  if(!('speechSynthesis'in window))return;
  const utterance=new SpeechSynthesisUtterance(text);
- utterance.lang=$('[data-listening-accent]').value||'en-GB';
+ utterance.lang=activeLanguageCode==='de'?'de-DE':($('[data-listening-accent]').value||'en-GB');
  utterance.rate=Number($('[data-listening-speed]').value)||0.9;
  const voices=speechSynthesis.getVoices();
- const preferred=voices.find(v=>v.lang===utterance.lang)||voices.find(v=>v.lang.startsWith('en'));
+ const preferred=voices.find(v=>v.lang===utterance.lang)||voices.find(v=>v.lang.startsWith(activeLanguageCode==='de'?'de':'en'));
  if(preferred)utterance.voice=preferred;
  speechSynthesis.cancel();speechSynthesis.speak(utterance);
 }
@@ -90,7 +105,7 @@ transcribeButton.addEventListener('click',async()=>{
   const samples=await toSamples(localAudio);
   const transcriber=await getTranscriber();
   message('Whisper распознаёт речь в браузере. Это может занять некоторое время…');
-  const result=await transcriber(samples);
+  const result=await transcriber(samples,{language:activeLanguageCode==='de'?'german':'english',task:'transcribe'});
   const text=String(result&&result.text||'').trim();
   if(!text)throw Error('Не удалось распознать речь. Попробуй запись с более чётким звучанием.');
   transcript.value=text;transcript.dispatchEvent(new Event('input',{bubbles:true}));
@@ -110,14 +125,14 @@ player.addEventListener('timeupdate',()=>{
  if(repeatEnd!==null&&player.currentTime>=repeatEnd){player.pause();repeatEnd=null;}
 });
 function openDictionary(word){
- const value=word.toLowerCase().replace(/[^a-z'-]/g,'').slice(0,60);
+ const value=word.toLowerCase().replace(/[^\p{L}'-]/gu,'').slice(0,60);
  if(value.length>1)location.href='/dictionary.html?word='+encodeURIComponent(value)+'&source=listening';
 }
 async function addWord(word,button){
  button.disabled=true;
  const original=button.textContent;
  try{
-  const response=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word));
+  const response=await fetch('https://api.dictionaryapi.dev/api/v2/entries/'+activeLanguageCode+'/'+encodeURIComponent(word));
   const entries=await response.json();
   if(!response.ok||!Array.isArray(entries)||!entries.length)throw Error('Не удалось получить карточку слова. Открой его в словаре.');
   const first=entries[0],meanings=first.meanings||[],phonetics=first.phonetics||[];
@@ -171,7 +186,7 @@ function renderSentences(items){
   controls.append(translate,replay);card.append(controls,translation);
   const words=make('div','listening-word-chips');
   item.text.split(/\s+/u).slice(0,20).forEach(token=>{
-   const word=token.replace(/^[^a-z]+|[^a-z'-]+$/giu,'');if(word.length<2)return;
+   const word=token.replace(/^[^\p{L}]+|[^\p{L}'-]+$/gu,'');if(word.length<2)return;
    const group=make('span','listening-word-item');
    const button=make('button','listening-word-chip',word);button.type='button';button.title='Открыть слово в словаре';
    button.addEventListener('click',()=>openDictionary(word));
