@@ -50,7 +50,7 @@ export async function loadActiveStudyLanguage(req, res, next) {
   try {
     const { rows } = await pool.query(
       `SELECT l.language_code, l.english_name, l.native_name, l.locale,
-              l.course_status, l.speech_supported
+              l.course_status, l.speech_supported, p.preferred_language
        FROM learner_profiles p
        JOIN study_languages l ON l.language_code=p.active_learning_language_code
        WHERE p.user_id=$1`,
@@ -59,6 +59,7 @@ export async function loadActiveStudyLanguage(req, res, next) {
     if (!rows[0]) return res.status(409).json({ error: 'Сначала выбери изучаемый язык.' });
     req.studyLanguage = rows[0];
     req.studyLanguageCode = rows[0].language_code.trim();
+    req.interfaceLanguage = rows[0].preferred_language === 'en' ? 'en' : 'ru';
     next();
   } catch (error) {
     next(error);
