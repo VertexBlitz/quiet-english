@@ -1,6 +1,6 @@
 import express from 'express';
 import { pool, requireDatabase, requireUser, recordActivity } from '../db.js';
-import { estimateLevel, publicQuestions, placementQuestions } from '../content/placement.js';
+import { estimateLevel, publicQuestions, placementQuestions, estimateGermanLevel, publicGermanQuestions, germanPlacementQuestions } from '../content/placement.js';
 
 const router = express.Router();
 router.use(requireDatabase, requireUser);
@@ -85,11 +85,15 @@ async function generatePlan(userId) {
     const plan = planResult.rows[0];
     for (let week = 1; week <= 4; week++) {
       const weekContent = weeklyPlan[week - 1];
-      const theme = weekContent.theme;
-      const objective = weekContent.objective;
+      const theme = weekContent.theme_ru || weekContent.theme;
+      const objective = weekContent.objective || weekContent.objective_ru || '';
       const weekResult = await client.query(
-        'INSERT INTO plan_weeks (plan_id, week_number, theme, objective) VALUES ($1,$2,$3,$4) RETURNING id',
-        [plan.id, week, theme, objective]
+        `INSERT INTO plan_weeks
+           (plan_id,week_number,theme,objective,theme_ru,theme_en,objective_ru,objective_en)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+        [plan.id, week, theme, objective, weekContent.theme_ru || theme,
+          weekContent.theme_en || theme, weekContent.objective || objective,
+          weekContent.objective_en || objective]
       );
       for (let dayInWeek = 1; dayInWeek <= 7; dayInWeek++) {
         const day = (week - 1) * 7 + dayInWeek;
@@ -223,6 +227,9 @@ router.put('/onboarding', async (req, res, next) => {
   const levels = ['Pre-A1','A1','A2','B1','B2','C1','C2'];
   if (!goals.includes(goal)) return res.status(400).json({ error: 'Выбери цель обучения.' });
   if (self_assessed_level && !levels.includes(self_assessed_level)) return res.status(400).json({ error: 'Уровень указан некорректно.' });
+  if (language_code === 'de' && self_assessed_level && !['A1','A2'].includes(self_assessed_level)) {
+    return res.status(400).json({ error: 'Первый немецкий курс рассчитан на уровни A1–A2. Выбери A1 или A2.' });
+  }
   if (![5,10,15,30].includes(Number(minutes_per_day))) return res.status(400).json({ error: 'Выбери 5, 10, 15 или 30 минут.' });
   if (Number(duration_weeks) !== 4) return res.status(400).json({ error: 'В первой версии доступен четырёхнедельный план.' });
   if (!Array.isArray(interests) || interests.length > 8 || interests.some(x => typeof x !== 'string' || x.length > 40)) {
@@ -285,32 +292,41 @@ router.get('/placement/questions', async (req, res, next) => {
       'SELECT active_learning_language_code FROM learner_profiles WHERE user_id=$1',
       [req.user.id]
     );
-    if (rows[0]?.active_learning_language_code !== 'en') {
-      return res.status(409).json({ error: 'Тест уровня для выбранного языка ещё готовится.' });
+    const languageCode = rows[0]?.active_learning_language_code || 'en';
+    if (languageCode === 'de') {
+      return res.json({
+        language_code: 'de',
+        questions: publicGermanQuestions(),
+        note: 'Предварительная оценка немецкого A1–A2. Это не официальный сертификат CEFR.'
+      });
     }
-    res.json({ questions: publicQuestions(), note: 'Короткая предварительная оценка, не официальный сертификат CEFR.' });
+    if (languageCode !== 'en') return res.status(409).json({ error: 'Тест уровня для выбранного языка ещё готовится.' });
+    res.json({ language_code: 'en', questions: publicQuestions(), note: 'Короткая предварительная оценка, не официальный сертификат CEFR.' });
   } catch (error) { next(error); }
 });
 
 router.post('/placement/submit', async (req, res, next) => {
   const answers = req.body?.answers;
-  if (!Array.isArray(answers) || answers.length !== placementQuestions.length) {
-    return res.status(400).json({ error: 'Ответь на все вопросы теста.' });
-  }
-  const answerMap = new Map(answers.map(item => [item?.id, item?.option_id]));
-  if (placementQuestions.some(q => !answerMap.has(q.id))) return res.status(400).json({ error: 'В ответах отсутствуют вопросы.' });
-  const correct = placementQuestions.filter(q => answerMap.get(q.id) === q.answer).length;
-  const level = estimateLevel(correct);
   try {
     const active = await pool.query(
       'SELECT active_learning_language_code FROM learner_profiles WHERE user_id=$1',
       [req.user.id]
     );
     const languageCode = active.rows[0]?.active_learning_language_code || 'en';
-    if (languageCode !== 'en') return res.status(409).json({ error: 'Тест уровня для выбранного языка ещё готовится.' });
+    const questions = languageCode === 'de'
+      ? germanPlacementQuestions
+      : languageCode === 'en' ? placementQuestions : null;
+    if (!questions) return res.status(409).json({ error: 'Тест уровня для выбранного языка ещё готовится.' });
+    if (!Array.isArray(answers) || answers.length !== questions.length) {
+      return res.status(400).json({ error: 'Ответь на все вопросы теста.' });
+    }
+    const answerMap = new Map(answers.map(item => [item?.id, item?.option_id]));
+    if (questions.some(q => !answerMap.has(q.id))) return res.status(400).json({ error: 'В ответах отсутствуют вопросы.' });
+    const correct = questions.filter(q => answerMap.get(q.id) === q.answer).length;
+    const level = languageCode === 'de' ? estimateGermanLevel(correct) : estimateLevel(correct);
     await pool.query(
       'INSERT INTO placement_attempts (user_id, language_code, answers, correct_count, total_questions, estimated_level) VALUES ($1,$2,$3::jsonb,$4,$5,$6)',
-      [req.user.id, languageCode, JSON.stringify(answers), correct, placementQuestions.length, level]
+      [req.user.id, languageCode, JSON.stringify(answers), correct, questions.length, level]
     );
     await pool.query(
       'UPDATE learner_language_profiles SET assessed_level=$3, updated_at=NOW() WHERE user_id=$1 AND language_code=$2',
@@ -320,7 +336,7 @@ router.post('/placement/submit', async (req, res, next) => {
     const plan = await generatePlan(req.user.id);
     res.json({
       ok: true,
-      result: { level, correct, total: placementQuestions.length, is_preliminary: true },
+      result: { level, correct, total: questions.length, is_preliminary: true },
       plan: { id: plan.id, duration_weeks: plan.duration_weeks }
     });
   } catch (error) { next(error); }
@@ -337,7 +353,9 @@ router.get('/plan', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT p.*, json_agg(json_build_object(
-         'week_number', w.week_number, 'theme', w.theme, 'objective', w.objective
+         'week_number', w.week_number,
+         'theme', json_build_object('ru',COALESCE(w.theme_ru,w.theme),'en',COALESCE(w.theme_en,w.theme)),
+         'objective', json_build_object('ru',COALESCE(w.objective_ru,w.objective),'en',COALESCE(w.objective_en,w.objective))
        ) ORDER BY w.week_number) AS weeks
        FROM learning_plans p LEFT JOIN plan_weeks w ON w.plan_id=p.id
        WHERE p.user_id=$1 AND p.status='active'
@@ -355,7 +373,10 @@ router.get('/today', async (req, res, next) => {
     const { rows } = await pool.query(
       `SELECT p.id AS plan_id, p.level, p.goal, p.minutes_per_day,
               d.id AS day_id, d.day_index, d.main_task_id, d.review_item_limit, d.mini_prompt, d.completed_at,
-              w.week_number, w.theme, w.objective, e.skill, e.objective AS task_objective,
+              w.week_number,
+              json_build_object('ru',COALESCE(w.theme_ru,w.theme),'en',COALESCE(w.theme_en,w.theme)) AS theme,
+              json_build_object('ru',COALESCE(w.objective_ru,w.objective),'en',COALESCE(w.objective_en,w.objective)) AS objective,
+              e.skill, COALESCE(NULLIF(e.objective_i18n,'{}'::jsonb),to_jsonb(e.objective)) AS task_objective,
               e.level AS task_level, e.estimated_time, e.instructions, e.content, e.success_criteria
        FROM learning_plans p
        JOIN plan_days d ON d.plan_id=p.id
@@ -398,7 +419,7 @@ router.get('/exercises', async (req, res, next) => {
   const skill = req.query.skill;
   try {
     const { rows } = await pool.query(
-      `SELECT id, skill, level, objective, instructions, content, estimated_time, tags, success_criteria
+      `SELECT id, skill, level, COALESCE(NULLIF(objective_i18n,'{}'::jsonb),to_jsonb(objective)) AS objective, instructions, content, estimated_time, tags, success_criteria
        FROM exercises WHERE status='published' AND skill = ANY($1::text[])
          AND language_code=(SELECT active_learning_language_code FROM learner_profiles WHERE user_id=$3)
          AND ($2::text IS NULL OR skill=$2)
@@ -412,7 +433,7 @@ router.get('/exercises', async (req, res, next) => {
 router.get('/exercises/:id', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, skill, level, objective, instructions, content, estimated_time, tags, success_criteria, version
+      `SELECT id, skill, level, COALESCE(NULLIF(objective_i18n,'{}'::jsonb),to_jsonb(objective)) AS objective, instructions, content, estimated_time, tags, success_criteria, version
        FROM exercises WHERE id=$1 AND status='published'
          AND language_code=(SELECT active_learning_language_code FROM learner_profiles WHERE user_id=$2)`,
       [req.params.id, req.user.id]
