@@ -28,3 +28,28 @@ export function estimateLevel(correct) {
 export function publicQuestions() {
   return placementQuestions.map(({ id, level, prompt, options }) => ({ id, level, prompt, options }));
 }
+
+export const germanPlacementQuestions = [
+  { id: 'DE-P01', level: 'A1', prompt: 'Guten Morgen! — Guten ___.', options: [{id:'a',text:'Morgen'},{id:'b',text:'Nacht'},{id:'c',text:'Abend'}], answer: 'a' },
+  { id: 'DE-P02', level: 'A1', prompt: 'Ich ___ Maria.', options: [{id:'a',text:'bin'},{id:'b',text:'bist'},{id:'c',text:'ist'}], answer: 'a' },
+  { id: 'DE-P03', level: 'A1', prompt: 'Das ist ___ Tisch.', options: [{id:'a',text:'ein'},{id:'b',text:'eine'},{id:'c',text:'einen'}], answer: 'a' },
+  { id: 'DE-P04', level: 'A1', prompt: 'Wir ___ in Berlin.', options: [{id:'a',text:'wohnen'},{id:'b',text:'wohnt'},{id:'c',text:'wohne'}], answer: 'a' },
+  { id: 'DE-P05', level: 'A1', prompt: 'Ich habe ___ Schwester.', options: [{id:'a',text:'eine'},{id:'b',text:'einen'},{id:'c',text:'ein'}], answer: 'a' },
+  { id: 'DE-P06', level: 'A1', prompt: 'Am Samstag ___ ich Fußball.', options: [{id:'a',text:'spiele'},{id:'b',text:'spielen'},{id:'c',text:'spielt'}], answer: 'a' },
+  { id: 'DE-P07', level: 'A1', prompt: 'Ich trinke ___ Kaffee.', options: [{id:'a',text:'keinen'},{id:'b',text:'nicht'},{id:'c',text:'keine'}], answer: 'a' },
+  { id: 'DE-P08', level: 'A2', prompt: 'Gestern ___ wir nach Hamburg gefahren.', options: [{id:'a',text:'sind'},{id:'b',text:'haben'},{id:'c',text:'werden'}], answer: 'a' },
+  { id: 'DE-P09', level: 'A2', prompt: 'Ich helfe ___ Nachbarin.', options: [{id:'a',text:'meiner'},{id:'b',text:'meine'},{id:'c',text:'meinen'}], answer: 'a' },
+  { id: 'DE-P10', level: 'A2', prompt: 'Ich lerne Deutsch, weil ich in Deutschland ___ .', options: [{id:'a',text:'arbeite'},{id:'b',text:'arbeiten'},{id:'c',text:'arbeitet'}], answer: 'a' },
+  { id: 'DE-P11', level: 'A2', prompt: 'Der Zug ist ___ als der Bus.', options: [{id:'a',text:'schneller'},{id:'b',text:'am schnellsten'},{id:'c',text:'schnell'}], answer: 'a' },
+  { id: 'DE-P12', level: 'A2', prompt: 'Als Kind ___ ich oft bei meiner Oma.', options: [{id:'a',text:'war'},{id:'b',text:'bin'},{id:'c',text:'gewesen'}], answer: 'a' },
+  { id: 'DE-P13', level: 'A2', prompt: 'Könnten Sie mir bitte ___?', options: [{id:'a',text:'helfen'},{id:'b',text:'hilft'},{id:'c',text:'geholfen'}], answer: 'a' },
+  { id: 'DE-P14', level: 'A2', prompt: 'Kannst du mir sagen, wann der Bus ___?', options: [{id:'a',text:'ankommt'},{id:'b',text:'kommt an'},{id:'c',text:'ankommen'}], answer: 'a' }
+];
+
+export function estimateGermanLevel(correct) {
+  return correct <= 7 ? 'A1' : 'A2';
+}
+
+export function publicGermanQuestions() {
+  return germanPlacementQuestions.map(({ id, level, prompt, options }) => ({ id, level, prompt, options }));
+}
