@@ -499,7 +499,7 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
          AND d.day_index=LEAST(GREATEST(((NOW() AT TIME ZONE (SELECT timezone FROM learner_profiles WHERE user_id=$1))::date-p.starts_on+1),1),28)`,
       [req.user.id, exercise.id]
     );
-    await recordActivity(req.user.id, { minutes: exercise.estimated_time, completedTasks: 1 });
+    await recordActivity(req.user.id, { minutes: exercise.estimated_time, completedTasks: 1, languageCode: exercise.language_code });
     res.json({ attempt_id: result.rows[0].id, is_correct: isCorrect, score: isCorrect ? 100 : 0, feedback });
   } catch (error) { next(error); }
 });
@@ -555,7 +555,7 @@ router.post('/review/:id', async (req, res, next) => {
        WHERE id=$1 AND user_id=$2`,
       [item.id, req.user.id, interval, repetitions, ease, rating]
     );
-    await recordActivity(req.user.id, { minutes: 1, completedTasks: 0 });
+    await recordActivity(req.user.id, { minutes: 1, completedTasks: 0, languageCode: req.studyLanguageCode });
     res.json({ ok: true, next_interval_days: interval, rating });
   } catch (error) { next(error); }
 });
