@@ -1,5 +1,19 @@
 (async () => {
   const nav = document.querySelector('.topbar nav');
+  if (nav && !nav.querySelector('a[href="/vocabulary.html"]')) {
+    const vocabularyLink = document.createElement('a');
+    vocabularyLink.href = '/vocabulary.html';
+    vocabularyLink.setAttribute('data-ru', 'Словарь');
+    vocabularyLink.setAttribute('data-en', 'Vocabulary');
+    vocabularyLink.textContent = document.documentElement.lang === 'en' ? 'Vocabulary' : 'Словарь';
+    const skillsExisting = nav.querySelector('a[href="/skills.html"]');
+    if (skillsExisting) skillsExisting.insertAdjacentElement('afterend', vocabularyLink);
+    else {
+      const practiceExisting = nav.querySelector('a[href="/practice.html"]');
+      if (practiceExisting) practiceExisting.insertAdjacentElement('afterend', vocabularyLink);
+      else nav.appendChild(vocabularyLink);
+    }
+  }
   if (nav && !nav.querySelector('a[href="/skills.html"]')) {
     const skillsLink = document.createElement('a');
     skillsLink.href = '/skills.html';
