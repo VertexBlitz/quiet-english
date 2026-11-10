@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Your personal language vocabulary in Quiet English.">
+  <title>My Vocabulary — Quiet English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/i18n.js"></script>
+  <script defer src="/demo.js"></script>
+  <script defer src="/session.js"></script>
+  <script defer src="/vocabulary.js"></script>
+  <style>
+    .vocabulary-layout{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(0,1.2fr);gap:18px;align-items:start}
+    .vocabulary-form{display:grid;gap:13px}
+    .vocabulary-form label{display:grid;gap:7px;font-size:12px;color:var(--muted)}
+    .vocabulary-form input,.vocabulary-form select,.vocabulary-form textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:#fff;color:var(--ink);font:400 14px Inter,Arial,sans-serif}
+    .vocabulary-form textarea{min-height:75px;resize:vertical}
+    .vocabulary-list{display:grid;gap:10px}
+    .vocabulary-entry{padding:17px;border:1px solid var(--line);border-radius:15px;background:#fff;display:grid;gap:8px}
+    .vocabulary-entry h3{margin:0;font-size:19px;font-weight:500;letter-spacing:-.02em}
+    .vocabulary-entry p{margin:0;color:var(--muted);font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+    .vocabulary-entry-meta{font-size:11px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+    .vocabulary-entry-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:3px}
+    .vocabulary-entry-actions button{border:1px solid var(--line);border-radius:999px;padding:7px 11px;background:transparent;font:500 11px Inter,Arial,sans-serif;cursor:pointer}
+    .vocabulary-empty{padding:28px;border:1px dashed var(--line);border-radius:15px;color:var(--muted);font-size:13px;text-align:center}
+    .vocabulary-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px}
+    .vocabulary-toolbar input{max-width:260px;border:1px solid var(--line);border-radius:999px;padding:10px 14px;font:400 12px Inter,Arial,sans-serif}
+    @media(max-width:760px){.vocabulary-layout{grid-template-columns:1fr}.vocabulary-toolbar{align-items:stretch;flex-direction:column}.vocabulary-toolbar input{max-width:none;width:100%}}
+  </style>
+</head>
+<body>
+<header class="topbar wrap">
+  <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
+  <nav aria-label="Main navigation">
+    <a href="/plan.html">План</a>
+    <a href="/practice.html">Практика</a>
+    <a href="/skills.html">Навыки</a>
+    <a href="/vocabulary.html" aria-current="page">Словарь</a>
+    <a href="/progress.html">Прогресс</a>
+    <a href="/tutor.html">Чат</a>
+  </nav>
+  <div class="language-switch" aria-label="Language">
+    <button type="button" data-set-lang="ru" class="active">RU</button>
+    <button type="button" data-set-lang="en">EN</button>
+    <a class="account-link" href="/login.html">Аккаунт</a>
+  </div>
+</header>
+<main class="wrap" data-vocabulary-page>
+  <section class="panel page-head">
+    <p class="eyebrow">YOUR PERSONAL DICTIONARY</p>
+    <h1>Собирай <em>свой словарь.</em></h1>
+    <p class="lead">Слова и выражения хранятся отдельно для каждого изучаемого языка.</p>
+    <p class="eyebrow" data-vocabulary-language>Курс: —</p>
+  </section>
+  <p class="form-status" data-vocabulary-status aria-live="polite"></p>
+  <div class="vocabulary-layout">
+    <section class="panel">
+      <p class="eyebrow">ADD A WORD</p>
+      <h2 data-vocabulary-form-title>Новое слово</h2>
+      <form class="vocabulary-form" data-vocabulary-form>
+        <input type="hidden" name="entry_id">
+        <label>Слово или выражение<input name="term" maxlength="120" required placeholder="например, die Gelegenheit"></label>
+        <label>Перевод<input name="translation" maxlength="250" placeholder="значение на русском"></label>
+        <label>Часть речи<input name="part_of_speech" maxlength="50" placeholder="существительное, глагол..."></label>
+        <label data-gender-field hidden>Род существительного
+          <select name="grammatical_gender">
+            <option value="">Не указан</option>
+            <option value="masculine">Maskulin — der</option>
+            <option value="feminine">Feminin — die</option>
+            <option value="neuter">Neutrum — das</option>
+          </select>
+        </label>
+        <label data-plural-field hidden>Форма множественного числа<input name="plural_form" maxlength="120" placeholder="например, die Gelegenheiten"></label>
+        <label>Пример предложения<textarea name="example_sentence" maxlength="500" placeholder="Пример использования"></textarea></label>
+        <label>Заметка<textarea name="notes" maxlength="1000" placeholder="Дополнительная информация"></textarea></label>
+        <button class="button" type="submit" data-vocabulary-submit>Добавить в словарь ↗</button>
+        <button class="button secondary" type="button" data-vocabulary-cancel hidden>Отменить редактирование</button>
+      </form>
+    </section>
+    <section class="panel">
+      <div class="vocabulary-toolbar">
+        <div><p class="eyebrow">MY WORDS</p><h2><span data-vocabulary-count>0</span> слов</h2></div>
+        <input type="search" data-vocabulary-search placeholder="Найти слово или перевод…" aria-label="Поиск по словарю">
+      </div>
+      <div class="vocabulary-list" data-vocabulary-list>
+        <p class="vocabulary-empty">Загружаем словарь…</p>
+      </div>
+    </section>
+  </div>
+</main>
+<footer class="footer wrap"><span>QUIET ENGLISH</span><span>Learn at your own pace · © 2026</span></footer>
+</body>
+</html>
