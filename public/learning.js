@@ -65,6 +65,72 @@ const refreshLearningText = () => {
 window.addEventListener('quietenglish:languagechange', refreshLearningText);
 
 
+async function loadStudyLanguageOptions() {
+  const controls = [
+    ...$('[data-study-language-select]'),
+    $('select[name="language_code"]')
+  ].filter(Boolean);
+  if (!controls.length) return;
+
+  try {
+    const { languages } = await learningApi('/languages');
+    const active = languages.find(item => item.is_active)?.language_code || 'en';
+    controls.forEach(select => {
+      const previous = select.value || active;
+      select.replaceChildren();
+      languages.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.language_code;
+        option.textContent = item.native_name + ' · ' + item.english_name;
+        option.disabled = item.course_status !== 'available';
+        option.selected = item.language_code === previous || item.language_code === active;
+        select.append(option);
+      });
+      if (!languages.some(item => item.language_code === select.value && !item.is_active)) {
+        select.value = active;
+      }
+    });
+
+    const statusText = language => language?.course_status === 'available'
+      ? learningT('Курс доступен', 'Course available')
+      : learningT('Курс готовится', 'Course in preparation');
+    document.querySelectorAll('[data-study-language-status]').forEach(node => {
+      const selected = languages.find(item => item.language_code === active);
+      node.textContent = selected
+        ? learningT('Сейчас изучается: ', 'Currently learning: ') +
+          selected.native_name + ' · ' + statusText(selected)
+        : learningT('Выбери доступный учебный курс.', 'Choose an available course.');
+    });
+
+    const planSelect = $('[data-study-language-select]');
+    if (planSelect && !planSelect.dataset.bound) {
+      planSelect.dataset.bound = 'true';
+      planSelect.addEventListener('change', async () => {
+        planSelect.disabled = true;
+        try {
+          await learningApi('/languages/activate', {
+            method: 'POST',
+            body: JSON.stringify({ language_code: planSelect.value })
+          });
+          location.reload();
+        } catch (error) {
+          learningMessage($('[data-study-language-status]'), error.message, true);
+          planSelect.value = active;
+          planSelect.disabled = false;
+        }
+      });
+    }
+  } catch (error) {
+    document.querySelectorAll('[data-study-language-status]').forEach(node => {
+      node.textContent = error.message;
+      node.classList.add('error-text');
+    });
+  }
+}
+
+loadStudyLanguageOptions();
+
+
 function learningMessage(node, message, isError = false) {
   if (!node) return;
   node.textContent = message;
@@ -109,6 +175,7 @@ if (onboarding) {
           duration_weeks: Number(form.get('duration_weeks') || 4),
           interests,
           preferred_language: form.get('preferred_language') || 'ru',
+          language_code: form.get('language_code') || 'en',
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
         })
       });
