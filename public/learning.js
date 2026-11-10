@@ -93,13 +93,36 @@ async function loadStudyLanguageOptions() {
     const statusText = language => language?.course_status === 'available'
       ? learningT('Курс доступен', 'Course available')
       : learningT('Курс готовится', 'Course in preparation');
-    document.querySelectorAll('[data-study-language-status]').forEach(node => {
-      const selected = languages.find(item => item.language_code === active);
-      node.textContent = selected
-        ? learningT('Сейчас изучается: ', 'Currently learning: ') +
-          selected.native_name + ' · ' + statusText(selected)
-        : learningT('Выбери доступный учебный курс.', 'Choose an available course.');
-    });
+    const onboardingSelect = $('select[name="language_code"]');
+    const levelSelect = $('select[name="self_assessed_level"]');
+    const updateLanguageHint = () => {
+      const selectedCode = onboardingSelect?.value || active;
+      const selected = languages.find(item => item.language_code === selectedCode);
+      document.querySelectorAll('[data-study-language-status]').forEach(node => {
+        if (!selected) {
+          node.textContent = learningT('Выбери доступный учебный курс.', 'Choose an available course.');
+        } else if (selected.language_code === 'de') {
+          node.textContent = learningT(
+            'Доступен немецкий A1–A2: 4 недели, 28 заданий, тест уровня и голосовая практика.',
+            'German A1–A2 is ready: 4 weeks, 28 exercises, placement test and speaking practice.'
+          );
+        } else {
+          node.textContent = learningT('Сейчас изучается: ', 'Currently learning: ') +
+            selected.native_name + ' · ' + statusText(selected);
+        }
+      });
+      if (levelSelect) {
+        [...levelSelect.options].forEach(option => {
+          option.disabled = selectedCode === 'de' &&
+            !['', 'A1', 'A2'].includes(option.value);
+        });
+        if (selectedCode === 'de' && !['', 'A1', 'A2'].includes(levelSelect.value)) {
+          levelSelect.value = 'A2';
+        }
+      }
+    };
+    onboardingSelect?.addEventListener('change', updateLanguageHint);
+    updateLanguageHint();
 
     const planSelect = $('[data-active-language-switch]');
     if (planSelect && !planSelect.dataset.bound) {
