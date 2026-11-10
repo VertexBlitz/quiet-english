@@ -66,24 +66,23 @@ window.addEventListener('quietenglish:languagechange', refreshLearningText);
 
 
 async function loadStudyLanguageOptions() {
-  const controls = [
+  const controls = [...new Set([
     ...$('[data-study-language-select]'),
     $('select[name="language_code"]')
-  ].filter(Boolean);
+  ].filter(Boolean))];
   if (!controls.length) return;
 
   try {
     const { languages } = await learningApi('/languages');
     const active = languages.find(item => item.is_active)?.language_code || 'en';
     controls.forEach(select => {
-      const previous = select.value || active;
       select.replaceChildren();
       languages.forEach(item => {
         const option = document.createElement('option');
         option.value = item.language_code;
         option.textContent = item.native_name + ' · ' + item.english_name;
         option.disabled = item.course_status !== 'available';
-        option.selected = item.language_code === previous || item.language_code === active;
+        option.selected = item.language_code === active;
         select.append(option);
       });
       if (!languages.some(item => item.language_code === select.value && !item.is_active)) {
