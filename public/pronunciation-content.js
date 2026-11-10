@@ -51,3 +51,17 @@ export function buildProgressSeries(attempts) {
       return { score: Math.round(point.score), dateLabel, attempt: index + 1, total: points.length };
     });
 }
+
+
+export const GERMAN_PASSAGES = [
+  { id: 'de-a1-morning', level: 'A1', topic: 'Everyday life', title: 'Mein Morgen', text: 'Ich stehe um sieben Uhr auf. Dann frühstücke ich mit meiner Familie. Um acht Uhr gehe ich zur Schule. Am Nachmittag mache ich meine Hausaufgaben und höre Musik.' },
+  { id: 'de-a1-cafe', level: 'A1', topic: 'Food', title: 'Im Café', text: 'Guten Tag! Ich möchte einen Tee und ein Käsebrot, bitte. Haben Sie auch Wasser? Ja, natürlich. Das macht zusammen sechs Euro.' },
+  { id: 'de-a1-family', level: 'A1', topic: 'Everyday life', title: 'Meine Familie', text: 'Meine Familie ist nicht sehr groß. Ich habe eine Schwester und einen Bruder. Wir wohnen zusammen in einer kleinen Wohnung. Am Sonntag besuchen wir oft unsere Großeltern.' },
+  { id: 'de-a1-city', level: 'A1', topic: 'Around town', title: 'In meiner Stadt', text: 'In meiner Stadt gibt es einen Bahnhof, einen Park und viele Geschäfte. Der Supermarkt ist neben der Apotheke. Am Wochenende gehe ich gern mit Freunden ins Zentrum.' },
+  { id: 'de-a1-hobby', level: 'A1', topic: 'Free time', title: 'Meine Freizeit', text: 'In meiner Freizeit spiele ich gern Gitarre. Zweimal pro Woche treffe ich meine Freunde. Wir gehen spazieren oder sehen zusammen einen Film. Das macht mir viel Spaß.' },
+  { id: 'de-a2-travel', level: 'A2', topic: 'Travel', title: 'Ein Wochenende in Hamburg', text: 'Letztes Wochenende bin ich mit dem Zug nach Hamburg gefahren. Das Wetter war sonnig, deshalb habe ich einen langen Spaziergang am Hafen gemacht. Danach habe ich ein kleines Museum besucht und in einem Café zu Mittag gegessen.' },
+  { id: 'de-a2-learning', level: 'A2', topic: 'Education', title: 'Deutsch lernen', text: 'Ich lerne seit einem Jahr Deutsch. Jeden Tag wiederhole ich neue Wörter und lese kurze Texte. Am Anfang war die Grammatik schwierig, aber regelmäßiges Üben hilft mir. Jetzt kann ich schon einfache Gespräche führen.' },
+  { id: 'de-a2-health', level: 'A2', topic: 'Everyday life', title: 'Ein guter Tagesablauf', text: 'Ein guter Tagesablauf hilft mir, ruhig und konzentriert zu bleiben. Morgens frühstücke ich und plane meine Aufgaben. Nach der Arbeit oder der Schule mache ich eine Pause. Am Abend gehe ich manchmal spazieren.' },
+  { id: 'de-a2-environment', level: 'A2', topic: 'Environment', title: 'Umweltfreundlich leben', text: 'Viele Menschen möchten umweltfreundlicher leben. Sie fahren öfter mit dem Fahrrad oder benutzen öffentliche Verkehrsmittel. Zu Hause sparen sie Wasser und trennen den Müll. Auch kleine Veränderungen können im Alltag helfen.' },
+  { id: 'de-a2-plans', level: 'A2', topic: 'Education', title: 'Pläne für die Zukunft', text: 'Nächstes Jahr möchte ich eine neue Sprache lernen und mehr reisen. Dafür spare ich jeden Monat etwas Geld. Wenn ich genug Zeit habe, besuche ich auch einen Sprachkurs. Ich freue mich auf neue Erfahrungen.' }
+];
