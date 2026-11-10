@@ -5,12 +5,15 @@ const TOPICS = new Set([
   'Technology', 'Environment', 'Education', 'Books and media'
 ]);
 
-export function validatePracticeGenerationRequest(body) {
+export function validatePracticeGenerationRequest(body, languageCode = 'en') {
   const level = typeof body?.level === 'string' ? body.level.trim().toUpperCase() : '';
   const skill = typeof body?.skill === 'string' ? body.skill.trim().toLowerCase() : '';
   const topic = typeof body?.topic === 'string' ? body.topic.trim() : 'Any topic';
 
   if (!LEVELS.has(level)) return { ok: false, error: 'Выбери уровень от A1 до C1.' };
+  if (languageCode === 'de' && !['A1','A2'].includes(level)) {
+    return { ok: false, error: 'Немецкая AI-практика сейчас поддерживает уровни A1–A2.' };
+  }
   if (!SKILLS.has(skill)) return { ok: false, error: 'Выбери тип задания.' };
   if (!TOPICS.has(topic)) return { ok: false, error: 'Выбери тему из списка.' };
 
@@ -27,10 +30,11 @@ export function validatePracticeGenerationRequest(body) {
         explanation: typeof item?.explanation === 'string' ? item.explanation.replace(/\s+/gu, ' ').trim().slice(0, 200) : ''
       })).filter(item => item.area || item.prompt)
     : [];
-  return { ok: true, value: { level, skill, topic, avoid, focus } };
+  const interfaceLanguage = body?.interface_language === 'en' ? 'en' : 'ru';
+  return { ok: true, value: { level, skill, topic, avoid, focus, languageCode, interfaceLanguage } };
 }
 
-export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [], focus = [] }) {
+export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [], focus = [], languageCode = 'en', interfaceLanguage = 'ru' }) {
   const levelGuide = {
     A1: 'beginner: very common words, present simple, basic questions, short sentences',
     A2: 'elementary: everyday vocabulary, past and future basics, simple comparisons and requests',
@@ -61,8 +65,12 @@ export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [],
       ).join('\n')
     : '';
 
+  const targetLanguage = languageCode === 'de' ? 'German' : 'English';
+  const explanationLanguage = interfaceLanguage === 'en' ? 'English' : 'Russian';
   return [
-    'Create an original English-learning exercise for CEFR ' + level + ' (' + levelGuide + ').',
+    'Create an original ' + targetLanguage + '-learning exercise for CEFR ' + level + ' (' + levelGuide + ').',
+    languageCode === 'de' ? 'All passage text, prompts, answer options and correct answers must be natural standard German. This is a beginner course: use high-frequency A1-A2 vocabulary and accurate German spelling, including ä, ö, ü and ß.' : 'All learner-facing exercise text must be natural standard English.',
+    'Write explanations in ' + explanationLanguage + '.',
     'Type: ' + skill + '. Topic: ' + topic + '.',
     taskGuide,
     'Use age-appropriate, respectful, original school content. No personal data, dangerous instructions, sexual content, graphic violence, self-harm or copied published text.',
@@ -78,7 +86,7 @@ export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [],
   ].join('\n');
 }
 
-export function parseGeneratedPracticeExercise(content, { level, skill, topic }) {
+export function parseGeneratedPracticeExercise(content, { level, skill, topic, languageCode = 'en' }) {
   if (typeof content !== 'string' || !content.trim()) {
     throw new Error('ИИ не вернул задание.');
   }
@@ -172,7 +180,7 @@ export function parseGeneratedPracticeExercise(content, { level, skill, topic })
           ? option
           : (option?.text ?? option?.value ?? option?.content ?? option?.option ?? option?.answer)
       )).slice(0, 120);
-      const normalized = text.toLocaleLowerCase('en-US');
+      const normalized = text.toLocaleLowerCase(languageCode === 'de' ? 'de-DE' : 'en-US');
 
       if (!text || ids.has(optionId) || seenTexts.has(normalized)) {
         throw new Error('Варианты ответа в вопросе ' + (index + 1) + ' пустые или повторяются.');
@@ -235,7 +243,7 @@ export function parseGeneratedPracticeExercise(content, { level, skill, topic })
     };
   });
 
-  return { title, instructions, passage, level, skill, topic, questions };
+  return { title, instructions, passage, level, skill, topic, languageCode, questions };
 }
 
 export function gradeGeneratedPracticeExercise(exercise, answers) {
