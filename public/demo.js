@@ -76,7 +76,8 @@
       srsItems: Array.isArray(state.srsItems) ? state.srsItems : [],
       errors: Array.isArray(state.errors) ? state.errors : [],
       activity: Array.isArray(state.activity) ? state.activity : [],
-      skillPractice: Array.isArray(state.skillPractice) ? state.skillPractice : []
+      skillPractice: Array.isArray(state.skillPractice) ? state.skillPractice : [],
+      vocabulary: Array.isArray(state.vocabulary) ? state.vocabulary : []
     };
     const courses = { ...(state.courses || {}), [activeLanguage]: courseState };
     memoryState = { ...courseState, activeLanguage, courses };
@@ -298,6 +299,69 @@
 
     if (path === '/profile' && method === 'GET') {
       return { profile: state.profile };
+    }
+
+    if (path === '/vocabulary' && method === 'GET') {
+      return { language_code: state.activeLanguage || 'en', entries: state.vocabulary || [] };
+    }
+
+    if (path === '/vocabulary' && method === 'POST') {
+      const term = typeof body.term === 'string' ? body.term.trim() : '';
+      if (!term || term.length > 120) throw new Error('Слово должно содержать от 1 до 120 символов.');
+      const normalized = term.normalize('NFKC').toLowerCase();
+      state.vocabulary = state.vocabulary || [];
+      if (state.vocabulary.some(entry => entry.normalized_term === normalized)) {
+        throw new Error('Это слово уже есть в словаре данного курса.');
+      }
+      const entry = {
+        id: 'demo-vocab-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+        term, normalized_term: normalized,
+        translation: String(body.translation || '').trim() || null,
+        part_of_speech: String(body.part_of_speech || '').trim() || null,
+        grammatical_gender: state.activeLanguage === 'de' ? (body.grammatical_gender || null) : null,
+        plural_form: String(body.plural_form || '').trim() || null,
+        example_sentence: String(body.example_sentence || '').trim() || null,
+        notes: String(body.notes || '').trim() || null,
+        source: 'manual',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      state.vocabulary.push(entry);
+      writeState(state);
+      return { entry };
+    }
+
+    const vocabularyMatch = path.match(/^\/vocabulary\/([^/]+)$/);
+    if (vocabularyMatch && method === 'PUT') {
+      const entry = (state.vocabulary || []).find(item => item.id === decodeURIComponent(vocabularyMatch[1]));
+      if (!entry) throw new Error('Слово не найдено в этом учебном курсе.');
+      const term = typeof body.term === 'string' ? body.term.trim() : '';
+      if (!term || term.length > 120) throw new Error('Слово должно содержать от 1 до 120 символов.');
+      const normalized = term.normalize('NFKC').toLowerCase();
+      if (state.vocabulary.some(item => item.id !== entry.id && item.normalized_term === normalized)) {
+        throw new Error('Это слово уже есть в словаре данного курса.');
+      }
+      Object.assign(entry, {
+        term, normalized_term: normalized,
+        translation: String(body.translation || '').trim() || null,
+        part_of_speech: String(body.part_of_speech || '').trim() || null,
+        grammatical_gender: state.activeLanguage === 'de' ? (body.grammatical_gender || null) : null,
+        plural_form: String(body.plural_form || '').trim() || null,
+        example_sentence: String(body.example_sentence || '').trim() || null,
+        notes: String(body.notes || '').trim() || null,
+        updated_at: new Date().toISOString()
+      });
+      writeState(state);
+      return { entry };
+    }
+
+    if (vocabularyMatch && method === 'DELETE') {
+      const id = decodeURIComponent(vocabularyMatch[1]);
+      const before = (state.vocabulary || []).length;
+      state.vocabulary = (state.vocabulary || []).filter(item => item.id !== id);
+      if (state.vocabulary.length === before) throw new Error('Слово не найдено в этом учебном курсе.');
+      writeState(state);
+      return { ok: true };
     }
 
     if (path === '/onboarding' && method === 'PUT') {
