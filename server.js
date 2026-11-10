@@ -429,6 +429,39 @@ async function buildLearnerContext(userId, exerciseRef) {
 }
 
 
+
+async function getRequestStudyLanguage(req) {
+  const userId = req.session?.userId;
+  if (!userId) {
+    return { language_code: 'en', course_status: 'available', speech_supported: true };
+  }
+  const { rows } = await pool.query(
+    `SELECT l.language_code, l.course_status, l.speech_supported
+     FROM learner_profiles p
+     JOIN study_languages l ON l.language_code=p.active_learning_language_code
+     WHERE p.user_id=$1`,
+    [userId]
+  );
+  return rows[0] || null;
+}
+
+async function requireEnglishTargetCourse(req, res) {
+  try {
+    const language = await getRequestStudyLanguage(req);
+    if (!language || language.course_status !== 'available' || language.language_code.trim() !== 'en') {
+      res.status(409).json({
+        error: 'Генератор заданий для выбранного языка ещё готовится. Сейчас поддерживается английский.'
+      });
+      return null;
+    }
+    return language;
+  } catch (error) {
+    console.error('Active study language lookup failed:', error?.message || 'unknown error');
+    res.status(503).json({ error: 'Не удалось определить изучаемый язык. Попробуй ещё раз.' });
+    return null;
+  }
+}
+
 const speakingGenerationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 12,
@@ -440,6 +473,8 @@ const speakingGenerationLimiter = rateLimit({
 });
 
 app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) => {
+  const language = await requireEnglishTargetCourse(req, res);
+  if (!language) return;
   const origin = req.get('origin');
   if (origin) {
     try {
@@ -580,6 +615,8 @@ function cleanGeneratedPracticeSessions() {
 }
 
 app.post('/api/practice/instant', async (req, res) => {
+  const language = await requireEnglishTargetCourse(req, res);
+  if (!language) return;
   if (!sameRequestOrigin(req)) {
     return res.status(403).json({ error: 'Источник запроса не разрешён.' });
   }
@@ -594,6 +631,7 @@ app.post('/api/practice/instant', async (req, res) => {
     const exerciseId = randomUUID();
     generatedPracticeSessions.set(exerciseId, {
       exercise,
+      languageCode: language.language_code.trim(),
       expiresAt: Date.now() + PRACTICE_SESSION_TTL
     });
 
@@ -618,6 +656,8 @@ app.post('/api/practice/instant', async (req, res) => {
 });
 
 app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) => {
+  const language = await requireEnglishTargetCourse(req, res);
+  if (!language) return;
   if (!sameRequestOrigin(req)) {
     return res.status(403).json({ error: 'Источник запроса не разрешён.' });
   }
@@ -731,6 +771,7 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
       expiresAt: Date.now() + PRACTICE_SESSION_TTL,
       knowledgeNoteId,
       knowledgeNoteMeta,
+      languageCode: language.language_code.trim(),
       userId: knowledgeNoteId ? req.session.userId : null
     });
 
@@ -767,6 +808,10 @@ app.post('/api/practice/:id/check', practiceCheckLimiter, async (req, res) => {
   }
 
   try {
+    const activeLanguage = await getRequestStudyLanguage(req);
+    if (!activeLanguage || activeLanguage.language_code.trim() !== session.languageCode) {
+      return res.status(409).json({ error: 'Изучаемый язык изменился. Создай новое задание для активного курса.' });
+    }
     const result = gradeGeneratedPracticeExercise(session.exercise, req.body?.answers);
     if (session.knowledgeNoteId) {
       if (!req.session?.userId || req.session.userId !== session.userId || !pool) {
@@ -777,10 +822,11 @@ app.post('/api/practice/:id/check', practiceCheckLimiter, async (req, res) => {
         await client.query('BEGIN');
         await client.query(
           `INSERT INTO knowledge_quiz_attempts
-             (user_id,note_id,category,level,score,correct_count,question_count,results)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`,
+             (user_id,language_code,note_id,category,level,score,correct_count,question_count,results)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)`,
           [
             req.session.userId,
+            session.languageCode,
             session.knowledgeNoteId,
             session.knowledgeNoteMeta.category,
             session.knowledgeNoteMeta.level,
@@ -792,9 +838,9 @@ app.post('/api/practice/:id/check', practiceCheckLimiter, async (req, res) => {
         );
         await client.query(
           `INSERT INTO knowledge_note_progress
-             (user_id,note_id,title,summary,category,level,is_read,read_at,last_opened_at,last_score)
-           VALUES ($1,$2,$3,$4,$5,$6,TRUE,NOW(),NOW(),$7)
-           ON CONFLICT (user_id,note_id) DO UPDATE SET
+             (user_id,language_code,note_id,title,summary,category,level,is_read,read_at,last_opened_at,last_score)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,TRUE,NOW(),NOW(),$8)
+           ON CONFLICT (user_id,language_code,note_id) DO UPDATE SET
              title=EXCLUDED.title,
              summary=EXCLUDED.summary,
              category=EXCLUDED.category,
@@ -806,6 +852,7 @@ app.post('/api/practice/:id/check', practiceCheckLimiter, async (req, res) => {
              updated_at=NOW()`,
           [
             req.session.userId,
+            session.languageCode,
             session.knowledgeNoteId,
             session.knowledgeNoteMeta.title,
             session.knowledgeNoteMeta.summary,
@@ -817,10 +864,11 @@ app.post('/api/practice/:id/check', practiceCheckLimiter, async (req, res) => {
         for (const item of result.results.filter(question => !question.is_correct)) {
           await client.query(
             `INSERT INTO error_journal
-               (user_id,error_type,incorrect_form,correction,explanation)
-             VALUES ($1,$2,$3,$4,$5)`,
+               (user_id,language_code,error_type,incorrect_form,correction,explanation)
+             VALUES ($1,$2,$3,$4,$5,$6)`,
             [
               req.session.userId,
+              session.languageCode,
               ['grammar','vocabulary','reading','listening','speaking','writing'].includes(item.category) ? item.category : session.knowledgeNoteMeta.category,
               (item.learning_point + ': ' + item.selected_answer).slice(0, 500),
               item.correct_answer.slice(0, 500),
