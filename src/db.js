@@ -45,6 +45,44 @@ export async function requireUser(req, res, next) {
   }
 }
 
+
+export async function loadActiveStudyLanguage(req, res, next) {
+  try {
+    const { rows } = await pool.query(
+      `SELECT l.language_code, l.english_name, l.native_name, l.locale,
+              l.course_status, l.speech_supported
+       FROM learner_profiles p
+       JOIN study_languages l ON l.language_code=p.active_learning_language_code
+       WHERE p.user_id=$1`,
+      [req.user.id]
+    );
+    if (!rows[0]) return res.status(409).json({ error: 'Сначала выбери изучаемый язык.' });
+    req.studyLanguage = rows[0];
+    req.studyLanguageCode = rows[0].language_code.trim();
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+export function requireEnglishStudyLanguage(req, res, next) {
+  if (req.studyLanguageCode !== 'en') {
+    return res.status(409).json({
+      error: 'Эта функция для выбранного языка ещё готовится.'
+    });
+  }
+  next();
+}
+
+export function requireSpeechSupport(req, res, next) {
+  if (!req.studyLanguage?.speech_supported) {
+    return res.status(409).json({
+      error: 'Голосовая практика для выбранного языка ещё не подключена.'
+    });
+  }
+  next();
+}
+
 export async function recordActivity(userId, { minutes = 0, completedTasks = 0 } = {}) {
   if (!pool) return;
   await pool.query(
