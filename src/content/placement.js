@@ -43,7 +43,7 @@ export const germanPlacementQuestions = [
   { id: 'DE-P11', level: 'A2', prompt: 'Der Zug ist ___ als der Bus.', options: [{id:'a',text:'schneller'},{id:'b',text:'am schnellsten'},{id:'c',text:'schnell'}], answer: 'a' },
   { id: 'DE-P12', level: 'A2', prompt: 'Als Kind ___ ich oft bei meiner Oma.', options: [{id:'a',text:'war'},{id:'b',text:'bin'},{id:'c',text:'gewesen'}], answer: 'a' },
   { id: 'DE-P13', level: 'A2', prompt: 'Könnten Sie mir bitte ___?', options: [{id:'a',text:'helfen'},{id:'b',text:'hilft'},{id:'c',text:'geholfen'}], answer: 'a' },
-  { id: 'DE-P14', level: 'A2', prompt: 'Kannst du mir sagen, wann der Bus ___?', options: [{id:'a',text:'ankommt'},{id:'b',text:'kommt an'},{id:'c',text:'ankommen'}], answer: 'a' }
+  { id: 'DE-P14', level: 'A2', prompt: 'Kannst du mir sagen, wann der Bus ___?', options: [{id:'a',text:'ankommt'},{id:'b',text:'kommt an'},{id:'c',text:'ankommen'}], answer: 'a' },
   { id: 'DE-P15', level: 'B1', prompt: 'Wenn ich mehr Zeit ___, würde ich ein Instrument lernen.', options: [{id:'a',text:'hätte'},{id:'b',text:'habe'},{id:'c',text:'hatte'}], answer: 'a' },
   { id: 'DE-P16', level: 'B1', prompt: 'Der Bericht muss bis Freitag ___ werden.', options: [{id:'a',text:'eingereicht'},{id:'b',text:'einreichen'},{id:'c',text:'einreicht'}], answer: 'a' },
   { id: 'DE-P17', level: 'B1', prompt: 'Das ist die Kollegin, mit ___ ich arbeite.', options: [{id:'a',text:'der'},{id:'b',text:'die'},{id:'c',text:'den'}], answer: 'a' },
@@ -60,7 +60,6 @@ export const germanPlacementQuestions = [
   { id: 'DE-P28', level: 'C2', prompt: '___ seiner Tragweite wurde der Vorschlag nur am Rande erörtert.', options: [{id:'a',text:'Ungeachtet'},{id:'b',text:'Angesichts'},{id:'c',text:'Bezüglich'}], answer: 'a' },
   { id: 'DE-P29', level: 'C2', prompt: 'Sie stellte die Behauptung entschieden in ___.', options: [{id:'a',text:'Abrede'},{id:'b',text:'Aussicht'},{id:'c',text:'Frage'}], answer: 'a' },
   { id: 'DE-P30', level: 'C2', prompt: 'Als ___ gilt, dass jede Entscheidung nachvollziehbar begründet werden muss.', options: [{id:'a',text:'Prämisse'},{id:'b',text:'Prämie'},{id:'c',text:'Präambel'}], answer: 'a' }
-];
 ];
 
 export function estimateGermanLevel(correct, answers = []) {
