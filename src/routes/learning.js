@@ -411,6 +411,24 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+router.get('/skill-tasks', async (req, res, next) => {
+  const skills = ['listening','writing','speaking','pronunciation'];
+  const skill = typeof req.query.skill === 'string' ? req.query.skill : null;
+  if (skill && !skills.includes(skill)) return res.status(400).json({ error: 'Неизвестный навык.' });
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, language_code, skill, level, title, description,
+              duration_minutes, content, version
+       FROM skill_practice_tasks
+       WHERE language_code=$1 AND status='published'
+         AND ($2::text IS NULL OR skill=$2)
+       ORDER BY skill, level, id`,
+      [req.course.language_code, skill]
+    );
+    res.json({ language_code: req.course.language_code, tasks: rows });
+  } catch (error) { next(error); }
+});
+
 const skillTaskIds = {
   en: new Set(['listen_cafe_01','listen_station_01','listen_weekend_01','write_invitation_01','write_opinion_01','write_summary_01','speak_hobby_01','speak_place_01','speak_technology_01']),
   de: new Set(['de_listen_cafe_01','de_listen_station_01','de_listen_weekend_01','de_write_invitation_01','de_write_opinion_01','de_write_summary_01','de_speak_hobby_01','de_speak_place_01','de_speak_technology_01','de_pronunciation_01'])
