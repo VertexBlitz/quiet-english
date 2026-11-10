@@ -78,3 +78,58 @@ test('onboarding and plan screens expose a separate target-language selector', (
   assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v8'"));
   assert.ok(serviceWorker.includes('"/onboarding.html"'));
 });
+
+
+test('English-only tools refuse an unprepared study language', () => {
+  const db = read('src/db.js');
+  const learning = read('src/routes/learning.js');
+  const writing = read('src/routes/writing.js');
+  const studyTools = read('src/routes/study-tools.js');
+  const pronunciation = read('src/routes/pronunciation.js');
+  const server = read('server.js');
+
+  assert.ok(db.includes('export function requireEnglishStudyLanguage'));
+  assert.ok(db.includes('export function requireSpeechSupport'));
+  assert.ok(writing.includes("router.post('/writing/review',requireEnglishStudyLanguage"));
+  assert.ok(studyTools.includes("router.post('/listening/prepare',requireEnglishStudyLanguage"));
+  assert.ok(pronunciation.includes('loadActiveStudyLanguage, requireSpeechSupport'));
+  assert.ok(server.includes("app.post('/api/practice/instant'"));
+  assert.ok(server.includes("app.post('/api/practice/generate'"));
+  assert.ok(server.includes("app.post('/api/speaking/generate'"));
+  assert.ok(server.includes('requireEnglishTargetCourse(req, res)'));
+  assert.ok(learning.includes("if (!selectedTemplate && profile.language_code !== 'en')"));
+});
+
+test('knowledge, vocabulary, writing, speaking and study tools isolate saved data by language', () => {
+  const knowledge = read('src/routes/knowledge.js');
+  const writing = read('src/routes/writing.js');
+  const speaking = read('src/routes/pronunciation.js');
+  const studyTools = read('src/routes/study-tools.js');
+  const db = read('src/db.js');
+
+  assert.ok(knowledge.includes('loadActiveStudyLanguage'));
+  assert.ok(knowledge.includes('ON CONFLICT (user_id,language_code,note_id)'));
+  assert.ok(knowledge.includes('ON CONFLICT (user_id,language_code,LOWER(word))'));
+  assert.ok(knowledge.includes('ON CONFLICT (user_id,language_code,item_type,item_ref)'));
+  assert.ok(writing.includes('WHERE user_id=$1 AND language_code=$2 ORDER BY created_at DESC LIMIT 20'));
+  assert.ok(writing.includes('WHERE id=$1 AND user_id=$2 AND language_code=$3'));
+  assert.ok(speaking.includes('WHERE user_id=$1 AND language_code=$2'));
+  assert.ok(studyTools.includes('learnerSnapshot(req.user.id,req.studyLanguageCode)'));
+  assert.ok(studyTools.includes('WHERE user_id=$1 AND language_code=$2'));
+  assert.ok(db.includes('INSERT INTO daily_activity'));
+  assert.ok(db.includes('ON CONFLICT (user_id, language_code, activity_date)'));
+});
+
+test('AI practice local history is separated by study language and preserves legacy English history', () => {
+  const practice = read('public/ai-practice.js');
+  assert.ok(practice.includes('let activeStudyLanguageCode = \'en\''));
+  assert.ok(practice.includes('byLanguage[activeStudyLanguageCode] = next'));
+  assert.ok(practice.includes("activeStudyLanguageCode === 'en' ? value.slice(0, 8) : []"));
+  assert.ok(practice.includes("fetch('/api/learning/languages'"));
+});
+
+test('switching target languages restores each language profile settings', () => {
+  const route = read('src/routes/learning.js');
+  const updates = route.match(/active_learning_language_code=\$2,[\s\S]{0,260}onboarding_completed_at=llp\.onboarding_completed_at/g) || [];
+  assert.ok(updates.length >= 2, 'both enroll and activate should restore the selected language profile');
+});
