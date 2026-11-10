@@ -112,9 +112,75 @@ async function generatePlan(userId, course) {
   }
 }
 
+router.get('/languages', (_req, res) => {
+  res.json({ languages: publicLanguageCatalog() });
+});
+
+router.get('/courses', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT l.language_code, l.name_en, l.native_name, l.speech_locale, l.status AS availability,
+              c.id AS course_id, c.status AS course_status, c.goal, c.self_assessed_level,
+              c.assessed_level, c.onboarding_completed_at,
+              (c.id=u.active_learner_course_id) AS is_active
+       FROM language_catalog l
+       CROSS JOIN users u
+       LEFT JOIN learner_courses c ON c.user_id=u.id AND c.language_code=l.language_code
+       WHERE u.id=$1 AND l.status <> 'disabled'
+       ORDER BY l.sort_order`,
+      [req.user.id]
+    );
+    res.json({ courses: rows });
+  } catch (error) { next(error); }
+});
+
+router.post('/courses', async (req, res, next) => {
+  const languageCode = req.body?.language_code;
+  if (typeof languageCode !== 'string' || !isAvailableLanguage(languageCode)) {
+    return res.status(400).json({ error: 'Этот язык пока недоступен для изучения.' });
+  }
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO learner_courses (user_id, language_code)
+       VALUES ($1,$2)
+       ON CONFLICT (user_id, language_code) DO UPDATE
+         SET status='active', updated_at=NOW()
+       RETURNING *`,
+      [req.user.id, languageCode]
+    );
+    await pool.query(
+      'UPDATE users SET active_learner_course_id=$2, updated_at=NOW() WHERE id=$1',
+      [req.user.id, rows[0].id]
+    );
+    res.status(201).json({ course: rows[0], message: 'Учебный курс выбран. Настрой его и пройди тест уровня.' });
+  } catch (error) { next(error); }
+});
+
+router.put('/courses/:id/activate', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `UPDATE users u SET active_learner_course_id=c.id, updated_at=NOW()
+       FROM learner_courses c
+       JOIN language_catalog l ON l.language_code=c.language_code
+       WHERE u.id=$1 AND c.id=$2 AND c.user_id=u.id
+         AND c.status='active' AND l.status='active'
+       RETURNING c.id, c.language_code`,
+      [req.user.id, req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Учебный курс не найден или недоступен.' });
+    res.json({ ok: true, course: rows[0] });
+  } catch (error) { next(error); }
+});
+
 router.get('/profile', async (req, res, next) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM learner_profiles WHERE user_id=$1', [req.user.id]);
+    const { rows } = await pool.query(
+      `SELECT c.*, p.preferred_language, p.timezone
+       FROM learner_courses c
+       JOIN learner_profiles p ON p.user_id=c.user_id
+       WHERE c.user_id=$1 AND c.id=$2`,
+      [req.user.id, req.course.id]
+    );
     res.json({ profile: rows[0] || null });
   } catch (error) { next(error); }
 });
@@ -135,21 +201,24 @@ router.put('/onboarding', async (req, res, next) => {
   try { new Intl.DateTimeFormat('en', { timeZone: timezone }).format(new Date()); } catch { return res.status(400).json({ error: 'Часовой пояс указан некорректно.' }); }
   try {
     await pool.query(
-      `UPDATE learner_profiles
-       SET goal=$2, self_assessed_level=$3, minutes_per_day=$4, duration_weeks=$5,
-           interests=$6::jsonb, preferred_language=$7, timezone=$8, onboarding_completed_at=NOW(), updated_at=NOW()
-       WHERE user_id=$1`,
-      [req.user.id, goal, self_assessed_level || null, Number(minutes_per_day), Number(duration_weeks), JSON.stringify(interests), preferred_language, timezone]
+      `UPDATE learner_courses
+       SET goal=$3, self_assessed_level=$4, minutes_per_day=$5, duration_weeks=$6,
+           interests=$7::jsonb, onboarding_completed_at=NOW(), updated_at=NOW()
+       WHERE user_id=$1 AND id=$2`,
+      [req.user.id, req.course.id, goal, self_assessed_level || null, Number(minutes_per_day), Number(duration_weeks), JSON.stringify(interests)]
     );
+    await pool.query('UPDATE learner_profiles SET preferred_language=$2, timezone=$3, updated_at=NOW() WHERE user_id=$1', [req.user.id, preferred_language, timezone]);
     res.json({ ok: true, message: 'Настройки обучения сохранены.' });
   } catch (error) { next(error); }
 });
 
-router.get('/placement/questions', (_req, res) => {
-  res.json({ questions: publicQuestions(), note: 'Короткая предварительная оценка, не официальный сертификат CEFR.' });
+router.get('/placement/questions', (req, res) => {
+  const questions = placementForLanguage(req.course.language_code);
+  res.json({ questions: publicQuestions(questions), language_code: req.course.language_code, note: 'Короткая предварительная оценка, не официальный сертификат CEFR.' });
 });
 
 router.post('/placement/submit', async (req, res, next) => {
+  const placementQuestions = placementForLanguage(req.course.language_code);
   const answers = req.body?.answers;
   if (!Array.isArray(answers) || answers.length !== placementQuestions.length) {
     return res.status(400).json({ error: 'Ответь на все вопросы теста.' });
@@ -160,11 +229,11 @@ router.post('/placement/submit', async (req, res, next) => {
   const level = estimateLevel(correct);
   try {
     await pool.query(
-      'INSERT INTO placement_attempts (user_id, answers, correct_count, total_questions, estimated_level) VALUES ($1,$2::jsonb,$3,$4,$5)',
-      [req.user.id, JSON.stringify(answers), correct, placementQuestions.length, level]
+      'INSERT INTO placement_attempts (user_id, learner_course_id, answers, correct_count, total_questions, estimated_level) VALUES ($1,$2,$3::jsonb,$4,$5,$6)',
+      [req.user.id, req.course.id, JSON.stringify(answers), correct, placementQuestions.length, level]
     );
-    await pool.query('UPDATE learner_profiles SET assessed_level=$2, updated_at=NOW() WHERE user_id=$1', [req.user.id, level]);
-    const plan = await generatePlan(req.user.id);
+    await pool.query('UPDATE learner_courses SET assessed_level=$3, updated_at=NOW() WHERE user_id=$1 AND id=$2', [req.user.id, req.course.id, level]);
+    const plan = await generatePlan(req.user.id, req.course);
     res.json({
       ok: true,
       result: { level, correct, total: placementQuestions.length, is_preliminary: true },
@@ -175,7 +244,7 @@ router.post('/placement/submit', async (req, res, next) => {
 
 router.post('/plan/generate', async (req, res, next) => {
   try {
-    const plan = await generatePlan(req.user.id);
+    const plan = await generatePlan(req.user.id, req.course);
     res.status(201).json({ plan });
   } catch (error) { next(error); }
 });
