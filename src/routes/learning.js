@@ -18,12 +18,44 @@ const miniPrompts = [
   'Give one reason for an opinion using “because”.',
   'Summarise one useful thing you learned this week.'
 ];
-const germanMiniPrompts = [
-  { ru:'Представься по-немецки и назови город, в котором живёшь.', en:'Introduce yourself in German and name the city where you live.' },
-  { ru:'Составь короткую просьбу с bitte.', en:'Make a short request using bitte.' },
-  { ru:'Опиши свой обычный день двумя предложениями на немецком.', en:'Describe your daily routine in two German sentences.' },
-  { ru:'Расскажи, что ты делал(а) вчера, используя Perfekt.', en:'Say what you did yesterday using the Perfekt.' }
-];
+const germanMiniPrompts = {
+  A1: [
+    { ru:'Представься по-немецки и назови город, в котором живёшь.', en:'Introduce yourself in German and name your city.' },
+    { ru:'Составь короткую просьбу с bitte.', en:'Make a short request using bitte.' },
+    { ru:'Опиши свой обычный день двумя простыми предложениями.', en:'Describe your daily routine in two simple sentences.' },
+    { ru:'Расскажи, что ты делал(а) вчера, используя Perfekt.', en:'Say what you did yesterday using the Perfekt.' }
+  ],
+  A2: [
+    { ru:'Опиши недавнюю поездку и объясни, что тебе понравилось.', en:'Describe a recent trip and explain what you liked.' },
+    { ru:'Сравни два способа добраться до учёбы или работы.', en:'Compare two ways of travelling to school or work.' },
+    { ru:'Дай совет другу, используя solltest.', en:'Give a friend advice using solltest.' },
+    { ru:'Объясни причину своего решения с weil.', en:'Explain the reason for a decision using weil.' }
+  ],
+  B1: [
+    { ru:'Обоснуй своё мнение и приведи два аргумента.', en:'Justify your opinion and give two arguments.' },
+    { ru:'Опиши проблему на работе или учёбе и предложи решение.', en:'Describe a work or study problem and suggest a solution.' },
+    { ru:'Перескажи событие, используя Plusquamperfekt там, где нужно.', en:'Retell an event using the past perfect where appropriate.' },
+    { ru:'Сравни два варианта и объясни последствия каждого.', en:'Compare two options and explain their consequences.' }
+  ],
+  B2: [
+    { ru:'Сопоставь противоположные точки зрения на общественную тему.', en:'Compare opposing viewpoints on a social issue.' },
+    { ru:'Сформулируй аргументированную рекомендацию в формальном стиле.', en:'Write a reasoned recommendation in a formal register.' },
+    { ru:'Объясни гипотетическую ситуацию с Konjunktiv II.', en:'Explain a hypothetical situation using Konjunktiv II.' },
+    { ru:'Кратко изложи сложную проблему, сохранив важные нюансы.', en:'Summarise a complex issue while preserving key nuances.' }
+  ],
+  C1: [
+    { ru:'Проанализируй аргумент автора и оцени качество доказательств.', en:'Analyse an author’s argument and assess the evidence.' },
+    { ru:'Сформулируй нейтральное резюме формального сообщения.', en:'Produce a neutral summary of a formal statement.' },
+    { ru:'Объясни сложную причинно-следственную связь точными связками.', en:'Explain a complex causal relationship with precise connectors.' },
+    { ru:'Переформулируй разговорное высказывание в академическом стиле.', en:'Rephrase an informal statement in an academic register.' }
+  ],
+  C2: [
+    { ru:'Разбери тонкие смысловые различия между двумя близкими позициями.', en:'Analyse subtle distinctions between two closely related positions.' },
+    { ru:'Сформулируй сбалансированный вывод с учётом контраргументов.', en:'Formulate a balanced conclusion that accounts for counterarguments.' },
+    { ru:'Перепиши мысль для официальной, академической и разговорной аудитории.', en:'Adapt an idea for formal, academic and conversational audiences.' },
+    { ru:'Оцени риторический приём и его влияние на интерпретацию текста.', en:'Assess a rhetorical device and its effect on interpretation.' }
+  ]
+};
 
 function chooseExercise(level, day) {
   const rank = levelRank[level] ?? 2;
@@ -104,7 +136,7 @@ async function generatePlan(userId) {
       for (let dayInWeek = 1; dayInWeek <= 7; dayInWeek++) {
         const day = (week - 1) * 7 + dayInWeek;
         const miniPrompt = profile.language_code === 'de'
-          ? germanMiniPrompts[(day - 1) % germanMiniPrompts.length]
+          ? (germanMiniPrompts[profile.level] || germanMiniPrompts.A1)[(day - 1) % 4]
           : { ru: miniPrompts[(day - 1) % miniPrompts.length], en: miniPrompts[(day - 1) % miniPrompts.length] };
         await client.query(
           `INSERT INTO plan_days
@@ -239,8 +271,8 @@ router.put('/onboarding', async (req, res, next) => {
   const levels = ['Pre-A1','A1','A2','B1','B2','C1','C2'];
   if (!goals.includes(goal)) return res.status(400).json({ error: 'Выбери цель обучения.' });
   if (self_assessed_level && !levels.includes(self_assessed_level)) return res.status(400).json({ error: 'Уровень указан некорректно.' });
-  if (language_code === 'de' && self_assessed_level && !['A1','A2'].includes(self_assessed_level)) {
-    return res.status(400).json({ error: 'Первый немецкий курс рассчитан на уровни A1–A2. Выбери A1 или A2.' });
+  if (language_code === 'de' && self_assessed_level === 'Pre-A1') {
+    return res.status(400).json({ error: 'Немецкая программа начинается с A1. Выбери A1 или пройди тест уровня.' });
   }
   if (![5,10,15,30].includes(Number(minutes_per_day))) return res.status(400).json({ error: 'Выбери 5, 10, 15 или 30 минут.' });
   if (Number(duration_weeks) !== 4) return res.status(400).json({ error: 'В первой версии доступен четырёхнедельный план.' });
@@ -309,7 +341,7 @@ router.get('/placement/questions', async (req, res, next) => {
       return res.json({
         language_code: 'de',
         questions: publicGermanQuestions(),
-        note: 'Предварительная оценка немецкого A1–A2. Это не официальный сертификат CEFR.'
+        note: 'Предварительная оценка немецкого A1–C2. Это не официальный сертификат CEFR.'
       });
     }
     if (languageCode !== 'en') return res.status(409).json({ error: 'Тест уровня для выбранного языка ещё готовится.' });
@@ -335,7 +367,7 @@ router.post('/placement/submit', async (req, res, next) => {
     const answerMap = new Map(answers.map(item => [item?.id, item?.option_id]));
     if (questions.some(q => !answerMap.has(q.id))) return res.status(400).json({ error: 'В ответах отсутствуют вопросы.' });
     const correct = questions.filter(q => answerMap.get(q.id) === q.answer).length;
-    const level = languageCode === 'de' ? estimateGermanLevel(correct) : estimateLevel(correct);
+    const level = languageCode === 'de' ? estimateGermanLevel(correct, answers) : estimateLevel(correct);
     await pool.query(
       'INSERT INTO placement_attempts (user_id, language_code, answers, correct_count, total_questions, estimated_level) VALUES ($1,$2,$3::jsonb,$4,$5,$6)',
       [req.user.id, languageCode, JSON.stringify(answers), correct, questions.length, level]
