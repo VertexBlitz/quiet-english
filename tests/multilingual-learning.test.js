@@ -91,7 +91,8 @@ test('only supported study languages can reach language-specific generators', ()
   assert.ok(db.includes('export function requireEnglishStudyLanguage'));
   assert.ok(db.includes('export function requireSpeechSupport'));
   assert.ok(writing.includes("req.studyLanguageCode === 'de'"));
-  assert.ok(studyTools.includes("req.studyLanguageCode === 'de'"));
+  assert.ok(studyTools.includes('const LEVELS = [\'A1\',\'A2\',\'B1\',\'B2\',\'C1\',\'C2\']'));
+  assert.ok(studyTools.includes('loadActiveStudyLanguage'));
   assert.ok(pronunciation.includes('loadActiveStudyLanguage, requireSpeechSupport'));
   assert.ok(server.includes("app.post('/api/practice/instant'"));
   assert.ok(server.includes("app.post('/api/practice/generate'"));
