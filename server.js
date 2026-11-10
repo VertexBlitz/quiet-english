@@ -422,7 +422,9 @@ app.post('/api/chat', async (req, res) => {
   const command = messages.at(-1)?.content.trim().toLowerCase();
   if (['/plan','/today','/practice','/review','/progress'].includes(command)) {
     try {
-      const message = await buildCommandReply(req.session?.userId, command);
+      const userId = req.session?.userId;
+      const course = await getActiveCourse(userId);
+      const message = await buildCommandReply(userId, command, course);
       return res.json({ message, demo: false, command });
     } catch (error) {
       console.error('Tutor command failed:', error?.message || 'unknown error');
@@ -433,6 +435,16 @@ app.post('/api/chat', async (req, res) => {
   if (!isAiConfigured()) {
     return res.status(503).json({ error: 'ИИ временно не настроен.' });
   }
+
+  let activeCourse = null;
+  try { activeCourse = await getActiveCourse(req.session?.userId); }
+  catch (error) {
+    console.error('Unable to load active learner course:', error?.message || 'unknown error');
+    return res.status(503).json({ error: 'Не удалось определить активный учебный курс.' });
+  }
+  const requestedLanguage = req.body?.language_code;
+  const languageCode = activeCourse?.language_code || (isAvailableLanguage(requestedLanguage) ? requestedLanguage : 'en');
+  const systemPrompt = SYSTEM_PROMPTS[languageCode] || SYSTEM_PROMPTS.en;
 
   const endpoint = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}/ai/v1/chat/completions`;
   let upstream;
@@ -448,8 +460,8 @@ app.post('/api/chat', async (req, res) => {
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          ...(await buildLearnerContext(req.session?.userId, req.body?.context_ref)
+          { role: 'system', content: systemPrompt },
+          ...(await buildLearnerContext(req.session?.userId, req.body?.context_ref, activeCourse)
             .then(context => context ? [{ role: 'system', content: context }] : [])),
           ...messages
         ],
