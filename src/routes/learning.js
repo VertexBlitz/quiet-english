@@ -552,7 +552,8 @@ router.post('/review/:id', async (req, res, next) => {
     await pool.query(
       `UPDATE srs_items SET interval_days=$3,repetitions=$4,ease_factor=$5,last_rating=$6,
        due_at=CASE WHEN $3=0 THEN NOW()+INTERVAL '10 minutes' ELSE NOW()+($3 * INTERVAL '1 day') END, updated_at=NOW()
-       WHERE id=$1 AND user_id=$2`,
+       WHERE id=$1 AND user_id=$2
+         AND language_code=(SELECT active_learning_language_code FROM learner_profiles WHERE user_id=$2)`,
       [item.id, req.user.id, interval, repetitions, ease, rating]
     );
     await recordActivity(req.user.id, { minutes: 1, completedTasks: 0, languageCode: req.studyLanguageCode });
