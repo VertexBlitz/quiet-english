@@ -231,6 +231,7 @@ if (form) {
       }
 
       const requestBody = { messages: history.slice(-12) };
+      requestBody.language_code = window.QEDemo?.getActiveLanguage?.() || window.QEActiveLanguage || 'en';
       if (exerciseContextRef) {
         if (window.QEDemo && await window.QEDemo.ensure()) {
           const { exercise } = await window.QEDemo.request('/exercises/' + encodeURIComponent(exerciseContextRef));
