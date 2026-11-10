@@ -31,3 +31,31 @@ test('German placement contains a balanced 14-question CEFR progression', () => 
     assert.ok(question.options.some(option => option.id === question.answer));
   }
 });
+
+import { readFileSync } from 'node:fs';
+
+const germanExercises = JSON.parse(readFileSync(new URL('../content/seed-exercises.de.json', import.meta.url), 'utf8'));
+const germanPlans = JSON.parse(readFileSync(new URL('../content/plan-templates.de.json', import.meta.url), 'utf8'));
+
+test('German exercise library covers all CEFR bands with unique IDs', () => {
+  assert.equal(germanExercises.length, 21);
+  assert.deepEqual(
+    [...new Set(germanExercises.map(exercise => exercise.level))].sort(),
+    ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
+  );
+  assert.ok(germanExercises.every(exercise => exercise.language_code === 'de'));
+  assert.equal(new Set(germanExercises.map(exercise => exercise.id)).size, germanExercises.length);
+});
+
+test('German four-week plans reference only German exercises', () => {
+  const exerciseIds = new Set(germanExercises.map(exercise => exercise.id));
+  assert.equal(germanPlans.length, 6);
+  for (const plan of germanPlans) {
+    assert.equal(plan.language_code, 'de');
+    assert.equal(plan.weekly_themes.length, 4);
+    for (const week of plan.weekly_themes) {
+      assert.equal(week.tasks.length, 7);
+      for (const taskId of week.tasks) assert.ok(exerciseIds.has(taskId), plan.id + ': ' + taskId);
+    }
+  }
+});
