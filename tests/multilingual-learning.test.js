@@ -133,3 +133,20 @@ test('switching target languages restores each language profile settings', () =>
   const updates = route.match(/active_learning_language_code=\$2,[\s\S]{0,260}onboarding_completed_at=llp\.onboarding_completed_at/g) || [];
   assert.ok(updates.length >= 2, 'both enroll and activate should restore the selected language profile');
 });
+
+
+test('activity tracking keeps the originating study language even after a profile switch', () => {
+  const db = read('src/db.js');
+  const learning = read('src/routes/learning.js');
+  const writing = read('src/routes/writing.js');
+  const tools = read('src/routes/study-tools.js');
+  const server = read('server.js');
+
+  assert.ok(db.includes('languageCode = null'));
+  assert.ok(db.includes('COALESCE($4, active_learning_language_code)'));
+  assert.ok(learning.includes('languageCode: exercise.language_code'));
+  assert.ok(writing.includes('languageCode:req.studyLanguageCode'));
+  assert.ok(tools.includes('languageCode:found.rows[0].language_code'));
+  assert.ok(server.includes('languageCode: session.languageCode'));
+  assert.ok(learning.includes('AND language_code=(SELECT active_learning_language_code FROM learner_profiles WHERE user_id=$2)'));
+});
