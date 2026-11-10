@@ -3,6 +3,7 @@
   if (!root) return;
 
   const STORE_KEY = 'quiet-english-ai-practice-history-v1';
+  let activeStudyLanguageCode = 'en';
   const $ = selector => root.querySelector(selector);
   const level = $('[data-ai-level]');
   const skill = $('[data-ai-skill]');
@@ -91,10 +92,32 @@
   function readHistory() {
     try {
       const value = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
-      return Array.isArray(value) ? value.slice(0, 8) : [];
+      // Legacy history was a single English-only array; retain it under English.
+      if (Array.isArray(value)) {
+        return activeStudyLanguageCode === 'en' ? value.slice(0, 8) : [];
+      }
+      const languageHistory = value && typeof value === 'object'
+        ? value[activeStudyLanguageCode]
+        : null;
+      return Array.isArray(languageHistory) ? languageHistory.slice(0, 8) : [];
     } catch {
       return [];
     }
+  }
+
+  async function loadActiveStudyLanguage() {
+    try {
+      const response = await fetch('/api/learning/languages', { credentials: 'same-origin' });
+      if (!response.ok) return;
+      const data = await response.json().catch(() => ({}));
+      const active = Array.isArray(data.languages)
+        ? data.languages.find(item => item.is_active)
+        : null;
+      if (active && typeof active.language_code === 'string') {
+        activeStudyLanguageCode = active.language_code.trim().toLowerCase();
+      }
+    } catch {}
+    renderHistory();
   }
 
   function renderHistory() {
@@ -116,7 +139,12 @@
   function saveHistory(item) {
     const next = [item, ...readHistory()].slice(0, 8);
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify(next));
+      const stored = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+      const byLanguage = Array.isArray(stored)
+        ? (activeStudyLanguageCode === 'en' ? { en: stored } : {})
+        : (stored && typeof stored === 'object' ? stored : {});
+      byLanguage[activeStudyLanguageCode] = next;
+      localStorage.setItem(STORE_KEY, JSON.stringify(byLanguage));
     } catch {}
     renderHistory();
   }
@@ -459,6 +487,7 @@
   generateButton.addEventListener('click', () => activeKnowledgeQuiz ? generateKnowledgeQuiz() : generateExercise());
   listenButton.addEventListener('click', speakPassage);
   renderHistory();
+  void loadActiveStudyLanguage();
   window.addEventListener('quietenglish:languagechange', () => {
     renderHistory();
     if (currentExercise) {
