@@ -1,11 +1,11 @@
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { pool, requireDatabase, requireUser, recordActivity } from '../db.js';
+import { pool, requireDatabase, requireUser, loadActiveStudyLanguage, requireEnglishStudyLanguage, recordActivity } from '../db.js';
 import { isExternalPersonalDataProcessingAllowed } from '../region-config.js';
 import { consumeMonthlyQuota } from '../subscription-access.js';
 
 const router = express.Router();
-router.use(requireDatabase, requireUser);
+router.use(requireDatabase, requireUser, loadActiveStudyLanguage);
 const MODEL = process.env.CLOUDFLARE_MODEL || '@cf/google/gemma-4-26b-a4b-it';
 const LEVELS = ['A1','A2','B1','B2','C1','C2'];
 const SKILLS = ['grammar','vocabulary','reading','listening','speaking','writing','mixed'];
@@ -52,7 +52,7 @@ function aiError(res,error) {
 }
 
 const listeningLimiter=rateLimit({windowMs:3600000,limit:8,standardHeaders:'draft-8',legacyHeaders:false});
-router.post('/listening/prepare',listeningLimiter,async function(req,res,next) {
+router.post('/listening/prepare',requireEnglishStudyLanguage,listeningLimiter,async function(req,res,next) {
   const body=req.body || {};
   const transcript=multiline(body.transcript,12000);
   const title=clean(body.title,120);
@@ -83,8 +83,8 @@ router.post('/listening/prepare',listeningLimiter,async function(req,res,next) {
         !Number.isInteger(q.correct_option) || q.correct_option<0 || q.correct_option>3;
     })) throw new Error('AI_QUESTIONS');
     const inserted=await pool.query(
-      "INSERT INTO listening_quiz_sessions (user_id,title,level,question_set,expires_at) VALUES ($1,$2,$3,$4::jsonb,NOW()+INTERVAL '90 minutes') RETURNING id",
-      [req.user.id,title || 'Listening practice',level,JSON.stringify(questions)]
+      "INSERT INTO listening_quiz_sessions (user_id,language_code,title,level,question_set,expires_at) VALUES ($1,$2,$3,$4,$5::jsonb,NOW()+INTERVAL '90 minutes') RETURNING id",
+      [req.user.id,req.studyLanguageCode,title || 'Listening practice',level,JSON.stringify(questions)]
     );
     res.status(201).json({
       session_id:inserted.rows[0].id,
@@ -108,8 +108,8 @@ router.post('/listening/attempts',async function(req,res,next) {
   try {
     await client.query('BEGIN');
     const found=await client.query(
-      "SELECT id,title,level,question_set FROM listening_quiz_sessions WHERE id=$1 AND user_id=$2 AND completed_at IS NULL AND expires_at>NOW() FOR UPDATE",
-      [sessionId,req.user.id]
+      "SELECT id,title,level,language_code,question_set FROM listening_quiz_sessions WHERE id=$1 AND user_id=$2 AND language_code=$3 AND completed_at IS NULL AND expires_at>NOW() FOR UPDATE",
+      [sessionId,req.user.id,req.studyLanguageCode]
     );
     if (!found.rows[0]) {await client.query('ROLLBACK');return res.status(404).json({error:'Сессия аудирования истекла. Подготовь вопросы ещё раз.'});}
     const questions=found.rows[0].question_set;
@@ -121,12 +121,12 @@ router.post('/listening/attempts',async function(req,res,next) {
     const correct=details.filter(function(x){return x.correct;}).length;
     const resultScore=Math.round(correct/questions.length*100);
     const stored=await client.query(
-      "INSERT INTO listening_attempts (user_id,title,level,score,correct_count,question_count,duration_seconds) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id,created_at",
-      [req.user.id,found.rows[0].title,found.rows[0].level,resultScore,correct,questions.length,duration]
+      "INSERT INTO listening_attempts (user_id,language_code,title,level,score,correct_count,question_count,duration_seconds) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,created_at",
+      [req.user.id,found.rows[0].language_code,found.rows[0].title,found.rows[0].level,resultScore,correct,questions.length,duration]
     );
-    await client.query('UPDATE listening_quiz_sessions SET completed_at=NOW() WHERE id=$1',[sessionId]);
+    await client.query('UPDATE listening_quiz_sessions SET completed_at=NOW() WHERE id=$1 AND user_id=$2 AND language_code=$3',[sessionId,req.user.id,req.studyLanguageCode]);
     await client.query('COMMIT');
-    await recordActivity(req.user.id,{minutes:Math.max(1,Math.round(duration/60)),completedTasks:1});
+    await recordActivity(req.user.id,{minutes:Math.max(1,Math.round(duration/60)),completedTasks:1,languageCode:found.rows[0].language_code});
     res.json({attempt_id:stored.rows[0].id,score:resultScore,correct_count:correct,question_count:questions.length,details:details});
   } catch(error) {
     await client.query('ROLLBACK');next(error);
@@ -141,14 +141,14 @@ router.get('/analytics',async function(req,res,next) {
   if (range==='all') {bucket='month';days=null;}
   try {
     const result=await Promise.all([
-      pool.query("SELECT date_trunc($2,activity_date::timestamp)::date::text AS period,SUM(minutes)::int AS minutes,SUM(completed_tasks)::int AS completed_tasks FROM daily_activity WHERE user_id=$1 AND ($3::int IS NULL OR activity_date>=CURRENT_DATE-($3::int-1)) GROUP BY 1 ORDER BY 1",[req.user.id,bucket,days]),
-      pool.query("SELECT e.skill,COUNT(*)::int AS attempts,ROUND(AVG(a.score))::int AS accuracy FROM exercise_attempts a JOIN exercises e ON e.id=a.exercise_id WHERE a.user_id=$1 GROUP BY e.skill",[req.user.id]),
-      pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(score))::int AS accuracy FROM listening_attempts WHERE user_id=$1",[req.user.id]),
-      pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(overall_score))::int AS accuracy FROM writing_submissions WHERE user_id=$1",[req.user.id]),
-      pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(word_match_score))::int AS accuracy FROM pronunciation_attempts WHERE user_id=$1",[req.user.id]),
-      pool.query("SELECT COALESCE(SUM(minutes),0)::int AS minutes,COALESCE(SUM(completed_tasks),0)::int AS tasks,COUNT(*) FILTER (WHERE completed_tasks>0)::int AS active_days FROM daily_activity WHERE user_id=$1",[req.user.id]),
-      pool.query("SELECT COUNT(*)::int AS count FROM srs_items WHERE user_id=$1 AND item_type='vocabulary' AND due_at<=NOW()",[req.user.id]),
-      pool.query("SELECT error_type,COUNT(*)::int AS count,SUM(occurrences)::int AS occurrences FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL GROUP BY error_type ORDER BY SUM(occurrences) DESC LIMIT 8",[req.user.id])
+      pool.query("SELECT date_trunc($2,activity_date::timestamp)::date::text AS period,SUM(minutes)::int AS minutes,SUM(completed_tasks)::int AS completed_tasks FROM daily_activity WHERE user_id=$1 AND language_code=$4 AND ($3::int IS NULL OR activity_date>=CURRENT_DATE-($3::int-1)) GROUP BY 1 ORDER BY 1",[req.user.id,bucket,days,req.studyLanguageCode]),
+      pool.query("SELECT e.skill,COUNT(*)::int AS attempts,ROUND(AVG(a.score))::int AS accuracy FROM exercise_attempts a JOIN exercises e ON e.id=a.exercise_id WHERE a.user_id=$1 AND a.language_code=$2 GROUP BY e.skill",[req.user.id,req.studyLanguageCode]),
+      pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(score))::int AS accuracy FROM listening_attempts WHERE user_id=$1 AND language_code=$2",[req.user.id,req.studyLanguageCode]),
+      pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(overall_score))::int AS accuracy FROM writing_submissions WHERE user_id=$1 AND language_code=$2",[req.user.id,req.studyLanguageCode]),
+      pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(word_match_score))::int AS accuracy FROM pronunciation_attempts WHERE user_id=$1 AND language_code=$2",[req.user.id,req.studyLanguageCode]),
+      pool.query("SELECT COALESCE(SUM(minutes),0)::int AS minutes,COALESCE(SUM(completed_tasks),0)::int AS tasks,COUNT(*) FILTER (WHERE completed_tasks>0)::int AS active_days FROM daily_activity WHERE user_id=$1 AND language_code=$2",[req.user.id,req.studyLanguageCode]),
+      pool.query("SELECT COUNT(*)::int AS count FROM srs_items WHERE user_id=$1 AND language_code=$2 AND item_type='vocabulary' AND due_at<=NOW()",[req.user.id,req.studyLanguageCode]),
+      pool.query("SELECT error_type,COUNT(*)::int AS count,SUM(occurrences)::int AS occurrences FROM error_journal WHERE user_id=$1 AND language_code=$2 AND resolved_at IS NULL GROUP BY error_type ORDER BY SUM(occurrences) DESC LIMIT 8",[req.user.id,req.studyLanguageCode])
     ]);
     const bySkill=new Map(result[1].rows.map(function(row){return [row.skill,row];}));
     const skills=[];
@@ -163,16 +163,16 @@ router.get('/analytics',async function(req,res,next) {
   } catch(error) {next(error);}
 });
 
-async function learnerSnapshot(userId) {
+async function learnerSnapshot(userId, languageCode) {
   const result=await Promise.all([
-    pool.query("SELECT goal,COALESCE(assessed_level,self_assessed_level,'A2') AS level,minutes_per_day FROM learner_profiles WHERE user_id=$1",[userId]),
-    pool.query("SELECT error_type,incorrect_form,correction,explanation,occurrences FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL ORDER BY occurrences DESC,updated_at DESC LIMIT 10",[userId]),
-    pool.query("SELECT e.skill,COUNT(*)::int AS attempts,ROUND(AVG(a.score))::int AS accuracy FROM exercise_attempts a JOIN exercises e ON e.id=a.exercise_id WHERE a.user_id=$1 GROUP BY e.skill",[userId]),
-    pool.query("SELECT COUNT(*)::int AS due_words FROM srs_items WHERE user_id=$1 AND item_type='vocabulary' AND due_at<=NOW()",[userId]),
-    pool.query("SELECT COALESCE(SUM(minutes),0)::int AS minutes,COUNT(*) FILTER (WHERE completed_tasks>0)::int AS active_days FROM daily_activity WHERE user_id=$1 AND activity_date>=CURRENT_DATE-6",[userId]),
-    pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(score))::int AS accuracy FROM listening_attempts WHERE user_id=$1",[userId]),
-    pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(overall_score))::int AS accuracy FROM writing_submissions WHERE user_id=$1",[userId]),
-    pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(word_match_score))::int AS accuracy FROM pronunciation_attempts WHERE user_id=$1",[userId])
+    pool.query("SELECT goal,COALESCE(assessed_level,self_assessed_level,'A2') AS level,minutes_per_day FROM learner_language_profiles WHERE user_id=$1 AND language_code=$2",[userId,languageCode]),
+    pool.query("SELECT error_type,incorrect_form,correction,explanation,occurrences FROM error_journal WHERE user_id=$1 AND language_code=$2 AND resolved_at IS NULL ORDER BY occurrences DESC,updated_at DESC LIMIT 10",[userId,languageCode]),
+    pool.query("SELECT e.skill,COUNT(*)::int AS attempts,ROUND(AVG(a.score))::int AS accuracy FROM exercise_attempts a JOIN exercises e ON e.id=a.exercise_id WHERE a.user_id=$1 AND a.language_code=$2 GROUP BY e.skill",[userId,languageCode]),
+    pool.query("SELECT COUNT(*)::int AS due_words FROM srs_items WHERE user_id=$1 AND language_code=$2 AND item_type='vocabulary' AND due_at<=NOW()",[userId,languageCode]),
+    pool.query("SELECT COALESCE(SUM(minutes),0)::int AS minutes,COUNT(*) FILTER (WHERE completed_tasks>0)::int AS active_days FROM daily_activity WHERE user_id=$1 AND language_code=$2 AND activity_date>=CURRENT_DATE-6",[userId,languageCode]),
+    pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(score))::int AS accuracy FROM listening_attempts WHERE user_id=$1 AND language_code=$2",[userId,languageCode]),
+    pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(overall_score))::int AS accuracy FROM writing_submissions WHERE user_id=$1 AND language_code=$2",[userId,languageCode]),
+    pool.query("SELECT COUNT(*)::int AS attempts,ROUND(AVG(word_match_score))::int AS accuracy FROM pronunciation_attempts WHERE user_id=$1 AND language_code=$2",[userId,languageCode])
   ]);
   const measuredSkills=result[2].rows.slice();
   [
@@ -211,24 +211,24 @@ const coachLimiter=rateLimit({windowMs:3600000,limit:4,standardHeaders:'draft-8'
 router.get('/coach/latest',async function(req,res,next) {
   try {
     const result=await Promise.all([
-      pool.query("SELECT id,recommendations,summary,source,created_at FROM learner_coach_reports WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1",[req.user.id]),
-      pool.query("SELECT id,title,description,skill,topic,due_date,completed_at FROM learner_focus_tasks WHERE user_id=$1 AND completed_at IS NULL ORDER BY due_date,id LIMIT 8",[req.user.id])
+      pool.query("SELECT id,recommendations,summary,source,created_at FROM learner_coach_reports WHERE user_id=$1 AND language_code=$2 ORDER BY created_at DESC LIMIT 1",[req.user.id,req.studyLanguageCode]),
+      pool.query("SELECT id,title,description,skill,topic,due_date,completed_at FROM learner_focus_tasks WHERE user_id=$1 AND language_code=$2 AND completed_at IS NULL ORDER BY due_date,id LIMIT 8",[req.user.id,req.studyLanguageCode])
     ]);
     res.json({report:result[0].rows[0] || null,tasks:result[1].rows});
   } catch(error){next(error);}
 });
 router.post('/coach/analyze',coachLimiter,async function(req,res,next) {
   try {
-    const cached=await pool.query("SELECT id,recommendations,summary,source,created_at FROM learner_coach_reports WHERE user_id=$1 AND created_at>NOW()-INTERVAL '20 hours' ORDER BY created_at DESC LIMIT 1",[req.user.id]);
+    const cached=await pool.query("SELECT id,recommendations,summary,source,created_at FROM learner_coach_reports WHERE user_id=$1 AND language_code=$2 AND created_at>NOW()-INTERVAL '20 hours' ORDER BY created_at DESC LIMIT 1",[req.user.id,req.studyLanguageCode]);
     if (cached.rows[0]) {
-      const tasks=await pool.query("SELECT id,title,description,skill,topic,due_date,completed_at FROM learner_focus_tasks WHERE user_id=$1 AND report_id=$2 AND completed_at IS NULL ORDER BY due_date,id",[req.user.id,cached.rows[0].id]);
+      const tasks=await pool.query("SELECT id,title,description,skill,topic,due_date,completed_at FROM learner_focus_tasks WHERE user_id=$1 AND language_code=$3 AND report_id=$2 AND completed_at IS NULL ORDER BY due_date,id",[req.user.id,cached.rows[0].id,req.studyLanguageCode]);
       return res.json({report:cached.rows[0],tasks:tasks.rows,cached:true});
     }
     const quota=await consumeMonthlyQuota(req.user.id,'coach_analyze',2,30);
     if (!quota.allowed) return res.status(429).json({
       error:'Лимит AI-анализа прогресса на этот месяц исчерпан ('+quota.used+'/'+quota.limit+'). Premium увеличивает лимит до 30.'
     });
-    const snapshot=await learnerSnapshot(req.user.id);
+    const snapshot=await learnerSnapshot(req.user.id,req.studyLanguageCode);
     let summary='Анализ по сохранённым учебным результатам.';
     let recommendations=fallbackRecommendations(snapshot);
     let source='learning-patterns';
@@ -245,13 +245,13 @@ router.post('/coach/analyze',coachLimiter,async function(req,res,next) {
         if (parsed.length) {recommendations=parsed;summary=clean(data.summary_ru,500) || summary;source='cloudflare-ai';}
       } catch(error){console.error('Coach AI fallback:',error.message);}
     }
-    const inserted=await pool.query("INSERT INTO learner_coach_reports (user_id,summary,recommendations,source) VALUES ($1,$2,$3::jsonb,$4) RETURNING id,summary,recommendations,source,created_at",[req.user.id,summary,JSON.stringify(recommendations),source]);
+    const inserted=await pool.query("INSERT INTO learner_coach_reports (user_id,language_code,summary,recommendations,source) VALUES ($1,$2,$3,$4::jsonb,$5) RETURNING id,summary,recommendations,source,created_at",[req.user.id,req.studyLanguageCode,summary,JSON.stringify(recommendations),source]);
     const report=inserted.rows[0];const tasks=[];
     for (let i=0;i<recommendations.length;i++) {
       const item=recommendations[i];
       const task=await pool.query(
-        "INSERT INTO learner_focus_tasks (user_id,report_id,position,title,description,skill,topic,due_date) VALUES ($1,$2,$3,$4,$5,$6,$7,CURRENT_DATE+$3::int) ON CONFLICT (report_id,position) DO NOTHING RETURNING id,title,description,skill,topic,due_date,completed_at",
-        [req.user.id,report.id,i,item.title,item.action,item.skill,item.topic]
+        "INSERT INTO learner_focus_tasks (user_id,language_code,report_id,position,title,description,skill,topic,due_date) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,CURRENT_DATE+$4::int) ON CONFLICT (report_id,position) DO NOTHING RETURNING id,title,description,skill,topic,due_date,completed_at",
+        [req.user.id,req.studyLanguageCode,report.id,i,item.title,item.action,item.skill,item.topic]
       );
       if (task.rows[0]) tasks.push(task.rows[0]);
     }
@@ -260,16 +260,16 @@ router.post('/coach/analyze',coachLimiter,async function(req,res,next) {
 });
 router.get('/coach/tasks',async function(req,res,next) {
   try {
-    const result=await pool.query("SELECT id,title,description,skill,topic,due_date,completed_at FROM learner_focus_tasks WHERE user_id=$1 ORDER BY completed_at NULLS FIRST,due_date,id LIMIT 30",[req.user.id]);
+    const result=await pool.query("SELECT id,title,description,skill,topic,due_date,completed_at FROM learner_focus_tasks WHERE user_id=$1 AND language_code=$2 ORDER BY completed_at NULLS FIRST,due_date,id LIMIT 30",[req.user.id,req.studyLanguageCode]);
     res.json({tasks:result.rows});
   } catch(error){next(error);}
 });
 router.patch('/coach/tasks/:id',async function(req,res,next) {
   if (!req.body || typeof req.body.completed!=='boolean') return res.status(400).json({error:'Укажи состояние задачи.'});
   try {
-    const result=await pool.query("UPDATE learner_focus_tasks SET completed_at=CASE WHEN $3 THEN COALESCE(completed_at,NOW()) ELSE NULL END WHERE id=$1 AND user_id=$2 RETURNING id,title,completed_at",[req.params.id,req.user.id,req.body.completed]);
+    const result=await pool.query("UPDATE learner_focus_tasks SET completed_at=CASE WHEN $3 THEN COALESCE(completed_at,NOW()) ELSE NULL END WHERE id=$1 AND user_id=$2 AND language_code=$4 RETURNING id,title,completed_at",[req.params.id,req.user.id,req.body.completed,req.studyLanguageCode]);
     if (!result.rows[0]) return res.status(404).json({error:'Задача не найдена.'});
-    if (req.body.completed) await recordActivity(req.user.id,{minutes:3,completedTasks:1});
+    if (req.body.completed) await recordActivity(req.user.id,{minutes:3,completedTasks:1,languageCode:req.studyLanguageCode});
     res.json({task:result.rows[0]});
   } catch(error){next(error);}
 });
@@ -280,7 +280,7 @@ router.get('/calendar/events',async function(req,res,next) {
   if (typeof req.query.to==='string') to=new Date(req.query.to);
   if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to<=from || to-from>370*86400000) return res.status(400).json({error:'Проверь диапазон календаря.'});
   try {
-    const result=await pool.query("SELECT id,title,description,event_type,starts_at,duration_minutes,completed_at,created_at FROM study_calendar_events WHERE user_id=$1 AND starts_at>=$2 AND starts_at<$3 ORDER BY starts_at",[req.user.id,from,to]);
+    const result=await pool.query("SELECT id,title,description,event_type,starts_at,duration_minutes,completed_at,created_at FROM study_calendar_events WHERE user_id=$1 AND language_code=$4 AND starts_at>=$2 AND starts_at<$3 ORDER BY starts_at",[req.user.id,from,to,req.studyLanguageCode]);
     res.json({events:result.rows});
   } catch(error){next(error);}
 });
@@ -294,22 +294,22 @@ router.post('/calendar/events',async function(req,res,next) {
   if (!['study','review','writing','listening','speaking','other'].includes(eventType)) return res.status(400).json({error:'Выбери тип занятия.'});
   if (!Number.isInteger(duration) || duration<5 || duration>240) return res.status(400).json({error:'Длительность должна быть от 5 до 240 минут.'});
   try {
-    const result=await pool.query("INSERT INTO study_calendar_events (user_id,title,description,event_type,starts_at,duration_minutes) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id,title,description,event_type,starts_at,duration_minutes,completed_at",[req.user.id,title,description,eventType,startsAt,duration]);
+    const result=await pool.query("INSERT INTO study_calendar_events (user_id,language_code,title,description,event_type,starts_at,duration_minutes) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id,title,description,event_type,starts_at,duration_minutes,completed_at",[req.user.id,req.studyLanguageCode,title,description,eventType,startsAt,duration]);
     res.status(201).json({event:result.rows[0]});
   } catch(error){next(error);}
 });
 router.patch('/calendar/events/:id',async function(req,res,next) {
   if (!req.body || typeof req.body.completed!=='boolean') return res.status(400).json({error:'Укажи состояние занятия.'});
   try {
-    const result=await pool.query("UPDATE study_calendar_events SET completed_at=CASE WHEN $3 THEN COALESCE(completed_at,NOW()) ELSE NULL END WHERE id=$1 AND user_id=$2 RETURNING id,title,completed_at",[req.params.id,req.user.id,req.body.completed]);
+    const result=await pool.query("UPDATE study_calendar_events SET completed_at=CASE WHEN $3 THEN COALESCE(completed_at,NOW()) ELSE NULL END WHERE id=$1 AND user_id=$2 AND language_code=$4 RETURNING id,title,completed_at",[req.params.id,req.user.id,req.body.completed,req.studyLanguageCode]);
     if (!result.rows[0]) return res.status(404).json({error:'Занятие не найдено.'});
-    if (req.body.completed) await recordActivity(req.user.id,{minutes:1,completedTasks:0});
+    if (req.body.completed) await recordActivity(req.user.id,{minutes:1,completedTasks:0,languageCode:req.studyLanguageCode});
     res.json({event:result.rows[0]});
   } catch(error){next(error);}
 });
 router.delete('/calendar/events/:id',async function(req,res,next) {
   try {
-    const result=await pool.query("DELETE FROM study_calendar_events WHERE id=$1 AND user_id=$2",[req.params.id,req.user.id]);
+    const result=await pool.query("DELETE FROM study_calendar_events WHERE id=$1 AND user_id=$2 AND language_code=$3",[req.params.id,req.user.id,req.studyLanguageCode]);
     if (!result.rowCount) return res.status(404).json({error:'Занятие не найдено.'});
     res.json({ok:true});
   } catch(error){next(error);}
