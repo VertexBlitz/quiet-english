@@ -577,9 +577,16 @@
     const allowed = new Set([
       'listen_cafe_01','listen_station_01','listen_weekend_01',
       'write_invitation_01','write_opinion_01','write_summary_01',
-      'speak_hobby_01','speak_place_01','speak_technology_01'
+      'speak_hobby_01','speak_place_01','speak_technology_01',
+      'de_listen_cafe_01','de_listen_station_01','de_listen_weekend_01',
+      'de_write_invitation_01','de_write_opinion_01','de_write_summary_01',
+      'de_speak_hobby_01','de_speak_place_01','de_speak_technology_01',
+      'de_pronunciation_01'
     ]);
-    if (!allowed.has(record?.task_id) || !['listening','writing','speaking'].includes(record?.skill)) {
+    const allowedSkills = record?.skill === 'pronunciation'
+      ? readState().activeLanguage === 'de'
+      : ['listening','writing','speaking'].includes(record?.skill);
+    if (!allowed.has(record?.task_id) || !allowedSkills) {
       throw new Error('Неизвестный тип задания.');
     }
     const state = readState();
@@ -599,7 +606,7 @@
 
   function getSkillPracticeStats() {
     const rows = readState().skillPractice || [];
-    return ['listening','writing','speaking'].map(skill => {
+    return ['listening','writing','speaking','pronunciation'].map(skill => {
       const matching = rows.filter(item => item.skill === skill);
       const scored = matching.filter(item => Number.isInteger(item.score));
       return {
