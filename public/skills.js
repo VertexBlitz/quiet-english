@@ -466,6 +466,153 @@
     taskContent.append(prompt, tips, toolbar, voiceStatus, text, submit);
   }
 
+  function textSimilarity(expected, actual) {
+    const clean = value => value.normalize('NFC').toLocaleLowerCase('de-DE')
+      .replace(/[^\\p{L}\\p{N}\\s]/gu, ' ')
+      .trim().replace(/\\s+/g, ' ');
+    const left = clean(expected);
+    const right = clean(actual);
+    if (!left) return 0;
+    const a = left.split(' ');
+    const b = right ? right.split(' ') : [];
+    const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+    for (let i = 1; i <= a.length; i++) {
+      let diagonal = previous[0];
+      previous[0] = i;
+      for (let j = 1; j <= b.length; j++) {
+        const above = previous[j];
+        previous[j] = Math.min(
+          previous[j] + 1,
+          previous[j - 1] + 1,
+          diagonal + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+        diagonal = above;
+      }
+    }
+    return Math.max(0, Math.round((1 - previous[b.length] / Math.max(a.length, b.length, 1)) * 100));
+  }
+
+  function renderPronunciation(task) {
+    const target = document.createElement('div');
+    target.className = 'skill-passage';
+    target.textContent = task.target;
+
+    const note = document.createElement('p');
+    note.className = 'skill-status';
+    note.textContent = 'Der Vergleich basiert auf der Spracherkennung. Er bewertet nicht direkt die phonetische Qualität oder den Akzent.';
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'skill-toolbar';
+
+    const play = document.createElement('button');
+    play.className = 'button secondary';
+    play.type = 'button';
+    play.textContent = '▶ Modell anhören';
+    play.addEventListener('click', () => {
+      if (!('speechSynthesis' in window)) {
+        setStatus('Die Sprachausgabe wird in diesem Browser nicht unterstützt.', 'error-text');
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(task.target);
+      utterance.lang = 'de-DE';
+      utterance.rate = 0.85;
+      window.speechSynthesis.speak(utterance);
+    });
+
+    const start = document.createElement('button');
+    start.className = 'button';
+    start.type = 'button';
+    start.textContent = '🎙 Vorlesen';
+    const stop = document.createElement('button');
+    stop.className = 'button secondary';
+    stop.type = 'button';
+    stop.textContent = 'Stopp';
+    stop.disabled = true;
+
+    const transcript = document.createElement('textarea');
+    transcript.maxLength = 500;
+    transcript.placeholder = 'Hier erscheint die erkannte Sprache. Du kannst den Text auch manuell eingeben.';
+    transcript.setAttribute('aria-label', 'Erkannter deutscher Text');
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      start.disabled = true;
+      note.textContent = 'Die Spracherkennung wird in diesem Browser nicht unterstützt. Du kannst den erkannten Text eines anderen Geräts hier eingeben.';
+    }
+
+    start.addEventListener('click', () => {
+      if (!SpeechRecognition) return;
+      stopRecognition();
+      recognition = new SpeechRecognition();
+      recognition.lang = 'de-DE';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+      finalTranscript = '';
+      recognition.onresult = event => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const phrase = event.results[i][0].transcript;
+          if (event.results[i].isFinal) finalTranscript += (finalTranscript ? ' ' : '') + phrase;
+          else interim += phrase;
+        }
+        transcript.value = (finalTranscript + (interim ? ' ' + interim : '')).trim().slice(0, 500);
+      };
+      recognition.onerror = event => {
+        setStatus(event.error === 'not-allowed'
+          ? 'Der Zugriff auf das Mikrofon wurde nicht erlaubt.'
+          : 'Die Spracherkennung wurde beendet: ' + event.error, 'error-text');
+        start.disabled = false;
+        stop.disabled = true;
+      };
+      recognition.onend = () => {
+        start.disabled = false;
+        stop.disabled = true;
+        voiceStatus.textContent = 'Erkennung beendet. Prüfe den erkannten Text.';
+      };
+      try {
+        recognition.start();
+        start.disabled = true;
+        stop.disabled = false;
+        voiceStatus.textContent = 'Ich höre zu … Lies den Satz auf Deutsch vor.';
+      } catch {
+        setStatus('Die Spracherkennung konnte nicht gestartet werden.', 'error-text');
+      }
+    });
+    stop.addEventListener('click', stopRecognition);
+
+    const voiceStatus = document.createElement('p');
+    voiceStatus.className = 'skill-status';
+    voiceStatus.textContent = SpeechRecognition
+      ? 'Lies den Satz langsam und deutlich vor oder gib den erkannten Text manuell ein.'
+      : 'Manuelle Eingabe ist verfügbar.';
+
+    const submit = document.createElement('button');
+    submit.className = 'button';
+    submit.type = 'button';
+    submit.textContent = 'Text vergleichen und Feedback erhalten ↗';
+    submit.addEventListener('click', async () => {
+      const answer = transcript.value.trim();
+      if (words(answer) < 3) return setStatus('Lies den Satz vor oder gib die erkannte Version ein.', 'error-text');
+      submit.disabled = true;
+      const match = textSimilarity(task.target, answer);
+      setStatus('Die Textübereinstimmung wird berechnet …');
+      try {
+        const feedback = await requestFeedback(task, answer, 'pronunciation');
+        resultBox.textContent = 'Textübereinstimmung: ' + match + '% (keine phonetische Bewertung)\\n\\n' + feedback.message;
+        resultBox.hidden = false;
+        await recordAttempt({ skill: 'pronunciation', task_id: task.id, score: match, word_count: words(answer) });
+        setStatus('Vergleich abgeschlossen. Die Prozentzahl beschreibt nur die Ähnlichkeit des erkannten Textes.', 'success-text');
+      } catch (error) {
+        setStatus(error.message, 'error-text');
+      } finally { submit.disabled = false; }
+    });
+
+    toolbar.append(play, start, stop);
+    taskContent.append(target, note, toolbar, voiceStatus, transcript, submit);
+  }
+
   function stopRecognition() {
     if (recognition) {
       try { recognition.stop(); } catch {}
