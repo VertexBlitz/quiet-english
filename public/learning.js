@@ -103,8 +103,8 @@ async function loadStudyLanguageOptions() {
           node.textContent = learningT('Выбери доступный учебный курс.', 'Choose an available course.');
         } else if (selected.language_code === 'de') {
           node.textContent = learningT(
-            'Доступен немецкий A1–A2: 4 недели, 28 заданий, тест уровня и голосовая практика.',
-            'German A1–A2 is ready: 4 weeks, 28 exercises, placement test and speaking practice.'
+            'Немецкий доступен на уровнях A1–C2: отдельная 4-недельная программа и 28 заданий для выбранного уровня.',
+            'German is available from A1 to C2, with a dedicated 4-week plan and 28 exercises at each level.'
           );
         } else {
           node.textContent = learningT('Сейчас изучается: ', 'Currently learning: ') +
@@ -112,13 +112,7 @@ async function loadStudyLanguageOptions() {
         }
       });
       if (levelSelect) {
-        [...levelSelect.options].forEach(option => {
-          option.disabled = selectedCode === 'de' &&
-            !['', 'A1', 'A2'].includes(option.value);
-        });
-        if (selectedCode === 'de' && !['', 'A1', 'A2'].includes(levelSelect.value)) {
-          levelSelect.value = 'A2';
-        }
+        [...levelSelect.options].forEach(option => { option.disabled = false; });
       }
     };
     onboardingSelect?.addEventListener('change', updateLanguageHint);
