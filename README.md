@@ -133,3 +133,27 @@ CMS changes to a published template affect newly generated plans. Existing learn
 This work is developed in `quiet-english-2-mvp`, not deployed to the existing production Render service. The production site remains unchanged until the pull request is reviewed and merged.
 
 After merging, the site can serve the new pages, but account and learning APIs remain disabled until the required database and session settings exist. Email registration additionally requires the Resend settings. Keep the registration feature flags off until the safety and privacy review is complete.
+
+
+## Multilingual courses (development branch)
+
+The multilingual course model keeps one account and separates learning data by course:
+
+- `language_catalog` defines available and coming-soon languages.
+- `learner_courses` stores one course per user and language.
+- Existing learner data is migrated into an English course.
+- Plans, placement attempts, exercise attempts, spaced repetition, errors, activity and skill practice are scoped to `learner_course_id`.
+- English and German have independent placement content, exercise catalogs and four-week plan templates.
+- The personal vocabulary is course-specific; German entries support grammatical gender and plural forms.
+- Guest demo data is kept separately per language in browser storage.
+
+German is enabled as the second course. Spanish and French remain marked as coming soon.
+
+To prepare the multilingual database on a development database only:
+
+1. Back up the database.
+2. Run `npm run migrate` to apply migration `011_multilingual_courses.sql`.
+3. Run `npm run seed` to load the curated German exercises and German plan templates.
+4. Run `npm run check` and `npm test`.
+
+Do not run the migration or seed command against the preview database until its Render service and database are positively identified.
