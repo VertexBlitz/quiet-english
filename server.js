@@ -10,11 +10,15 @@ import { pool } from './src/db.js';
 import authRoutes from './src/routes/auth.js';
 import learningRoutes from './src/routes/learning.js';
 import adminRoutes from './src/routes/admin.js';
-import { estimateLevel, placementQuestions, publicQuestions } from './src/content/placement.js';
+import { estimateLevel, placementForLanguage, publicQuestions } from './src/content/placement.js';
+import { isAvailableLanguage } from './src/content/languages.js';
 
 const app = express();
 const root = path.dirname(fileURLToPath(import.meta.url));
-const demoExerciseCatalog = JSON.parse(readFileSync(path.join(root, 'content/seed-exercises.json'), 'utf8'));
+const demoExerciseCatalog = [
+  ...JSON.parse(readFileSync(path.join(root, 'content/seed-exercises.json'), 'utf8')).map(item => ({ ...item, language_code: 'en' })),
+  ...JSON.parse(readFileSync(path.join(root, 'content/seed-exercises.de.json'), 'utf8'))
+];
 const port = Number(process.env.PORT) || 3000;
 const PgSession = connectPgSimple(session);
 
@@ -58,14 +62,20 @@ const publicDemoExercise = exercise => {
 };
 
 // Guest demo endpoints are stateless: no user account, email, session or database writes.
-app.get('/api/demo/placement/questions', (_req, res) => {
+app.get('/api/demo/placement/questions', (req, res) => {
+  const languageCode = req.get('x-qe-language') || req.query.language_code || 'en';
+  const questions = placementForLanguage(isAvailableLanguage(languageCode) ? languageCode : 'en');
   res.json({
-    questions: publicQuestions(),
+    questions: publicQuestions(questions),
+    language_code: isAvailableLanguage(languageCode) ? languageCode : 'en',
     note: 'Короткая предварительная оценка, не официальный сертификат CEFR.'
   });
 });
 
 app.post('/api/demo/placement/submit', sameOrigin, (req, res) => {
+  const languageCode = req.body?.language_code;
+  if (!isAvailableLanguage(languageCode)) return res.status(400).json({ error: 'Этот язык пока недоступен.' });
+  const placementQuestions = placementForLanguage(languageCode);
   const answers = req.body?.answers;
   if (!Array.isArray(answers) || answers.length !== placementQuestions.length) {
     return res.status(400).json({ error: 'Ответь на все вопросы теста.' });
@@ -85,7 +95,10 @@ app.post('/api/demo/placement/submit', sameOrigin, (req, res) => {
 app.get('/api/demo/exercises', (req, res) => {
   const allowedSkills = ['vocabulary', 'grammar', 'reading'];
   const requestedSkill = req.query.skill;
+  const languageCode = req.get('x-qe-language') || req.query.language_code || 'en';
+  if (!isAvailableLanguage(languageCode)) return res.status(400).json({ error: 'Этот язык пока недоступен.' });
   const exercises = demoExerciseCatalog
+    .filter(exercise => exercise.language_code === languageCode)
     .filter(exercise => allowedSkills.includes(exercise.skill))
     .filter(exercise => !requestedSkill || exercise.skill === requestedSkill)
     .map(publicDemoExercise);
@@ -93,7 +106,8 @@ app.get('/api/demo/exercises', (req, res) => {
 });
 
 app.get('/api/demo/exercises/:id', (req, res) => {
-  const exercise = demoExerciseCatalog.find(item => item.id === req.params.id);
+  const languageCode = req.get('x-qe-language') || req.query.language_code || 'en';
+  const exercise = demoExerciseCatalog.find(item => item.id === req.params.id && item.language_code === languageCode);
   if (!exercise || !['vocabulary', 'grammar', 'reading'].includes(exercise.skill)) {
     return res.status(404).json({ error: 'Задание не найдено.' });
   }
@@ -101,7 +115,8 @@ app.get('/api/demo/exercises/:id', (req, res) => {
 });
 
 app.post('/api/demo/exercises/:id/attempts', sameOrigin, (req, res) => {
-  const exercise = demoExerciseCatalog.find(item => item.id === req.params.id);
+  const languageCode = req.get('x-qe-language') || req.body?.language_code || 'en';
+  const exercise = demoExerciseCatalog.find(item => item.id === req.params.id && item.language_code === languageCode);
   if (!exercise || !['vocabulary', 'grammar', 'reading'].includes(exercise.skill)) {
     return res.status(404).json({ error: 'Задание не найдено.' });
   }
