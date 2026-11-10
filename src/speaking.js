@@ -1,4 +1,4 @@
-const ALLOWED_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1']);
+const ALLOWED_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
 const ALLOWED_TOPICS = new Set([
   'Everyday life', 'Travel', 'History and culture', 'Science',
   'Technology', 'Environment', 'Education', 'Books and media'
@@ -9,10 +9,7 @@ export function validateSpeakingGenerationRequest(body, languageCode = 'en') {
   const topic = typeof body?.topic === 'string' ? body.topic.trim() : '';
 
   if (!ALLOWED_LEVELS.has(level)) {
-    return { ok: false, error: 'Выбери уровень от A1 до C1.' };
-  }
-  if (languageCode === 'de' && !['A1','A2'].includes(level)) {
-    return { ok: false, error: 'Немецкая голосовая практика сейчас поддерживает уровни A1–A2.' };
+    return { ok: false, error: 'Выбери уровень от A1 до C2.' };
   }
   if (!ALLOWED_TOPICS.has(topic)) {
     return { ok: false, error: 'Выбери тему из списка.' };
@@ -35,7 +32,8 @@ export function buildSpeakingGenerationPrompt({ level, topic, avoid = [], langua
     A2: '25–35 words, everyday vocabulary, simple past or future where useful',
     B1: '30–40 words, connected ideas, common linking words and clear opinions',
     B2: '35–45 words, varied sentence structures and more precise vocabulary',
-    C1: '40–50 words, nuanced meaning, natural collocations and sophisticated but readable syntax'
+    C1: '40–50 words, nuanced meaning, natural collocations and sophisticated but readable syntax',
+    C2: '45–55 words, idiomatic precision, subtle register shifts and complex but natural syntax'
   }[level];
 
   const avoidBlock = avoid.length
@@ -45,7 +43,7 @@ export function buildSpeakingGenerationPrompt({ level, topic, avoid = [], langua
   const targetLanguage = languageCode === 'de' ? 'German' : 'English';
   return [
     'Create one original ' + targetLanguage + ' reading passage for a learner at CEFR ' + level + '.',
-    languageCode === 'de' ? 'This is a German A1-A2 learning task. Use correct natural standard German, simple high-frequency structures and spelling with ä, ö, ü and ß where appropriate.' : 'Use natural standard English.',
+    languageCode === 'de' ? 'This is a German CEFR ' + level + ' learning task. Use natural standard German with grammar, vocabulary, idioms and register appropriate to this level, including accurate ä, ö, ü and ß.' : 'Use natural standard English.',
     'Topic: ' + topic + '.',
     'Length and language: ' + wordGuide + '.',
     'The passage must be suitable for reading aloud in no more than 28 seconds.',
