@@ -468,8 +468,8 @@
 
   function textSimilarity(expected, actual) {
     const clean = value => value.normalize('NFC').toLocaleLowerCase('de-DE')
-      .replace(/[^\\p{L}\\p{N}\\s]/gu, ' ')
-      .trim().replace(/\\s+/g, ' ');
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .trim().replace(/\s+/g, ' ');
     const left = clean(expected);
     const right = clean(actual);
     if (!left) return 0;
