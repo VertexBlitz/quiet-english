@@ -234,6 +234,7 @@ router.post('/placement/submit', async (req, res, next) => {
   }
   const answerMap = new Map(answers.map(item => [item?.id, item?.option_id]));
   if (placementQuestions.some(q => !answerMap.has(q.id))) return res.status(400).json({ error: 'В ответах отсутствуют вопросы.' });
+  if (placementQuestions.some(q => !q.options.some(option => option.id === answerMap.get(q.id)))) return res.status(400).json({ error: 'Один из вариантов ответа недействителен.' });
   const correct = placementQuestions.filter(q => answerMap.get(q.id) === q.answer).length;
   const level = estimateLevel(correct);
   try {
