@@ -486,7 +486,7 @@
   }
   generateButton.addEventListener('click', () => activeKnowledgeQuiz ? generateKnowledgeQuiz() : generateExercise());
   listenButton.addEventListener('click', speakPassage);
-  renderHistory();
+  historySection.hidden = true;
   void loadActiveStudyLanguage();
   window.addEventListener('quietenglish:languagechange', () => {
     renderHistory();
