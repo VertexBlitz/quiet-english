@@ -1,11 +1,11 @@
 const normalizeToken = value => value
-  .toLocaleLowerCase('en-US')
+  .toLocaleLowerCase()
   .replace(/[’‘]/gu, "'")
-  .replace(/^[^a-z0-9']+|[^a-z0-9']+$/giu, '');
+  .replace(/^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$/giu, '');
 
 export function tokenizeSpeech(text) {
   return String(text || '')
-    .match(/[a-z0-9]+(?:'[a-z0-9]+)*/giu)?.map(normalizeToken).filter(Boolean) || [];
+    .match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu)?.map(normalizeToken).filter(Boolean) || [];
 }
 
 export function compareTranscript(referenceText, recognizedText) {
