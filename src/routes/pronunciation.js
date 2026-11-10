@@ -12,7 +12,7 @@ router.get('/status', (req, res) => {
     language_code: req.studyLanguageCode,
     locale: req.studyLanguage.locale,
     engine: 'whisper-browser',
-    model: 'onnx-community/whisper-tiny.en',
+    model: 'onnx-community/whisper-tiny',
     audioSentToServer: false
   });
 });

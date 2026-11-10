@@ -18,17 +18,41 @@ if (listeningRoot) {
     {title:'ELLLO C1',titleEn:'ELLLO C1',level:'C1',topic:'podcast',provider:'ELLLO',kind:'Advanced listening',kindEn:'Advanced listening',url:'https://elllo.org/levels/C1-English-Lessons/index.html',description:'Продвинутые темы и насыщенная естественная речь.',descriptionEn:'Advanced topics and richer natural speech.'}
   ];
 
+  resources.forEach(item => { item.language = 'en'; });
+  resources.push(
+    {
+      title:'Nicos Weg · A1–B1',titleEn:'Nicos Weg · A1–B1',
+      level:'A1',topic:'daily',provider:'Deutsche Welle',
+      kind:'Video course · dialogues · exercises',kindEn:'Video course · dialogues · exercises',
+      url:'https://learngerman.dw.com/',
+      description:'Видеокурс немецкого с диалогами и упражнениями для уровней A1–B1.',
+      descriptionEn:'A German video course with dialogues and exercises for A1–B1 learners.',
+      language:'de'
+    },
+    {
+      title:'VHS-Lernportal · Deutsch',titleEn:'VHS-Lernportal · German',
+      level:'A1',topic:'study',provider:'VHS-Lernportal',
+      kind:'Structured course · exercises',kindEn:'Structured course · exercises',
+      url:'https://deutsch.vhs-lernportal.de/',
+      description:'Бесплатная учебная платформа с курсами немецкого и интерактивными упражнениями.',
+      descriptionEn:'A free learning platform with structured German courses and interactive exercises.',
+      language:'de'
+    }
+  );
+
   const grid = listeningRoot.querySelector('[data-listening-grid]');
   const levelFilter = listeningRoot.querySelector('[data-level-filter]');
   const topicFilter = listeningRoot.querySelector('[data-topic-filter]');
   const count = listeningRoot.querySelector('[data-library-count]');
   const language = () => document.documentElement.lang === 'en' ? 'en' : 'ru';
+  let activeStudyLanguageCode = 'en';
 
   function render() {
     const level = levelFilter.value;
     const topic = topicFilter.value;
     const lang = language();
     const matching = resources.filter(item =>
+      item.language === activeStudyLanguageCode &&
       (level === 'all' || item.level === level) && (topic === 'all' || item.topic === topic)
     );
     grid.replaceChildren();
@@ -66,5 +90,22 @@ if (listeningRoot) {
   levelFilter.addEventListener('change', render);
   topicFilter.addEventListener('change', render);
   window.addEventListener('quietenglish:languagechange', render);
-  render();
+  async function loadStudyLanguage() {
+    try {
+      const response = await fetch('/api/learning/languages', { credentials:'same-origin' });
+      const data = await response.json().catch(() => ({}));
+      const active = Array.isArray(data.languages) ? data.languages.find(item => item.is_active) : null;
+      if (active && ['en','de'].includes(String(active.language_code).trim())) {
+        activeStudyLanguageCode = String(active.language_code).trim();
+      }
+    } catch {}
+    if (activeStudyLanguageCode === 'de') {
+      [...levelFilter.options].forEach(option => {
+        option.disabled = !['all','A1','A2'].includes(option.value);
+      });
+      levelFilter.value = 'all';
+    }
+    render();
+  }
+  void loadStudyLanguage();
 }

@@ -1,6 +1,6 @@
 import { compareTranscript } from '/pronunciation-scoring.js';
 import { readLocalPronunciationHistory, saveLocalPronunciationAttempt } from '/pronunciation-storage.js';
-import { PASSAGES, buildProgressSeries, getReviewWords } from '/pronunciation-content.js';
+import { PASSAGES, GERMAN_PASSAGES, buildProgressSeries, getReviewWords } from '/pronunciation-content.js';
 
 const pronRoot = document.querySelector('[data-pronunciation-page]');
 
@@ -26,10 +26,11 @@ if (pronRoot) {
   const resultSection = pronRoot.querySelector('[data-pron-result]');
 
   const MAX_SECONDS = 28;
-  const MODEL_ID = 'onnx-community/whisper-tiny.en';
+  const MODEL_ID = 'onnx-community/whisper-tiny';
   const TRANSFORMERS_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2';
 
   let transcriberPromise = null;
+  let activeLanguageCode = 'en';
   let recorder = null;
   let mediaStream = null;
   let chunks = [];
@@ -64,9 +65,10 @@ if (pronRoot) {
   };
 
   const selectedPrompt = () => promptList.querySelector('input[name="pron-prompt"]:checked');
-  const allPassages = () => [...generatedPassages, ...PASSAGES];
+  const basePassages = () => activeLanguageCode === 'de' ? GERMAN_PASSAGES : PASSAGES;
+  const allPassages = () => [...generatedPassages, ...basePassages()];
   const selectedPassage = () => allPassages().find(item => item.id === selectedPrompt()?.dataset.passageId);
-  const selectedText = () => activeReviewText || selectedPrompt()?.value || PASSAGES[0].text;
+  const selectedText = () => activeReviewText || selectedPrompt()?.value || basePassages()[0].text;
   const topicLabels = {
     'Everyday life': ['Повседневная жизнь', 'Everyday life'], Food: ['Еда', 'Food'],
     'Free time': ['Свободное время', 'Free time'], 'Around town': ['В городе', 'Around town'],
@@ -104,7 +106,7 @@ if (pronRoot) {
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
+    utterance.lang = activeLanguageCode === 'de' ? 'de-DE' : 'en-US';
     utterance.rate = 0.88;
     window.speechSynthesis.speak(utterance);
   }
@@ -115,7 +117,7 @@ if (pronRoot) {
     const visiblePassages = level === 'ALL'
       ? library
       : library.filter(item => item.level === level);
-    const currentId = preferredId || selectedPrompt()?.dataset.passageId || PASSAGES[0].id;
+    const currentId = preferredId || selectedPrompt()?.dataset.passageId || basePassages()[0].id;
     const selectedId = visiblePassages.some(item => item.id === currentId)
       ? currentId
       : visiblePassages[0]?.id;
@@ -529,7 +531,7 @@ if (pronRoot) {
 
     let localAttempts = [];
     try {
-      localAttempts = readLocalPronunciationHistory(window.localStorage);
+      localAttempts = readLocalPronunciationHistory(window.localStorage, activeLanguageCode);
     } catch {}
 
     const attempts = [...remoteAttempts, ...localAttempts]
@@ -544,6 +546,7 @@ if (pronRoot) {
   async function saveAttempt(referenceText, recognizedText, analysis) {
     const attempt = {
       id: (globalThis.crypto?.randomUUID?.() || String(Date.now())),
+      language_code: activeLanguageCode,
       reference_text: referenceText,
       recognized_text: recognizedText,
       word_match_score: analysis.wordMatchPercent,
@@ -568,7 +571,7 @@ if (pronRoot) {
 
     let savedLocally = false;
     try {
-      savedLocally = saveLocalPronunciationAttempt(window.localStorage, attempt);
+      savedLocally = saveLocalPronunciationAttempt(window.localStorage, attempt, activeLanguageCode);
     } catch {}
 
     if (savedLocally) return 'device';
@@ -582,7 +585,10 @@ if (pronRoot) {
       const { samples, duration } = await toSamples(recordingBlob);
       const transcriber = await getTranscriber();
       message(t('Whisper распознаёт речь прямо на устройстве. Это может занять некоторое время.', 'Whisper is transcribing speech on this device. This may take a little while.'));
-      const output = await transcriber(samples);
+      const output = await transcriber(samples, {
+        language: activeLanguageCode === 'de' ? 'german' : 'english',
+        task: 'transcribe'
+      });
       const recognizedText = String(output?.text || '').trim();
       if (!recognizedText) {
         throw new Error('Whisper не распознал слова. Попробуй говорить ближе к микрофону и повторить запись.');
@@ -690,7 +696,30 @@ if (pronRoot) {
   });
 
   engineBadge.textContent = 'WHISPER · ON-DEVICE';
-  renderPassages();
+  async function initializeActiveLanguage() {
+    try {
+      const response = await fetch('/api/learning/languages', { credentials: 'same-origin' });
+      const data = await response.json().catch(() => ({}));
+      const active = Array.isArray(data.languages) ? data.languages.find(item => item.is_active) : null;
+      if (active && ['en','de'].includes(String(active.language_code).trim())) {
+        activeLanguageCode = String(active.language_code).trim();
+      }
+    } catch {}
+    generatedPassages = [];
+    [...levelFilter.options].forEach(option => {
+      option.disabled = activeLanguageCode === 'de' &&
+        !['ALL','A1','A2'].includes(option.value);
+    });
+    levelFilter.value = 'ALL';
+    renderPassages();
+    await loadHistory();
+    checkAiGeneratorStatus();
+    message(activeLanguageCode === 'de'
+      ? t('Выбери немецкий текст A1–A2, сгенерируй новый или потренируй произношение.', 'Choose a German A1–A2 passage, generate a new one or practise speaking.')
+      : t('Выбери уровень и текст, сгенерируй новый вариант или используй библиотеку A1–C1.', 'Choose a level and passage, generate a new one or use the A1–C1 library.'));
+    updateRecordAvailability();
+  }
+  void initializeActiveLanguage();
 
   window.addEventListener('quietenglish:languagechange', () => {
     renderPassages(selectedPassage()?.id || '');
@@ -708,8 +737,4 @@ if (pronRoot) {
   });
 
 
-  checkAiGeneratorStatus();
-  message(t('Выбери уровень и текст, сгенерируй новый вариант или используй библиотеку A1–C1.', 'Choose a level and passage, generate a new one or use the A1–C1 library.'));
-  updateRecordAvailability();
-  loadHistory();
 }

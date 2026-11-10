@@ -253,7 +253,7 @@ app.get('/api/registration-status', (_req, res) => {
   });
 });
 
-async function buildCommandReply(userId, command) {
+async function buildCommandReply(userId, command, languageCode = 'en') {
   if (!userId || !pool) {
     return 'Войди в личный кабинет и создай учебный план, чтобы использовать эту команду.';
   }
@@ -264,9 +264,9 @@ async function buildCommandReply(userId, command) {
               w.week_number, w.theme, w.objective
        FROM learning_plans p
        LEFT JOIN plan_weeks w ON w.plan_id=p.id
-       WHERE p.user_id=$1 AND p.status='active'
+       WHERE p.user_id=$1 AND p.status='active' AND p.language_code=$2
        ORDER BY w.week_number`,
-      [userId]
+      [userId, languageCode]
     );
     if (!rows.length) return 'У тебя пока нет активного плана. Сначала заверши онбординг и тест уровня.';
     const first = rows[0];
@@ -281,21 +281,21 @@ async function buildCommandReply(userId, command) {
   if (command === '/today') {
     const { rows } = await pool.query(
       `SELECT d.day_index, d.main_task_id, d.mini_prompt, w.week_number, w.theme,
-              e.objective AS task_objective, e.skill, e.level, e.estimated_time
+              COALESCE(e.objective_i18n->>'ru',e.objective) AS task_objective, e.skill, e.level, e.estimated_time
        FROM learning_plans p
        JOIN plan_days d ON d.plan_id=p.id
        JOIN plan_weeks w ON w.id=d.week_id
        LEFT JOIN exercises e ON e.id=d.main_task_id
-       WHERE p.user_id=$1 AND p.status='active'
+       WHERE p.user_id=$1 AND p.status='active' AND p.language_code=$2
          AND d.day_index=LEAST(GREATEST(((NOW() AT TIME ZONE
            (SELECT timezone FROM learner_profiles WHERE user_id=$1))::date-p.starts_on+1),1),28)
        LIMIT 1`,
-      [userId]
+      [userId, languageCode]
     );
     if (!rows[0]) return 'Не нашёл сегодняшнюю задачу. Проверь, что у тебя есть активный план.';
     const due = await pool.query(
-      'SELECT COUNT(*)::int AS count FROM srs_items WHERE user_id=$1 AND due_at<=NOW()',
-      [userId]
+      'SELECT COUNT(*)::int AS count FROM srs_items WHERE user_id=$1 AND language_code=$2 AND due_at<=NOW()',
+      [userId, languageCode]
     );
     const today = rows[0];
     return [
@@ -310,15 +310,16 @@ async function buildCommandReply(userId, command) {
 
   if (command === '/practice') {
     const profile = await pool.query(
-      'SELECT COALESCE(assessed_level,self_assessed_level,\'A2\') AS level FROM learner_profiles WHERE user_id=$1',
-      [userId]
+      'SELECT COALESCE(assessed_level,self_assessed_level,\'A2\') AS level FROM learner_language_profiles WHERE user_id=$1 AND language_code=$2',
+      [userId, languageCode]
     );
     const level = profile.rows[0]?.level || 'A2';
     const { rows } = await pool.query(
       `SELECT id, skill, level, objective, estimated_time
-       FROM exercises WHERE status='published' AND skill IN ('vocabulary','grammar','reading')
+       FROM exercises WHERE status='published' AND language_code=$2
+         AND skill IN ('vocabulary','grammar','reading','communication')
        ORDER BY (level=$1) DESC, skill, id LIMIT 5`,
-      [level]
+      [level, languageCode]
     );
     if (!rows.length) return 'В библиотеке пока нет опубликованных заданий.';
     return ['Подходящая практика для тебя:', ...rows.map(item =>
@@ -329,8 +330,8 @@ async function buildCommandReply(userId, command) {
   if (command === '/review') {
     const { rows } = await pool.query(
       `SELECT COUNT(*)::int AS count FROM srs_items
-       WHERE user_id=$1 AND due_at<=NOW()`,
-      [userId]
+       WHERE user_id=$1 AND language_code=$2 AND due_at<=NOW()`,
+      [userId, languageCode]
     );
     return rows[0].count
       ? 'У тебя ' + rows[0].count + ' карточек для повторения. Открой раздел «Повторение» и сначала попробуй вспомнить ответ, прежде чем раскрывать его.'
@@ -343,12 +344,12 @@ async function buildCommandReply(userId, command) {
         `SELECT COALESCE(SUM(minutes),0)::int AS minutes,
                 COALESCE(SUM(completed_tasks),0)::int AS tasks,
                 COUNT(*) FILTER (WHERE completed_tasks>0)::int AS active_days
-         FROM daily_activity WHERE user_id=$1`,
-        [userId]
+         FROM daily_activity WHERE user_id=$1 AND language_code=$2`,
+        [userId, languageCode]
       ),
       pool.query(
-        'SELECT COUNT(*)::int AS count FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL',
-        [userId]
+        'SELECT COUNT(*)::int AS count FROM error_journal WHERE user_id=$1 AND language_code=$2 AND resolved_at IS NULL',
+        [userId, languageCode]
       )
     ]);
     const item = summary.rows[0];
@@ -365,26 +366,26 @@ async function buildCommandReply(userId, command) {
   return null;
 }
 
-async function buildLearnerContext(userId, exerciseRef) {
+async function buildLearnerContext(userId, exerciseRef, languageCode = 'en') {
   if (!pool || !userId) return '';
   try {
     const [profileResult, planResult, errorsResult] = await Promise.all([
       pool.query(
-        'SELECT goal, COALESCE(assessed_level,self_assessed_level) AS level FROM learner_profiles WHERE user_id=$1',
-        [userId]
+        'SELECT goal, COALESCE(assessed_level,self_assessed_level) AS level FROM learner_language_profiles WHERE user_id=$1 AND language_code=$2',
+        [userId, languageCode]
       ),
       pool.query(
         `SELECT p.level, p.goal, w.week_number, w.theme, w.objective
          FROM learning_plans p LEFT JOIN plan_weeks w ON w.plan_id=p.id
-         WHERE p.user_id=$1 AND p.status='active'
+         WHERE p.user_id=$1 AND p.status='active' AND p.language_code=$2
          ORDER BY w.week_number LIMIT 1`,
-        [userId]
+        [userId, languageCode]
       ),
       pool.query(
         `SELECT error_type, incorrect_form, correction, explanation
-         FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL
+         FROM error_journal WHERE user_id=$1 AND language_code=$2 AND resolved_at IS NULL
          ORDER BY updated_at DESC LIMIT 3`,
-        [userId]
+        [userId, languageCode]
       )
     ]);
     const profile = profileResult.rows[0];
@@ -406,11 +407,11 @@ async function buildLearnerContext(userId, exerciseRef) {
          FROM exercises e
          LEFT JOIN LATERAL (
            SELECT answer, is_correct, feedback FROM exercise_attempts
-           WHERE user_id=$1 AND exercise_id=e.id
+           WHERE user_id=$1 AND language_code=$3 AND exercise_id=e.id
            ORDER BY created_at DESC LIMIT 1
          ) a ON TRUE
-         WHERE e.id=$2 AND e.status='published'`,
-        [userId, exerciseRef]
+         WHERE e.id=$2 AND e.status='published' AND e.language_code=$3`,
+        [userId, exerciseRef, languageCode]
       );
       if (exerciseResult.rows[0]) {
         const exercise = exerciseResult.rows[0];
@@ -433,10 +434,10 @@ async function buildLearnerContext(userId, exerciseRef) {
 async function getRequestStudyLanguage(req) {
   const userId = req.session?.userId;
   if (!userId) {
-    return { language_code: 'en', course_status: 'available', speech_supported: true };
+    return { language_code: 'en', course_status: 'available', speech_supported: true, preferred_language: 'ru' };
   }
   const { rows } = await pool.query(
-    `SELECT l.language_code, l.course_status, l.speech_supported
+    `SELECT l.language_code, l.course_status, l.speech_supported, p.preferred_language
      FROM learner_profiles p
      JOIN study_languages l ON l.language_code=p.active_learning_language_code
      WHERE p.user_id=$1`,
@@ -445,13 +446,12 @@ async function getRequestStudyLanguage(req) {
   return rows[0] || null;
 }
 
-async function requireEnglishTargetCourse(req, res) {
+async function requireSupportedTargetCourse(req, res) {
   try {
     const language = await getRequestStudyLanguage(req);
-    if (!language || language.course_status !== 'available' || language.language_code.trim() !== 'en') {
-      res.status(409).json({
-        error: 'Генератор заданий для выбранного языка ещё готовится. Сейчас поддерживается английский.'
-      });
+    const code = language?.language_code?.trim();
+    if (!language || language.course_status !== 'available' || !['en','de'].includes(code)) {
+      res.status(409).json({ error: 'Генератор для выбранного языка пока не готов.' });
       return null;
     }
     return language;
@@ -473,7 +473,7 @@ const speakingGenerationLimiter = rateLimit({
 });
 
 app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) => {
-  const language = await requireEnglishTargetCourse(req, res);
+  const language = await requireSupportedTargetCourse(req, res);
   if (!language) return;
   const origin = req.get('origin');
   if (origin) {
@@ -486,7 +486,7 @@ app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) =
     }
   }
 
-  const validated = validateSpeakingGenerationRequest(req.body);
+  const validated = validateSpeakingGenerationRequest(req.body, language.language_code.trim());
   if (!validated.ok) {
     return res.status(400).json({ error: validated.error });
   }
@@ -498,6 +498,8 @@ app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) =
   }
 
   const { level, topic, avoid } = validated.value;
+  const languageCode = language.language_code.trim();
+  const targetLanguage = languageCode === 'de' ? 'German' : 'English';
   const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' +
     encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID) + '/ai/v1/chat/completions';
   const variation = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
@@ -516,11 +518,11 @@ app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) =
         messages: [
           {
             role: 'system',
-            content: 'You create original, age-appropriate English reading exercises. Follow the requested CEFR level and return only the required JSON object. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
+            content: 'You create original, age-appropriate ' + targetLanguage + ' reading exercises. Follow the requested CEFR level and return only the required JSON object. Use natural standard ' + targetLanguage + '. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
           },
           {
             role: 'user',
-            content: buildSpeakingGenerationPrompt({ level, topic, avoid }) +
+            content: buildSpeakingGenerationPrompt({ level, topic, avoid, languageCode }) +
               '\nVariation identifier: ' + variation + '. Create a genuinely new scenario, not a synonym replacement.'
           }
         ],
@@ -563,7 +565,7 @@ app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) =
     result?.result?.response ?? result?.response;
 
   try {
-    const passage = parseGeneratedSpeakingPassage(modelContent, { level, topic });
+    const passage = parseGeneratedSpeakingPassage(modelContent, { level, topic, languageCode });
     return res.json({ passage, source: 'cloudflare-workers-ai' });
   } catch (error) {
     console.error('Speaking generation response validation failed:', error?.message || 'unknown error');
@@ -614,19 +616,106 @@ function cleanGeneratedPracticeSessions() {
   }
 }
 
+async function buildGermanInstantPracticeExercise(request) {
+  if (['reading','listening'].includes(request.skill)) {
+    const passages = {
+      A1: {
+        title: 'Ein Tag in München',
+        passage: 'Mia wohnt in München. Sie steht um sieben Uhr auf und frühstückt mit ihrer Schwester. Um acht Uhr fährt sie mit dem Bus zur Schule. Nach dem Unterricht kauft sie Brot und Äpfel. Am Abend liest Mia ein Buch und telefoniert mit ihrer Freundin. Am Samstag besucht sie ihre Großeltern.',
+        questions: [
+          { prompt:'Wo wohnt Mia?', options:['In München','In Berlin','In Hamburg','In Wien'], correct_option_id:'a', explanation:'Im ersten Satz steht: Mia wohnt in München.' },
+          { prompt:'Wie fährt sie zur Schule?', options:['Mit dem Bus','Mit dem Zug','Mit dem Fahrrad','Zu Fuß'], correct_option_id:'a', explanation:'Mia fährt mit dem Bus zur Schule.' },
+          { prompt:'Was kauft sie nach dem Unterricht?', options:['Brot und Äpfel','Käse und Milch','Bücher und Stifte','Tee und Kaffee'], correct_option_id:'a', explanation:'Nach dem Unterricht kauft sie Brot und Äpfel.' },
+          { prompt:'Wen besucht Mia am Samstag?', options:['Ihre Großeltern','Ihre Lehrerin','Ihre Freundin','Ihre Nachbarin'], correct_option_id:'a', explanation:'Am Samstag besucht sie ihre Großeltern.' }
+        ]
+      },
+      A2: {
+        title: 'Ein Ausflug an den See',
+        passage: 'Am vergangenen Sonntag hat Jonas mit zwei Freunden einen Ausflug an einen See gemacht. Sie sind früh mit dem Zug gefahren, weil das Wetter am Morgen besonders schön war. Am Ufer haben sie gefrühstückt und danach eine kleine Wanderung gemacht. Gegen Mittag wurde es windig, deshalb sind sie in ein Café gegangen. Dort haben sie heiße Schokolade getrunken und ihre nächsten Ferien geplant.',
+        questions: [
+          { prompt:'Wann hat Jonas den Ausflug gemacht?', options:['Am vergangenen Sonntag','Am Samstagabend','Am Montagmorgen','Vor zwei Wochen'], correct_option_id:'a', explanation:'Der Text beginnt mit Am vergangenen Sonntag.' },
+          { prompt:'Warum sind sie früh gefahren?', options:['Weil das Wetter schön war','Weil das Café geschlossen war','Weil der Zug später fuhr','Weil sie arbeiten mussten'], correct_option_id:'a', explanation:'Sie sind früh gefahren, weil das Wetter am Morgen schön war.' },
+          { prompt:'Was haben sie am Ufer gemacht?', options:['Gefrühstückt','Fußball gespielt','Ein Museum besucht','Einkäufe gemacht'], correct_option_id:'a', explanation:'Am Ufer haben sie gefrühstückt.' },
+          { prompt:'Warum sind sie in ein Café gegangen?', options:['Weil es windig wurde','Weil es zu warm war','Weil der See geschlossen war','Weil sie den Zug verpasst hatten'], correct_option_id:'a', explanation:'Gegen Mittag wurde es windig.' }
+        ]
+      }
+    };
+    const item = passages[request.level];
+    if (!item) throw new Error('Для немецкого курса доступны только A1 и A2.');
+    return {
+      title: item.title,
+      instructions: request.interfaceLanguage === 'en'
+        ? 'Read the German text and answer the questions.'
+        : 'Прочитай немецкий текст и ответь на вопросы.',
+      passage: item.passage,
+      level: request.level,
+      skill: request.skill,
+      topic: request.topic,
+      languageCode: 'de',
+      questions: item.questions.map((question,index)=>({
+        id:'q'+(index+1),prompt:question.prompt,category:request.skill,
+        options:question.options.map((text,optionIndex)=>({id:['a','b','c','d'][optionIndex],text})),
+        correct_option_id:question.correct_option_id,
+        explanation:question.explanation,
+        learning_point:request.skill==='listening'?'Hörverstehen':'Leseverstehen'
+      }))
+    };
+  }
+
+  const { rows } = await pool.query(
+    `SELECT id, skill, level, objective, content, answer_key, explanation
+     FROM exercises
+     WHERE language_code='de' AND status='published' AND level=$1
+       AND skill IN ('grammar','vocabulary','communication')
+     ORDER BY RANDOM() LIMIT 14`,
+    [request.level]
+  );
+  const wanted = request.skill === 'mixed'
+    ? rows
+    : rows.filter(row => row.skill === request.skill);
+  const fallback = wanted.length ? wanted : rows;
+  if (!fallback.length) throw new Error('Для выбранного уровня пока недостаточно немецких заданий.');
+  const questions = fallback.slice(0,5).map((row,index) => ({
+    id: 'q' + (index + 1),
+    prompt: row.content?.prompt || row.objective,
+    category: row.skill,
+    options: row.content?.options || [],
+    correct_option_id: row.answer_key?.correct_option_id,
+    explanation: row.explanation?.[request.interfaceLanguage] || row.explanation?.ru || '',
+    learning_point: row.objective
+  }));
+  return {
+    title: request.level + ' · Deutsch ' + (request.skill === 'mixed' ? 'Mix' : request.skill),
+    instructions: request.interfaceLanguage === 'en'
+      ? 'Choose the correct answer in German.'
+      : 'Выбери правильный ответ на немецком языке.',
+    passage: '',
+    level: request.level,
+    skill: request.skill,
+    topic: request.topic,
+    languageCode: 'de',
+    questions
+  };
+}
+
 app.post('/api/practice/instant', async (req, res) => {
-  const language = await requireEnglishTargetCourse(req, res);
+  const language = await requireSupportedTargetCourse(req, res);
   if (!language) return;
   if (!sameRequestOrigin(req)) {
     return res.status(403).json({ error: 'Источник запроса не разрешён.' });
   }
 
-  const validated = validatePracticeGenerationRequest(req.body);
+  const validated = validatePracticeGenerationRequest(req.body, language.language_code.trim());
   if (!validated.ok) return res.status(400).json({ error: validated.error });
 
   try {
-    const request = validated.value;
-    const exercise = buildInstantPracticeExercise(request);
+    const request = {
+      ...validated.value,
+      interfaceLanguage: language.preferred_language === 'en' ? 'en' : 'ru'
+    };
+    const exercise = language.language_code.trim() === 'de'
+      ? await buildGermanInstantPracticeExercise(request)
+      : buildInstantPracticeExercise(request);
     cleanGeneratedPracticeSessions();
     const exerciseId = randomUUID();
     generatedPracticeSessions.set(exerciseId, {
@@ -656,13 +745,13 @@ app.post('/api/practice/instant', async (req, res) => {
 });
 
 app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) => {
-  const language = await requireEnglishTargetCourse(req, res);
+  const language = await requireSupportedTargetCourse(req, res);
   if (!language) return;
   if (!sameRequestOrigin(req)) {
     return res.status(403).json({ error: 'Источник запроса не разрешён.' });
   }
 
-  const validated = validatePracticeGenerationRequest(req.body);
+  const validated = validatePracticeGenerationRequest(req.body, language.language_code.trim());
   if (!validated.ok) return res.status(400).json({ error: validated.error });
   if (!isAiConfigured()) {
     return res.status(503).json({ error: 'ИИ пока не настроен на этом сервисе.' });
@@ -676,6 +765,9 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
     : null;
   if (rawKnowledgeNoteId && !knowledgeNoteId) {
     return res.status(400).json({ error: 'Некорректный идентификатор конспекта.' });
+  }
+  if (knowledgeNoteId && language.language_code.trim() === 'de') {
+    return res.status(409).json({ error: 'Тесты по немецким конспектам появятся вместе с отдельной базой знаний немецкого курса.' });
   }
   if (knowledgeNoteId && !req.session?.userId) {
     return res.status(401).json({ error: 'Войди в аккаунт, чтобы сохранять результаты теста.' });
@@ -694,7 +786,10 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
   )) {
     return res.status(400).json({ error: 'Некорректные данные конспекта.' });
   }
-  const request = validated.value;
+  const request = {
+    ...validated.value,
+    interfaceLanguage: language.preferred_language === 'en' ? 'en' : 'ru'
+  };
   const variation = randomUUID();
   const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' +
     encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID) + '/ai/v1/chat/completions';
@@ -713,7 +808,7 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
         messages: [
           {
             role: 'system',
-            content: 'You are an expert but kind English teacher creating original, age-appropriate school exercises. Strictly follow the requested JSON schema. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
+            content: 'You are an expert but kind ' + (language.language_code.trim() === 'de' ? 'German' : 'English') + ' teacher creating original, age-appropriate school exercises. Use the target language for all learner-facing text. Strictly follow the requested JSON schema. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
           },
           {
             role: 'user',
@@ -926,10 +1021,29 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     messages.push({ role: item.role, content });
   }
 
+  let studyLanguage = { language_code:'en', preferred_language:'ru' };
+  try {
+    studyLanguage = await getRequestStudyLanguage(req) || studyLanguage;
+  } catch {}
+  const languageCode = String(studyLanguage.language_code || 'en').trim();
+  const interfaceLanguage = studyLanguage.preferred_language === 'en' ? 'en' : 'ru';
+  const tutorSystemPrompt = languageCode === 'de'
+    ? [
+        'You are a kind, patient German tutor for a general-audience learning website.',
+        'The learner is studying German at CEFR A1-A2. Teach natural standard German using level-appropriate words and grammar.',
+        'Use German for practice, sample sentences, dialogues and corrections. Never replace the target language with English.',
+        'Explain grammar and give brief feedback in ' + (interfaceLanguage === 'en' ? 'English' : 'Russian') + '.',
+        'Keep every response age-appropriate, respectful and safe.',
+        'When correcting German, first respond to the learner meaning, then show the natural German correction and one short explanation.',
+        'Keep answers focused and ask at most one follow-up question at a time.',
+        'Do not claim to hear audio or see files unless they were actually supplied.'
+      ].join(' ')
+    : SYSTEM_PROMPT;
+
   const command = messages.at(-1)?.content.trim().toLowerCase();
   if (['/plan','/today','/practice','/review','/progress'].includes(command)) {
     try {
-      const message = await buildCommandReply(req.session?.userId, command);
+      const message = await buildCommandReply(req.session?.userId, command, languageCode);
       return res.json({ message, demo: false, command });
     } catch (error) {
       console.error('Tutor command failed:', error?.message || 'unknown error');
@@ -955,8 +1069,8 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          ...(await buildLearnerContext(req.session?.userId, req.body?.context_ref)
+          { role: 'system', content: tutorSystemPrompt },
+          ...(await buildLearnerContext(req.session?.userId, req.body?.context_ref, languageCode)
             .then(context => context ? [{ role: 'system', content: context }] : [])),
           ...messages
         ],

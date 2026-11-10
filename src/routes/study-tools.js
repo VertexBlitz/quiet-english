@@ -1,6 +1,6 @@
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { pool, requireDatabase, requireUser, loadActiveStudyLanguage, requireEnglishStudyLanguage, recordActivity } from '../db.js';
+import { pool, requireDatabase, requireUser, loadActiveStudyLanguage, recordActivity } from '../db.js';
 import { isExternalPersonalDataProcessingAllowed } from '../region-config.js';
 import { consumeMonthlyQuota } from '../subscription-access.js';
 
@@ -52,13 +52,16 @@ function aiError(res,error) {
 }
 
 const listeningLimiter=rateLimit({windowMs:3600000,limit:8,standardHeaders:'draft-8',legacyHeaders:false});
-router.post('/listening/prepare',requireEnglishStudyLanguage,listeningLimiter,async function(req,res,next) {
+router.post('/listening/prepare',listeningLimiter,async function(req,res,next) {
   const body=req.body || {};
   const transcript=multiline(body.transcript,12000);
   const title=clean(body.title,120);
   const level=clean(body.level,3).toUpperCase();
   if (transcript.length<80) return res.status(400).json({error:'Добавь расшифровку минимум из 80 символов.'});
   if (!LEVELS.includes(level)) return res.status(400).json({error:'Выбери уровень CEFR.'});
+  if (req.studyLanguageCode === 'de' && !['A1','A2'].includes(level)) {
+    return res.status(400).json({error:'Немецкое аудирование сейчас поддерживает уровни A1–A2.'});
+  }
   const sentences=transcript.split(/(?<=[.!?])\s+|\n+/u).map(function(x){return x.trim();}).filter(Boolean).slice(0,16);
   if (sentences.length<2) return res.status(400).json({error:'Нужно хотя бы два предложения для тренажёра.'});
   try {
@@ -66,9 +69,11 @@ router.post('/listening/prepare',requireEnglishStudyLanguage,listeningLimiter,as
     if (!quota.allowed) return res.status(429).json({
       error:'Лимит подготовки аудирования с ИИ на этот месяц исчерпан ('+quota.used+'/'+quota.limit+'). Premium увеличивает лимит до 60.'
     });
+    const targetLanguage = req.studyLanguage.english_name;
+    const translationLanguage = req.interfaceLanguage === 'en' ? 'English' : 'Russian';
     const data=await callAi(
-      'Create listening comprehension from the learner transcript. Use only the supplied text. Return JSON with sentence_translations (exactly one Russian translation per sentence in the same order) and exactly four questions. Each question has id, question, four options, correct_option integer 0-3, explanation_ru. Questions test details present in the text. Use age-appropriate neutral topics. JSON only.',
-      JSON.stringify({level:level,title:title,sentences:sentences}),1500
+      'Create ' + targetLanguage + ' listening comprehension from the learner transcript. Use only the supplied text. Return JSON with sentence_translations (exactly one ' + translationLanguage + ' translation per sentence in the same order) and exactly four questions written in ' + targetLanguage + '. Each question has id, question, four options, correct_option integer 0-3, explanation_ru written in Russian. Questions test details present in the text. Use age-appropriate neutral topics. JSON only.',
+      JSON.stringify({target_language:targetLanguage,translation_language:translationLanguage,level:level,title:title,sentences:sentences}),1500
     );
     if (!Array.isArray(data.sentence_translations) || data.sentence_translations.length!==sentences.length) throw new Error('AI_TRANSLATIONS');
     const translations=data.sentence_translations.map(function(x){return clean(x,500);});
