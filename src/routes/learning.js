@@ -36,6 +36,12 @@ const miniPrompts = [
   'Give one reason for an opinion using “because”.',
   'Summarise one useful thing you learned this week.'
 ];
+const germanMiniPrompts = [
+  'Schreibe einen Satz über deinen heutigen Tag.',
+  'Formuliere eine höfliche Bitte für eine Alltagssituation.',
+  'Begründe deine Meinung mit „weil“.',
+  'Fasse zusammen, was du diese Woche gelernt hast.'
+];
 
 function chooseExercise(level, day) {
   const rank = levelRank[level] ?? 2;
@@ -74,6 +80,9 @@ async function generatePlan(userId, course) {
       (levelRank[profile.level] ?? 2) >= (levelRank[template.level_min] ?? 0) &&
       (levelRank[profile.level] ?? 2) <= (levelRank[template.level_max] ?? 6)
     );
+    if (!selectedTemplate && profile.language_code !== 'en') {
+      throw new Error('Для этого языка ещё не опубликована программа выбранного уровня.');
+    }
     const weeklyPlan = selectedTemplate?.weekly_themes || weekThemes.map(([theme, objective], index) => ({
       theme, objective,
       tasks: Array.from({ length: 7 }, (_, day) => chooseExercise(profile.level, index * 7 + day + 1))
@@ -98,7 +107,7 @@ async function generatePlan(userId, course) {
         await client.query(
           `INSERT INTO plan_days (plan_id, week_id, day_index, main_task_id, review_item_limit, mini_prompt)
            VALUES ($1,$2,$3,$4,5,$5)`,
-          [plan.id, weekResult.rows[0].id, day, weekContent.tasks?.[dayInWeek - 1] || chooseExercise(profile.level, day), miniPrompts[(day - 1) % miniPrompts.length]]
+          [plan.id, weekResult.rows[0].id, day, weekContent.tasks?.[dayInWeek - 1] || chooseExercise(profile.level, day), (profile.language_code === 'de' ? germanMiniPrompts : miniPrompts)[(day - 1) % miniPrompts.length]]
         );
       }
     }
