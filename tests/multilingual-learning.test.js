@@ -75,12 +75,12 @@ test('onboarding and plan screens expose a separate target-language selector', (
   assert.ok(client.includes('/languages/activate'));
   assert.ok(client.includes("language_code: form.get('language_code') || 'en'"));
   assert.ok(styles.includes('.study-language-control'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v8'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v9'"));
   assert.ok(serviceWorker.includes('"/onboarding.html"'));
 });
 
 
-test('English-only tools refuse an unprepared study language', () => {
+test('only supported study languages can reach language-specific generators', () => {
   const db = read('src/db.js');
   const learning = read('src/routes/learning.js');
   const writing = read('src/routes/writing.js');
@@ -90,13 +90,14 @@ test('English-only tools refuse an unprepared study language', () => {
 
   assert.ok(db.includes('export function requireEnglishStudyLanguage'));
   assert.ok(db.includes('export function requireSpeechSupport'));
-  assert.ok(writing.includes("router.post('/writing/review',requireEnglishStudyLanguage"));
-  assert.ok(studyTools.includes("router.post('/listening/prepare',requireEnglishStudyLanguage"));
+  assert.ok(writing.includes("req.studyLanguageCode === 'de'"));
+  assert.ok(studyTools.includes("req.studyLanguageCode === 'de'"));
   assert.ok(pronunciation.includes('loadActiveStudyLanguage, requireSpeechSupport'));
   assert.ok(server.includes("app.post('/api/practice/instant'"));
   assert.ok(server.includes("app.post('/api/practice/generate'"));
   assert.ok(server.includes("app.post('/api/speaking/generate'"));
-  assert.ok(server.includes('requireEnglishTargetCourse(req, res)'));
+  assert.ok(server.includes('requireSupportedTargetCourse(req, res)'));
+  assert.ok(server.includes("!['en','de'].includes(code)"));
   assert.ok(learning.includes("if (!selectedTemplate && profile.language_code !== 'en')"));
 });
 
@@ -149,4 +150,83 @@ test('activity tracking keeps the originating study language even after a profil
   assert.ok(tools.includes('languageCode:found.rows[0].language_code'));
   assert.ok(server.includes('languageCode: session.languageCode'));
   assert.ok(learning.includes('AND language_code=(SELECT active_learning_language_code FROM learner_profiles WHERE user_id=$2)'));
+});
+
+
+test('German A1-A2 course release includes its own 4-week curriculum and 28 published tasks', () => {
+  const migration = read('db/migrations/014_german_a1_a2_course.sql');
+  const learning = read('src/routes/learning.js');
+  const ids = migration.match(/\('DE-A[12]-\d{2}'/g) || [];
+  assert.equal(ids.length, 28);
+  assert.ok(migration.includes("'german-a1-a2-4-week'"));
+  assert.ok(migration.includes("'published','de',1"));
+  assert.ok(migration.includes("course_status='available', speech_supported=TRUE"));
+  assert.ok(migration.includes('mini_prompt_ru TEXT'));
+  assert.ok(migration.includes('mini_prompt_en TEXT'));
+  assert.ok(learning.includes('germanPlacementQuestions'));
+  assert.ok(learning.includes('estimateGermanLevel(correct)'));
+  assert.ok(learning.includes('German A1–A2'));
+  assert.ok(learning.includes('mini_prompt_ru'));
+});
+
+test('German placement, AI practice, writing and speaking are constrained to A1-A2', () => {
+  const placement = read('src/content/placement.js');
+  const practice = read('src/practice-generation.js');
+  const speaking = read('src/speaking.js');
+  const server = read('server.js');
+  const writing = read('src/routes/writing.js');
+  const listening = read('src/routes/study-tools.js');
+
+  assert.ok(placement.includes('export const germanPlacementQuestions'));
+  assert.ok(placement.includes('export function estimateGermanLevel'));
+  assert.ok(practice.includes("languageCode === 'de' && !['A1','A2'].includes(level)"));
+  assert.ok(speaking.includes("languageCode === 'de' && !['A1','A2'].includes(level)"));
+  assert.ok(server.includes('buildGermanInstantPracticeExercise'));
+  assert.ok(server.includes("language: 'german'"));
+  assert.ok(writing.includes("req.studyLanguageCode === 'de'"));
+  assert.ok(listening.includes("req.studyLanguageCode === 'de'"));
+});
+
+test('German Speaking Lab uses a multilingual local model, German passages and Unicode tokenization', () => {
+  const client = read('public/pronunciation.js');
+  const content = read('public/pronunciation-content.js');
+  const scoring = read('public/pronunciation-scoring.js');
+  const storage = read('public/pronunciation-storage.js');
+  const route = read('src/routes/pronunciation.js');
+
+  assert.ok(client.includes("onnx-community/whisper-tiny"));
+  assert.ok(client.includes("language: activeLanguageCode === 'de' ? 'german' : 'english'"));
+  assert.ok(client.includes("utterance.lang = activeLanguageCode === 'de' ? 'de-DE' : 'en-US'"));
+  assert.ok(content.includes('export const GERMAN_PASSAGES'));
+  assert.ok(scoring.includes('\\p{L}'));
+  assert.ok(storage.includes('byLanguage[languageCode]'));
+  assert.ok(route.includes('onnx-community/whisper-tiny'));
+});
+
+test('German dictionary and AI Tutor use the active study language', () => {
+  const dictionary = read('public/dictionary.js');
+  const listeningTrainer = read('public/listening-trainer.js');
+  const knowledge = read('src/routes/knowledge.js');
+  const server = read('server.js');
+  const learning = read('src/routes/learning.js');
+
+  assert.ok(dictionary.includes("'/entries/'+activeLanguageCode+'/"));
+  assert.ok(dictionary.includes('/dictionary-enrich/'));
+  assert.ok(listeningTrainer.includes("activeLanguageCode==='de'?'german':'english'"));
+  assert.ok(knowledge.includes('req.studyLanguage.english_name'));
+  assert.ok(knowledge.includes('translation_en'));
+  assert.ok(server.includes('You are a kind, patient German tutor'));
+  assert.ok(server.includes('buildCommandReply(req.session?.userId, command, languageCode)'));
+  assert.ok(server.includes('buildLearnerContext(req.session?.userId, req.body?.context_ref, languageCode)'));
+  assert.ok(learning.includes("'communication'"));
+});
+
+test('German listening materials are filtered separately from English resources', () => {
+  const library = read('public/listening.js');
+  const trainer = read('public/listening-trainer.js');
+
+  assert.ok(library.includes('learngerman.dw.com'));
+  assert.ok(library.includes('deutsch.vhs-lernportal.de'));
+  assert.ok(library.includes('item.language === activeStudyLanguageCode'));
+  assert.ok(trainer.includes("activeLanguageCode==='de'?'de-DE'"));
 });
