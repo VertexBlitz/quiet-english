@@ -151,7 +151,18 @@ router.post('/languages/enroll', async (req, res, next) => {
       [req.user.id, code]
     );
     await pool.query(
-      'UPDATE learner_profiles SET active_learning_language_code=$2, updated_at=NOW() WHERE user_id=$1',
+      `UPDATE learner_profiles p SET
+         active_learning_language_code=$2,
+         goal=llp.goal,
+         self_assessed_level=llp.self_assessed_level,
+         assessed_level=llp.assessed_level,
+         minutes_per_day=llp.minutes_per_day,
+         duration_weeks=llp.duration_weeks,
+         interests=llp.interests,
+         onboarding_completed_at=llp.onboarding_completed_at,
+         updated_at=NOW()
+       FROM learner_language_profiles llp
+       WHERE p.user_id=$1 AND llp.user_id=p.user_id AND llp.language_code=$2`,
       [req.user.id, code]
     );
     res.status(201).json({ ok: true, active_language_code: code });
