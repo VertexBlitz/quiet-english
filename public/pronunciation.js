@@ -706,6 +706,11 @@ if (pronRoot) {
       }
     } catch {}
     generatedPassages = [];
+    [...levelFilter.options].forEach(option => {
+      option.disabled = activeLanguageCode === 'de' &&
+        !['ALL','A1','A2'].includes(option.value);
+    });
+    levelFilter.value = 'ALL';
     renderPassages();
     await loadHistory();
     checkAiGeneratorStatus();
