@@ -105,14 +105,15 @@
       history.replaceState(null, '', location.pathname + (query ? '?' + query : '') + location.hash);
       return true;
     }
-    if (active) return true;
-    try { active = localStorage.getItem(ACTIVE_KEY) === '1'; } catch {}
-    if (active) return true;
-
+    // A signed-in account always takes precedence over stale guest-demo state.
     try {
       const response = await fetch('/api/auth/me', { credentials: 'same-origin' });
       if (response.ok) return false;
     } catch {}
+
+    if (active) return true;
+    try { active = localStorage.getItem(ACTIVE_KEY) === '1'; } catch {}
+    if (active) return true;
     return start();
   }
 
