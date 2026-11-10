@@ -15,6 +15,7 @@ const exercises = (await Promise.all(exerciseFiles.map(async file =>
   JSON.parse(await fs.readFile(path.join(root, '../content', file), 'utf8'))
 ))).flat();
 const planTemplates = JSON.parse(await fs.readFile(path.join(root, '../content/plan-templates.de.json'), 'utf8'));
+const germanSkillTasks = JSON.parse(await fs.readFile(path.join(root, '../content/skill-practice-tasks.de.json'), 'utf8'));
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.PGSSLMODE === 'disable' ? false : process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: true } : undefined
@@ -51,7 +52,21 @@ try {
       ]
     );
   }
-  console.log('Seeded ' + exercises.length + ' curated exercises and ' + planTemplates.length + ' German plan templates.');
+  for (const task of germanSkillTasks) {
+    await pool.query(
+      `INSERT INTO skill_practice_tasks
+        (id, language_code, skill, level, title, description, duration_minutes, content, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        task.id, task.language_code, task.skill, task.level, task.title,
+        task.description, task.duration_minutes, JSON.stringify(task.content), task.status
+      ]
+    );
+  }
+  console.log('Seeded ' + exercises.length + ' curated exercises, ' +
+    planTemplates.length + ' German plan templates and ' +
+    germanSkillTasks.length + ' German Skills Lab tasks.');
 } catch (error) {
   console.error('Seeding failed:', error.message);
   process.exitCode = 1;
