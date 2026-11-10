@@ -15,6 +15,7 @@ import { isAvailableLanguage } from './src/content/languages.js';
 
 const app = express();
 const root = path.dirname(fileURLToPath(import.meta.url));
+const demoSkillTaskCatalog = JSON.parse(readFileSync(path.join(root, 'content/skill-practice-tasks.de.json'), 'utf8'));
 const demoExerciseCatalog = [
   ...JSON.parse(readFileSync(path.join(root, 'content/seed-exercises.json'), 'utf8')).map(item => ({ ...item, language_code: 'en' })),
   ...JSON.parse(readFileSync(path.join(root, 'content/seed-exercises.de.json'), 'utf8'))
@@ -93,6 +94,19 @@ app.post('/api/demo/placement/submit', sameOrigin, (req, res) => {
     ok: true,
     result: { level, correct, total: placementQuestions.length, is_preliminary: true }
   });
+});
+
+app.get('/api/demo/skill-tasks', (req, res) => {
+  const languageCode = req.get('x-qe-language') || req.query.language_code || 'en';
+  const skill = req.query.skill;
+  if (!isAvailableLanguage(languageCode)) return res.status(400).json({ error: 'Этот язык пока недоступен.' });
+  const tasks = demoSkillTaskCatalog
+    .filter(task => task.language_code === languageCode)
+    .filter(task => !skill || task.skill === skill)
+    .map(({ id, language_code, skill: taskSkill, level, title, description, duration_minutes, content }) => ({
+      id, language_code, skill: taskSkill, level, title, description, duration_minutes, content
+    }));
+  res.json({ language_code: languageCode, tasks });
 });
 
 app.get('/api/demo/exercises', (req, res) => {
