@@ -558,4 +558,102 @@ router.post('/errors/:id/resolve', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+
+router.get('/vocabulary', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, term, translation, part_of_speech, grammatical_gender,
+              plural_form, example_sentence, notes, source, created_at, updated_at
+       FROM learner_vocabulary
+       WHERE user_id=$1 AND learner_course_id=$2
+       ORDER BY updated_at DESC, term ASC`,
+      [req.user.id, req.course.id]
+    );
+    res.json({ language_code: req.course.language_code, entries: rows });
+  } catch (error) { next(error); }
+});
+
+router.post('/vocabulary', async (req, res, next) => {
+  const body = req.body || {};
+  const term = typeof body.term === 'string' ? body.term.trim() : '';
+  const translation = typeof body.translation === 'string' ? body.translation.trim() : '';
+  const partOfSpeech = typeof body.part_of_speech === 'string' ? body.part_of_speech.trim() : null;
+  const gender = body.grammatical_gender || null;
+  const pluralForm = typeof body.plural_form === 'string' ? body.plural_form.trim() : null;
+  const example = typeof body.example_sentence === 'string' ? body.example_sentence.trim() : null;
+  const notes = typeof body.notes === 'string' ? body.notes.trim() : null;
+  if (!term || term.length > 120) return res.status(400).json({ error: 'Слово должно содержать от 1 до 120 символов.' });
+  if (translation.length > 250 || (partOfSpeech && partOfSpeech.length > 50) ||
+      (pluralForm && pluralForm.length > 120) || (example && example.length > 500) ||
+      (notes && notes.length > 1000)) {
+    return res.status(400).json({ error: 'Одно из полей словаря превышает допустимую длину.' });
+  }
+  if (gender && (req.course.language_code !== 'de' || !['masculine','feminine','neuter'].includes(gender))) {
+    return res.status(400).json({ error: 'Укажи корректный род существительного.' });
+  }
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO learner_vocabulary
+        (user_id, learner_course_id, term, normalized_term, translation, part_of_speech,
+         grammatical_gender, plural_form, example_sentence, notes, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'manual')
+       RETURNING id, term, translation, part_of_speech, grammatical_gender,
+                 plural_form, example_sentence, notes, source, created_at, updated_at`,
+      [req.user.id, req.course.id, term, term.normalize('NFKC').toLowerCase(),
+       translation || null, partOfSpeech || null, gender, pluralForm || null, example || null, notes || null]
+    );
+    res.status(201).json({ entry: rows[0] });
+  } catch (error) {
+    if (error.code === '23505') return res.status(409).json({ error: 'Это слово уже есть в словаре данного курса.' });
+    next(error);
+  }
+});
+
+router.put('/vocabulary/:id', async (req, res, next) => {
+  const body = req.body || {};
+  const term = typeof body.term === 'string' ? body.term.trim() : '';
+  const translation = typeof body.translation === 'string' ? body.translation.trim() : '';
+  const partOfSpeech = typeof body.part_of_speech === 'string' ? body.part_of_speech.trim() : null;
+  const gender = body.grammatical_gender || null;
+  const pluralForm = typeof body.plural_form === 'string' ? body.plural_form.trim() : null;
+  const example = typeof body.example_sentence === 'string' ? body.example_sentence.trim() : null;
+  const notes = typeof body.notes === 'string' ? body.notes.trim() : null;
+  if (!term || term.length > 120 || translation.length > 250 ||
+      (partOfSpeech && partOfSpeech.length > 50) || (pluralForm && pluralForm.length > 120) ||
+      (example && example.length > 500) || (notes && notes.length > 1000)) {
+    return res.status(400).json({ error: 'Проверь заполнение полей словаря.' });
+  }
+  if (gender && (req.course.language_code !== 'de' || !['masculine','feminine','neuter'].includes(gender))) {
+    return res.status(400).json({ error: 'Укажи корректный род существительного.' });
+  }
+  try {
+    const { rows } = await pool.query(
+      `UPDATE learner_vocabulary
+       SET term=$4, normalized_term=$5, translation=$6, part_of_speech=$7,
+           grammatical_gender=$8, plural_form=$9, example_sentence=$10, notes=$11, updated_at=NOW()
+       WHERE id=$1 AND user_id=$2 AND learner_course_id=$3
+       RETURNING id, term, translation, part_of_speech, grammatical_gender,
+                 plural_form, example_sentence, notes, source, created_at, updated_at`,
+      [req.params.id, req.user.id, req.course.id, term, term.normalize('NFKC').toLowerCase(),
+       translation || null, partOfSpeech || null, gender, pluralForm || null, example || null, notes || null]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Слово не найдено в этом учебном курсе.' });
+    res.json({ entry: rows[0] });
+  } catch (error) {
+    if (error.code === '23505') return res.status(409).json({ error: 'Это слово уже есть в словаре данного курса.' });
+    next(error);
+  }
+});
+
+router.delete('/vocabulary/:id', async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM learner_vocabulary WHERE id=$1 AND user_id=$2 AND learner_course_id=$3',
+      [req.params.id, req.user.id, req.course.id]
+    );
+    if (!result.rowCount) return res.status(404).json({ error: 'Слово не найдено в этом учебном курсе.' });
+    res.json({ ok: true });
+  } catch (error) { next(error); }
+});
+
 export default router;
