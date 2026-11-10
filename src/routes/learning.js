@@ -256,9 +256,9 @@ router.get('/plan', async (req, res, next) => {
          'week_number', w.week_number, 'theme', w.theme, 'objective', w.objective
        ) ORDER BY w.week_number) AS weeks
        FROM learning_plans p LEFT JOIN plan_weeks w ON w.plan_id=p.id
-       WHERE p.user_id=$1 AND p.status='active'
+       WHERE p.user_id=$1 AND p.learner_course_id=$2 AND p.status='active'
        GROUP BY p.id ORDER BY p.created_at DESC LIMIT 1`,
-      [req.user.id]
+      [req.user.id, req.course.id]
     );
     if (!rows[0]) return res.status(404).json({ error: 'План пока не создан. Заверши онбординг и тест.' });
     res.json({ plan: rows[0] });
@@ -276,14 +276,14 @@ router.get('/today', async (req, res, next) => {
        JOIN plan_days d ON d.plan_id=p.id
        JOIN plan_weeks w ON w.id=d.week_id
        LEFT JOIN exercises e ON e.id=d.main_task_id
-       WHERE p.user_id=$1 AND p.status='active'
+       WHERE p.user_id=$1 AND p.learner_course_id=$2 AND p.status='active'
          AND d.day_index = LEAST(GREATEST(((NOW() AT TIME ZONE (SELECT timezone FROM learner_profiles WHERE user_id=$1))::date - p.starts_on + 1), 1), 28)
        LIMIT 1`,
-      [req.user.id]
+      [req.user.id, req.course.id]
     );
     if (!rows[0]) return res.status(404).json({ error: 'Сегодняшняя задача пока недоступна. Создай учебный план.' });
     const day = rows[0];
-    const review = await pool.query('SELECT COUNT(*)::int AS due_count FROM srs_items WHERE user_id=$1 AND due_at <= NOW()', [req.user.id]);
+    const review = await pool.query('SELECT COUNT(*)::int AS due_count FROM srs_items WHERE user_id=$1 AND learner_course_id=$2 AND due_at <= NOW()', [req.user.id, req.course.id]);
     res.json({
       today: {
         plan_id: day.plan_id, level: day.level, goal: day.goal, minutes_per_day: day.minutes_per_day,
@@ -308,10 +308,10 @@ router.get('/exercises', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, skill, level, objective, instructions, content, estimated_time, tags, success_criteria
-       FROM exercises WHERE status='published' AND skill = ANY($1::text[])
-         AND ($2::text IS NULL OR skill=$2)
+       FROM exercises WHERE language_code=$1 AND status='published' AND skill = ANY($2::text[])
+         AND ($3::text IS NULL OR skill=$3)
        ORDER BY skill, level, id`,
-      [skills, skills.includes(skill) ? skill : null]
+      [req.course.language_code, skills, skills.includes(skill) ? skill : null]
     );
     res.json({ exercises: rows });
   } catch (error) { next(error); }
@@ -321,8 +321,8 @@ router.get('/exercises/:id', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, skill, level, objective, instructions, content, estimated_time, tags, success_criteria, version
-       FROM exercises WHERE id=$1 AND status='published'`,
-      [req.params.id]
+       FROM exercises WHERE id=$1 AND language_code=$2 AND status='published'`,
+      [req.params.id, req.course.language_code]
     );
     if (!rows[0]) return res.status(404).json({ error: 'Задание не найдено.' });
     res.json({ exercise: rows[0] });
@@ -333,7 +333,7 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
   const answer = req.body?.answer;
   if (answer === undefined || answer === null) return res.status(400).json({ error: 'Отправь ответ на задание.' });
   try {
-    const { rows } = await pool.query('SELECT * FROM exercises WHERE id=$1 AND status=\'published\'', [req.params.id]);
+    const { rows } = await pool.query('SELECT * FROM exercises WHERE id=$1 AND language_code=$2 AND status=\'published\'', [req.params.id, req.course.language_code]);
     const exercise = rows[0];
     if (!exercise) return res.status(404).json({ error: 'Задание не найдено.' });
     const selected = typeof answer === 'string' ? answer : answer.option_id;
@@ -347,9 +347,9 @@ router.post('/exercises/:id/attempts', async (req, res, next) => {
       explanation: exercise.explanation
     };
     const result = await pool.query(
-      `INSERT INTO exercise_attempts (user_id, exercise_id, exercise_version, answer, is_correct, score, feedback)
-       VALUES ($1,$2,$3,$4::jsonb,$5,$6,$7::jsonb) RETURNING id`,
-      [req.user.id, exercise.id, exercise.version, JSON.stringify(answer), isCorrect, isCorrect ? 100 : 0, JSON.stringify(feedback)]
+      `INSERT INTO exercise_attempts (user_id, learner_course_id, exercise_id, exercise_version, answer, is_correct, score, feedback)
+       VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8::jsonb) RETURNING id`,
+      [req.user.id, req.course.id, exercise.id, exercise.version, JSON.stringify(answer), isCorrect, isCorrect ? 100 : 0, JSON.stringify(feedback)]
     );
 
     if (exercise.srs?.enabled) {
