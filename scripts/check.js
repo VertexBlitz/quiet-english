@@ -28,6 +28,7 @@ for (const file of files) {
 const englishExercises = JSON.parse(fs.readFileSync(path.join(root, 'content/seed-exercises.json'), 'utf8'));
 const germanExercises = JSON.parse(fs.readFileSync(path.join(root, 'content/seed-exercises.de.json'), 'utf8'));
 const germanPlans = JSON.parse(fs.readFileSync(path.join(root, 'content/plan-templates.de.json'), 'utf8'));
+const germanSkillTasks = JSON.parse(fs.readFileSync(path.join(root, 'content/skill-practice-tasks.de.json'), 'utf8'));
 const germanIds = new Set(germanExercises.map(exercise => exercise.id));
 if (germanExercises.some(exercise => exercise.language_code !== 'de')) {
   throw new Error('Every German exercise must declare language_code=de.');
@@ -37,6 +38,13 @@ if (englishExercises.some(exercise => exercise.language_code && exercise.languag
 }
 if (new Set([...englishExercises, ...germanExercises].map(exercise => exercise.id)).size !== englishExercises.length + germanExercises.length) {
   throw new Error('Exercise IDs must be unique across language catalogs.');
+}
+const skillTaskIds = new Set(germanSkillTasks.map(task => task.id));
+if (germanSkillTasks.some(task => task.language_code !== 'de' || !['listening','writing','speaking','pronunciation'].includes(task.skill))) {
+  throw new Error('German Skills Lab content has an invalid language or skill.');
+}
+if (skillTaskIds.size !== germanSkillTasks.length) {
+  throw new Error('German Skills Lab task IDs must be unique.');
 }
 for (const plan of germanPlans) {
   if (plan.language_code !== 'de' || plan.weekly_themes?.length !== 4 ||
