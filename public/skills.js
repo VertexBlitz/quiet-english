@@ -92,6 +92,90 @@
     ]
   };
 
+  const germanTasks = {
+    listening: [
+      {
+        id: 'de_listen_cafe_01', level: 'A1', duration: 5, title: 'Im Café',
+        description: 'Verstehe eine einfache Bestellung und die Rückfrage.',
+        transcript: 'Guten Morgen! Was darf es sein? Ich möchte einen Tee und ein Käsebrötchen, bitte. Möchten Sie hier essen oder zum Mitnehmen? Zum Mitnehmen, bitte. Das macht zusammen sechs Euro.',
+        questions: [
+          { prompt: 'Was bestellt die Person?', choices: ['Einen Kaffee und Kuchen', 'Einen Tee und ein Käsebrötchen', 'Eine Suppe und Wasser'], answer: 1, explanation: 'Die Person bestellt einen Tee und ein Käsebrötchen.' },
+          { prompt: 'Möchte die Person hier essen?', choices: ['Ja, hier im Café', 'Nein, zum Mitnehmen', 'Das wird nicht gesagt'], answer: 1, explanation: 'Die Person sagt: „Zum Mitnehmen, bitte.“' }
+        ]
+      },
+      {
+        id: 'de_listen_station_01', level: 'A2', duration: 6, title: 'Am Bahnhof',
+        description: 'Verstehe eine Durchsage zu einer Zugverspätung.',
+        transcript: 'Achtung auf Gleis drei. Der Zug nach München hat heute zehn Minuten Verspätung. Er fährt voraussichtlich um neun Uhr vierzig ab. Bitte achten Sie auf weitere Informationen auf den Anzeigetafeln.',
+        questions: [
+          { prompt: 'Wie lange hat der Zug Verspätung?', choices: ['Fünf Minuten', 'Zehn Minuten', 'Zwanzig Minuten'], answer: 1, explanation: 'Die Durchsage nennt zehn Minuten Verspätung.' },
+          { prompt: 'Wohin fährt der Zug?', choices: ['Nach München', 'Nach Berlin', 'Nach Hamburg'], answer: 0, explanation: 'Der Zug fährt nach München.' }
+        ]
+      },
+      {
+        id: 'de_listen_weekend_01', level: 'B1', duration: 6, title: 'Pläne fürs Wochenende',
+        description: 'Erkenne, warum Freunde ihre Pläne ändern.',
+        transcript: 'Wollen wir am Samstag wandern gehen? Eigentlich gern, aber der Wetterbericht sagt starken Regen voraus. Wie wäre es stattdessen mit einem Besuch im Museum? Gute Idee. Dort gibt es eine neue Ausstellung zur Stadtgeschichte. Treffen wir uns um elf Uhr vor dem Eingang?',
+        questions: [
+          { prompt: 'Warum ändern sie ihre Pläne?', choices: ['Das Wetter wird schlecht', 'Das Museum ist geschlossen', 'Eine Person muss arbeiten'], answer: 0, explanation: 'Wegen des angekündigten Regens möchten sie nicht wandern.' },
+          { prompt: 'Wann treffen sie sich?', choices: ['Um zehn Uhr', 'Um elf Uhr', 'Um zwölf Uhr'], answer: 1, explanation: 'Sie verabreden sich für elf Uhr.' }
+        ]
+      }
+    ],
+    writing: [
+      {
+        id: 'de_write_invitation_01', level: 'A2', duration: 8, title: 'Eine Einladung schreiben',
+        description: 'Schreibe eine kurze Nachricht und lade eine Person zu einer Veranstaltung ein.',
+        prompt: 'In deiner Stadt findet am Wochenende ein Kulturfest statt. Schreibe einer Freundin oder einem Freund eine Nachricht. Erzähle, was es dort gibt, wann ihr euch treffen könnt und warum du die Veranstaltung interessant findest.',
+        minWords: 50, maxWords: 80,
+        checklist: ['Beginne mit einer passenden Anrede.', 'Nenne Zeit und Treffpunkt.', 'Erkläre kurz, warum du die Person einlädst.']
+      },
+      {
+        id: 'de_write_opinion_01', level: 'B1', duration: 10, title: 'Eine Meinung begründen',
+        description: 'Formuliere deine Meinung und unterstütze sie mit Argumenten.',
+        prompt: 'Viele Menschen lernen heute online. Findest du Online-Unterricht besser als Unterricht im Klassenzimmer? Schreibe einen kurzen Text mit deiner Meinung, zwei Gründen und einem Beispiel.',
+        minWords: 80, maxWords: 120,
+        checklist: ['Formuliere deine Meinung klar.', 'Verwende Konnektoren wie weil, obwohl und außerdem.', 'Beende den Text mit einem kurzen Fazit.']
+      },
+      {
+        id: 'de_write_summary_01', level: 'B2', duration: 10, title: 'Eine kurze Zusammenfassung',
+        description: 'Fasse einen Standpunkt sachlich zusammen und bewerte ihn.',
+        prompt: 'Schreibe eine kurze Stellungnahme zur Frage, ob öffentliche Verkehrsmittel in Städten stärker gefördert werden sollten. Nenne Vorteile, mögliche Schwierigkeiten und ein begründetes Fazit.',
+        minWords: 110, maxWords: 150,
+        checklist: ['Strukturiere den Text in Einleitung, Argumente und Fazit.', 'Nutze präzise Konnektoren.', 'Vermeide Wiederholungen und umgangssprachliche Formulierungen.']
+      }
+    ],
+    speaking: [
+      {
+        id: 'de_speak_hobby_01', level: 'A1', duration: 3, title: 'Über dich und deine Hobbys sprechen',
+        description: 'Stelle dich kurz vor und erzähle von einer Freizeitaktivität.',
+        prompt: 'Stelle dich kurz vor. Erzähle, was du gern in deiner Freizeit machst, wann du dein Hobby ausübst und warum es dir gefällt.',
+        tips: ['Beginne mit „Ich heiße …“.', 'Verwende „gern“ und „am Wochenende“.', 'Bilde kurze vollständige Sätze.']
+      },
+      {
+        id: 'de_speak_place_01', level: 'A2', duration: 3, title: 'Einen Ort beschreiben',
+        description: 'Beschreibe einen öffentlichen Ort, den du gern besuchst.',
+        prompt: 'Beschreibe einen Ort in deiner Stadt, den du gern besuchst. Erkläre, was man dort machen kann und warum du diesen Ort magst.',
+        tips: ['Nutze passende Adjektive.', 'Erwähne zwei Aktivitäten.', 'Begründe deine Meinung mit „weil“.']
+      },
+      {
+        id: 'de_speak_technology_01', level: 'B1', duration: 4, title: 'Technologie und Lernen',
+        description: 'Äußere deine Meinung und nenne ein Beispiel.',
+        prompt: 'Macht Technologie das Lernen einfacher? Nenne deine Meinung, einen Vorteil, einen möglichen Nachteil und ein Beispiel.',
+        tips: ['Beginne mit „Meiner Meinung nach …“.', 'Nutze „einerseits“ und „andererseits“.', 'Schließe mit einem kurzen Fazit.']
+      }
+    ],
+    pronunciation: [
+      {
+        id: 'de_pronunciation_01', level: 'A1', duration: 4, title: 'Umlaute und lange Vokale',
+        description: 'Lies einen kurzen Satz laut vor und vergleiche die Spracherkennung mit dem Ausgangstext.',
+        target: 'Fünf schöne Bücher stehen über dem grünen Tisch.',
+        prompt: 'Fünf schöne Bücher stehen über dem grünen Tisch.',
+        tips: ['Achte auf ö in schöne und ü in Bücher.', 'Sprich jedes Wort deutlich.', 'Höre dir zuerst das Modell an.']
+      }
+    ]
+  };
+
   const words = value => (value.trim().match(/\S+/g) || []).length;
   const safeText = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
