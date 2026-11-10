@@ -433,8 +433,8 @@ router.post('/skill-practice', async (req, res, next) => {
 router.get('/skill-practice', async (req, res, next) => {
   try {
     const result = await pool.query(
-      'SELECT skill, COUNT(*)::int AS attempts, COUNT(score)::int AS scored_attempts, COALESCE(AVG(score),0)::numeric AS average_score FROM skill_practice_attempts WHERE user_id=$1 GROUP BY skill ORDER BY skill',
-      [req.user.id]
+      'SELECT skill, COUNT(*)::int AS attempts, COUNT(score)::int AS scored_attempts, COALESCE(AVG(score),0)::numeric AS average_score FROM skill_practice_attempts WHERE user_id=$1 AND learner_course_id=$2 GROUP BY skill ORDER BY skill',
+      [req.user.id, req.course.id]
     );
     res.json({ skills: result.rows.map(row => ({ skill: row.skill, attempts: row.attempts, accuracy: row.scored_attempts ? Math.round(Number(row.average_score)) : null })) });
   } catch (error) { next(error); }
@@ -443,9 +443,9 @@ router.get('/review/queue', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, item_type, item_ref, prompt, explanation, interval_days, repetitions, due_at
-       FROM srs_items WHERE user_id=$1 AND due_at <= NOW()
+       FROM srs_items WHERE user_id=$1 AND learner_course_id=$2 AND due_at <= NOW()
        ORDER BY due_at ASC LIMIT 20`,
-      [req.user.id]
+      [req.user.id, req.course.id]
     );
     res.json({ items: rows });
   } catch (error) { next(error); }
@@ -454,8 +454,8 @@ router.get('/review/queue', async (req, res, next) => {
 router.post('/review/:id/reveal', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      'SELECT answer, explanation FROM srs_items WHERE id=$1 AND user_id=$2 AND due_at <= NOW()',
-      [req.params.id, req.user.id]
+      'SELECT answer, explanation FROM srs_items WHERE id=$1 AND user_id=$2 AND learner_course_id=$3 AND due_at <= NOW()',
+      [req.params.id, req.user.id, req.course.id]
     );
     if (!rows[0]) return res.status(404).json({ error: 'Карточка не найдена или ещё не готова к повторению.' });
     res.json({ answer: rows[0].answer, explanation: rows[0].explanation });
@@ -466,7 +466,7 @@ router.post('/review/:id', async (req, res, next) => {
   const rating = req.body?.rating;
   if (!['Again','Hard','Good','Easy'].includes(rating)) return res.status(400).json({ error: 'Выбери Again, Hard, Good или Easy.' });
   try {
-    const { rows } = await pool.query('SELECT * FROM srs_items WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
+    const { rows } = await pool.query('SELECT * FROM srs_items WHERE id=$1 AND user_id=$2 AND learner_course_id=$3', [req.params.id, req.user.id, req.course.id]);
     const item = rows[0];
     if (!item) return res.status(404).json({ error: 'Карточка не найдена.' });
     let interval = item.interval_days;
@@ -479,10 +479,10 @@ router.post('/review/:id', async (req, res, next) => {
     await pool.query(
       `UPDATE srs_items SET interval_days=$3,repetitions=$4,ease_factor=$5,last_rating=$6,
        due_at=CASE WHEN $3=0 THEN NOW()+INTERVAL '10 minutes' ELSE NOW()+($3 * INTERVAL '1 day') END, updated_at=NOW()
-       WHERE id=$1 AND user_id=$2`,
-      [item.id, req.user.id, interval, repetitions, ease, rating]
+       WHERE id=$1 AND user_id=$2 AND learner_course_id=$7`,
+      [item.id, req.user.id, interval, repetitions, ease, rating, req.course.id]
     );
-    await recordActivity(req.user.id, { minutes: 1, completedTasks: 0 });
+    await recordActivity(req.user.id, { courseId: req.course.id, minutes: 1, completedTasks: 0 });
     res.json({ ok: true, next_interval_days: interval, rating });
   } catch (error) { next(error); }
 });
@@ -494,24 +494,24 @@ router.get('/progress', async (req, res, next) => {
         `SELECT COALESCE(SUM(minutes),0)::int AS minutes,
                 COALESCE(SUM(completed_tasks),0)::int AS completed_tasks,
                 COUNT(*) FILTER (WHERE completed_tasks > 0)::int AS active_days
-         FROM daily_activity WHERE user_id=$1`,
-        [req.user.id]
+         FROM daily_activity WHERE user_id=$1 AND learner_course_id=$2`,
+        [req.user.id, req.course.id]
       ),
       pool.query(
         `SELECT e.skill, COUNT(*)::int AS attempts,
                 COUNT(*) FILTER (WHERE a.is_correct)::int AS correct
          FROM exercise_attempts a JOIN exercises e ON e.id=a.exercise_id
-         WHERE a.user_id=$1 GROUP BY e.skill ORDER BY e.skill`,
-        [req.user.id]
+         WHERE a.user_id=$1 AND a.learner_course_id=$2 GROUP BY e.skill ORDER BY e.skill`,
+        [req.user.id, req.course.id]
       ),
       pool.query(
         `SELECT activity_date, minutes, completed_tasks FROM daily_activity
-         WHERE user_id=$1 AND activity_date >= CURRENT_DATE - INTERVAL '6 days'
+         WHERE user_id=$1 AND learner_course_id=$2 AND activity_date >= CURRENT_DATE - INTERVAL '6 days'
          ORDER BY activity_date`,
-        [req.user.id]
+        [req.user.id, req.course.id]
       ),
-      pool.query('SELECT COUNT(*)::int AS open_errors FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL', [req.user.id]),
-      pool.query('SELECT skill, COUNT(*)::int AS attempts, COUNT(score)::int AS scored_attempts, COALESCE(AVG(score),0)::numeric AS average_score FROM skill_practice_attempts WHERE user_id=$1 GROUP BY skill', [req.user.id])
+      pool.query('SELECT COUNT(*)::int AS open_errors FROM error_journal WHERE user_id=$1 AND learner_course_id=$2 AND resolved_at IS NULL', [req.user.id, req.course.id]),
+      pool.query('SELECT skill, COUNT(*)::int AS attempts, COUNT(score)::int AS scored_attempts, COALESCE(AVG(score),0)::numeric AS average_score FROM skill_practice_attempts WHERE user_id=$1 AND learner_course_id=$2 GROUP BY skill', [req.user.id, req.course.id])
     ]);
     res.json({
       summary: { ...summary.rows[0], open_errors: errors.rows[0].open_errors },
@@ -540,8 +540,8 @@ router.get('/errors', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, error_type, incorrect_form, correction, explanation, occurrences, created_at, updated_at
-       FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL ORDER BY updated_at DESC LIMIT 50`,
-      [req.user.id]
+       FROM error_journal WHERE user_id=$1 AND learner_course_id=$2 AND resolved_at IS NULL ORDER BY updated_at DESC LIMIT 50`,
+      [req.user.id, req.course.id]
     );
     res.json({ errors: rows });
   } catch (error) { next(error); }
@@ -550,8 +550,8 @@ router.get('/errors', async (req, res, next) => {
 router.post('/errors/:id/resolve', async (req, res, next) => {
   try {
     const result = await pool.query(
-      'UPDATE error_journal SET resolved_at=NOW(), updated_at=NOW() WHERE id=$1 AND user_id=$2 AND resolved_at IS NULL',
-      [req.params.id, req.user.id]
+      'UPDATE error_journal SET resolved_at=NOW(), updated_at=NOW() WHERE id=$1 AND user_id=$2 AND learner_course_id=$3 AND resolved_at IS NULL',
+      [req.params.id, req.user.id, req.course.id]
     );
     if (!result.rowCount) return res.status(404).json({ error: 'Ошибка не найдена или уже закрыта.' });
     res.json({ ok: true });
