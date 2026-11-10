@@ -18,6 +18,12 @@ const miniPrompts = [
   'Give one reason for an opinion using “because”.',
   'Summarise one useful thing you learned this week.'
 ];
+const germanMiniPrompts = [
+  { ru:'Представься по-немецки и назови город, в котором живёшь.', en:'Introduce yourself in German and name the city where you live.' },
+  { ru:'Составь короткую просьбу с bitte.', en:'Make a short request using bitte.' },
+  { ru:'Опиши свой обычный день двумя предложениями на немецком.', en:'Describe your daily routine in two German sentences.' },
+  { ru:'Расскажи, что ты делал(а) вчера, используя Perfekt.', en:'Say what you did yesterday using the Perfekt.' }
+];
 
 function chooseExercise(level, day) {
   const rank = levelRank[level] ?? 2;
@@ -97,10 +103,16 @@ async function generatePlan(userId) {
       );
       for (let dayInWeek = 1; dayInWeek <= 7; dayInWeek++) {
         const day = (week - 1) * 7 + dayInWeek;
+        const miniPrompt = profile.language_code === 'de'
+          ? germanMiniPrompts[(day - 1) % germanMiniPrompts.length]
+          : { ru: miniPrompts[(day - 1) % miniPrompts.length], en: miniPrompts[(day - 1) % miniPrompts.length] };
         await client.query(
-          `INSERT INTO plan_days (plan_id, week_id, day_index, main_task_id, review_item_limit, mini_prompt)
-           VALUES ($1,$2,$3,$4,5,$5)`,
-          [plan.id, weekResult.rows[0].id, day, weekContent.tasks?.[dayInWeek - 1] || chooseExercise(profile.level, day), miniPrompts[(day - 1) % miniPrompts.length]]
+          `INSERT INTO plan_days
+             (plan_id,week_id,day_index,main_task_id,review_item_limit,mini_prompt,mini_prompt_ru,mini_prompt_en)
+           VALUES ($1,$2,$3,$4,5,$5,$6,$7)`,
+          [plan.id, weekResult.rows[0].id, day,
+            weekContent.tasks?.[dayInWeek - 1] || chooseExercise(profile.level, day),
+            miniPrompt.ru, miniPrompt.ru, miniPrompt.en]
         );
       }
     }
@@ -372,7 +384,9 @@ router.get('/today', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT p.id AS plan_id, p.level, p.goal, p.minutes_per_day,
-              d.id AS day_id, d.day_index, d.main_task_id, d.review_item_limit, d.mini_prompt, d.completed_at,
+              d.id AS day_id, d.day_index, d.main_task_id, d.review_item_limit,
+              json_build_object('ru',COALESCE(d.mini_prompt_ru,d.mini_prompt),'en',COALESCE(d.mini_prompt_en,d.mini_prompt)) AS mini_prompt,
+              d.completed_at,
               w.week_number,
               json_build_object('ru',COALESCE(w.theme_ru,w.theme),'en',COALESCE(w.theme_en,w.theme)) AS theme,
               json_build_object('ru',COALESCE(w.objective_ru,w.objective),'en',COALESCE(w.objective_en,w.objective)) AS objective,
