@@ -6,7 +6,6 @@ import { consumeMonthlyQuota } from '../subscription-access.js';
 
 const router = express.Router();
 router.use(requireDatabase, requireUser, loadActiveStudyLanguage);
-router.use(requireDatabase, requireUser);
 const MODEL = process.env.CLOUDFLARE_MODEL || '@cf/google/gemma-4-26b-a4b-it';
 const TYPES = ['essay','email','story','article','exam'];
 const LEVELS = ['A1','A2','B1','B2','C1','C2'];
