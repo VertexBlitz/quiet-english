@@ -156,7 +156,7 @@ test('activity tracking keeps the originating study language even after a profil
 test('German A1-A2 course remains available with its own 4-week curriculum and 28 published tasks', () => {
   const migration = read('db/migrations/014_german_a1_a2_course.sql');
   const learning = read('src/routes/learning.js');
-  const ids = migration.match(/\\('DE-A[12]-\\d{2}'/g) || [];
+  const ids = migration.match(/\('DE-A[12]-\d{2}'/g) || [];
   assert.equal(ids.length, 28);
   assert.ok(migration.includes("'german-a1-a2-4-week'"));
   assert.ok(migration.includes("'published','de',1"));
@@ -172,7 +172,7 @@ test('German A1-A2 course remains available with its own 4-week curriculum and 2
 test('German B1-C2 release includes four independent curricula and 112 published tasks', () => {
   const migration = read('db/migrations/015_german_b1_c2_course.sql');
   for (const level of ['B1','B2','C1','C2']) {
-    const ids = migration.match(new RegExp("\\\\('DE-" + level + "-\\\\d{2}'", 'g')) || [];
+    const ids = migration.match(new RegExp("\\('DE-" + level + "-\\d{2}'", 'g')) || [];
     assert.equal(ids.length, 28, level + ' must have 28 exercises');
     assert.ok(migration.includes("'german-" + level.toLowerCase() + "-4-week'"));
     assert.ok(migration.includes("'" + level + "','" + level + "',4,10"));
