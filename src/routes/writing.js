@@ -1,6 +1,6 @@
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { pool, requireDatabase, requireUser, loadActiveStudyLanguage, requireEnglishStudyLanguage, recordActivity } from '../db.js';
+import { pool, requireDatabase, requireUser, loadActiveStudyLanguage, recordActivity } from '../db.js';
 import { isExternalPersonalDataProcessingAllowed } from '../region-config.js';
 import { consumeMonthlyQuota } from '../subscription-access.js';
 
@@ -56,7 +56,7 @@ function handleAiError(res,error) {
   return false;
 }
 const writingLimiter = rateLimit({windowMs:3600000,limit:6,standardHeaders:'draft-8',legacyHeaders:false});
-router.post('/writing/review',requireEnglishStudyLanguage,writingLimiter,async function(req,res,next) {
+router.post('/writing/review',writingLimiter,async function(req,res,next) {
   const body = req.body || {};
   const text = multiline(body.text);
   const taskType = clean(body.task_type,20).toLowerCase();
@@ -65,24 +65,34 @@ router.post('/writing/review',requireEnglishStudyLanguage,writingLimiter,async f
   if (text.length < 30) return res.status(400).json({error:'Добавь текст минимум из 30 символов.'});
   if (!TYPES.includes(taskType)) return res.status(400).json({error:'Выбери формат текста.'});
   if (!LEVELS.includes(level)) return res.status(400).json({error:'Выбери уровень CEFR.'});
+  if (req.studyLanguageCode === 'de' && !['A1','A2'].includes(level)) {
+    return res.status(400).json({error:'Немецкий Writing Lab сейчас поддерживает уровни A1–A2.'});
+  }
   try {
     const profile = await pool.query("SELECT COALESCE(assessed_level,self_assessed_level,$2) AS level FROM learner_language_profiles WHERE user_id=$1 AND language_code=$3",[req.user.id,level,req.studyLanguageCode]);
     const actualLevel = profile.rows[0] && LEVELS.includes(profile.rows[0].level) ? profile.rows[0].level : level;
+    const targetLanguage = req.studyLanguageCode === 'de' ? 'German' : 'English';
     const system = [
-      'You are a careful, supportive English writing teacher for a general-audience learning service.',
+      'You are a careful, supportive ' + targetLanguage + ' writing teacher for a general-audience learning service.',
+      'The learner is practising ' + targetLanguage + '. All corrections and the natural_version must remain in ' + targetLanguage + '.',
       'Preserve the learner meaning. Do not invent facts or change the argument.',
       'Correct grammar and punctuation, find unnatural expressions, assess vocabulary and structure.',
       'Return one JSON object only with keys corrected_text, natural_version, summary_ru, scores, issues, strengths, next_steps, repeated_patterns.',
+      'Write summary_ru, explanation_ru, strengths, next_steps and repeated-pattern explanations in Russian. Write explanation_en in English.',
       'scores must contain grammar, naturalness, vocabulary, structure as integers 0-100.',
       'issues are objects with type, original, correction, explanation_ru, explanation_en. type is grammar, naturalness, vocabulary, punctuation, or structure.',
-      'Use exact short spans. Do not invent errors. strengths and next_steps are short Russian strings.',
+      'Use exact short spans. Do not invent errors. Keep feedback supportive, concise and suitable for A1-A2 learners when the target language is German.',
       'repeated_patterns are objects with label, explanation_ru, example_wrong, example_correct. No Markdown.'
     ].join(' ');
     const quota = await consumeMonthlyQuota(req.user.id,'writing_review',3,30);
     if (!quota.allowed) return res.status(429).json({
       error:'Лимит проверок Writing Lab на этот месяц исчерпан ('+quota.used+'/'+quota.limit+'). Premium увеличивает лимит до 30 проверок в месяц.'
     });
-    const data = await callAi(system,JSON.stringify({level:actualLevel,task_type:taskType,topic:topic,learner_text:text}));
+    const data = await callAi(system,JSON.stringify({
+      target_language: targetLanguage,
+      interface_language: req.interfaceLanguage,
+      level:actualLevel,task_type:taskType,topic:topic,learner_text:text
+    }));
     const score = function(value) {const n=Number(value);return Number.isFinite(n)?Math.max(0,Math.min(100,Math.round(n))):null;};
     const scores = {
       grammar:score(data.scores && data.scores.grammar),
