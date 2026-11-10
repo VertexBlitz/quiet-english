@@ -673,8 +673,8 @@ async function buildGermanInstantPracticeExercise(request) {
   const wanted = request.skill === 'mixed'
     ? rows
     : rows.filter(row => row.skill === request.skill);
-  const fallback = wanted.length >= 5 ? wanted : rows;
-  if (fallback.length < 5) throw new Error('Для выбранного уровня пока недостаточно немецких заданий.');
+  const fallback = wanted.length ? wanted : rows;
+  if (!fallback.length) throw new Error('Для выбранного уровня пока недостаточно немецких заданий.');
   const questions = fallback.slice(0,5).map((row,index) => ({
     id: 'q' + (index + 1),
     prompt: row.content?.prompt || row.objective,
