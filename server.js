@@ -433,10 +433,10 @@ async function buildLearnerContext(userId, exerciseRef) {
 async function getRequestStudyLanguage(req) {
   const userId = req.session?.userId;
   if (!userId) {
-    return { language_code: 'en', course_status: 'available', speech_supported: true };
+    return { language_code: 'en', course_status: 'available', speech_supported: true, preferred_language: 'ru' };
   }
   const { rows } = await pool.query(
-    `SELECT l.language_code, l.course_status, l.speech_supported
+    `SELECT l.language_code, l.course_status, l.speech_supported, p.preferred_language
      FROM learner_profiles p
      JOIN study_languages l ON l.language_code=p.active_learning_language_code
      WHERE p.user_id=$1`,
@@ -615,6 +615,43 @@ function cleanGeneratedPracticeSessions() {
   }
 }
 
+async function buildGermanInstantPracticeExercise(request) {
+  const { rows } = await pool.query(
+    `SELECT id, skill, level, objective, content, answer_key, explanation
+     FROM exercises
+     WHERE language_code='de' AND status='published' AND level=$1
+       AND skill IN ('grammar','vocabulary','communication')
+     ORDER BY RANDOM() LIMIT 14`,
+    [request.level]
+  );
+  const wanted = request.skill === 'mixed'
+    ? rows
+    : rows.filter(row => row.skill === request.skill);
+  const fallback = wanted.length >= 5 ? wanted : rows;
+  if (fallback.length < 5) throw new Error('Для выбранного уровня пока недостаточно немецких заданий.');
+  const questions = fallback.slice(0,5).map((row,index) => ({
+    id: 'q' + (index + 1),
+    prompt: row.content?.prompt || row.objective,
+    category: row.skill,
+    options: row.content?.options || [],
+    correct_option_id: row.answer_key?.correct_option_id,
+    explanation: row.explanation?.[request.interfaceLanguage] || row.explanation?.ru || '',
+    learning_point: row.objective
+  }));
+  return {
+    title: request.level + ' · Deutsch ' + (request.skill === 'mixed' ? 'Mix' : request.skill),
+    instructions: request.interfaceLanguage === 'en'
+      ? 'Choose the correct answer in German.'
+      : 'Выбери правильный ответ на немецком языке.',
+    passage: '',
+    level: request.level,
+    skill: request.skill,
+    topic: request.topic,
+    languageCode: 'de',
+    questions
+  };
+}
+
 app.post('/api/practice/instant', async (req, res) => {
   const language = await requireSupportedTargetCourse(req, res);
   if (!language) return;
@@ -622,12 +659,17 @@ app.post('/api/practice/instant', async (req, res) => {
     return res.status(403).json({ error: 'Источник запроса не разрешён.' });
   }
 
-  const validated = validatePracticeGenerationRequest(req.body);
+  const validated = validatePracticeGenerationRequest(req.body, language.language_code.trim());
   if (!validated.ok) return res.status(400).json({ error: validated.error });
 
   try {
-    const request = validated.value;
-    const exercise = buildInstantPracticeExercise(request);
+    const request = {
+      ...validated.value,
+      interfaceLanguage: language.preferred_language === 'en' ? 'en' : 'ru'
+    };
+    const exercise = language.language_code.trim() === 'de'
+      ? await buildGermanInstantPracticeExercise(request)
+      : buildInstantPracticeExercise(request);
     cleanGeneratedPracticeSessions();
     const exerciseId = randomUUID();
     generatedPracticeSessions.set(exerciseId, {
@@ -663,7 +705,7 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
     return res.status(403).json({ error: 'Источник запроса не разрешён.' });
   }
 
-  const validated = validatePracticeGenerationRequest(req.body);
+  const validated = validatePracticeGenerationRequest(req.body, language.language_code.trim());
   if (!validated.ok) return res.status(400).json({ error: validated.error });
   if (!isAiConfigured()) {
     return res.status(503).json({ error: 'ИИ пока не настроен на этом сервисе.' });
@@ -677,6 +719,9 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
     : null;
   if (rawKnowledgeNoteId && !knowledgeNoteId) {
     return res.status(400).json({ error: 'Некорректный идентификатор конспекта.' });
+  }
+  if (knowledgeNoteId && language.language_code.trim() === 'de') {
+    return res.status(409).json({ error: 'Тесты по немецким конспектам появятся вместе с отдельной базой знаний немецкого курса.' });
   }
   if (knowledgeNoteId && !req.session?.userId) {
     return res.status(401).json({ error: 'Войди в аккаунт, чтобы сохранять результаты теста.' });
@@ -695,7 +740,10 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
   )) {
     return res.status(400).json({ error: 'Некорректные данные конспекта.' });
   }
-  const request = validated.value;
+  const request = {
+    ...validated.value,
+    interfaceLanguage: language.preferred_language === 'en' ? 'en' : 'ru'
+  };
   const variation = randomUUID();
   const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' +
     encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID) + '/ai/v1/chat/completions';
@@ -714,7 +762,7 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
         messages: [
           {
             role: 'system',
-            content: 'You are an expert but kind English teacher creating original, age-appropriate school exercises. Strictly follow the requested JSON schema. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
+            content: 'You are an expert but kind ' + (language.language_code.trim() === 'de' ? 'German' : 'English') + ' teacher creating original, age-appropriate school exercises. Use the target language for all learner-facing text. Strictly follow the requested JSON schema. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
           },
           {
             role: 'user',
