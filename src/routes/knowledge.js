@@ -1,9 +1,10 @@
 import express from 'express';
-import { pool, requireDatabase, requireUser } from '../db.js';
+import { pool, requireDatabase, requireUser, loadActiveStudyLanguage, requireEnglishStudyLanguage } from '../db.js';
 import { isExternalPersonalDataProcessingAllowed } from '../region-config.js';
 import { rateLimit } from 'express-rate-limit';
 
 const router = express.Router();
+const studyAuth = [requireDatabase, requireUser, loadActiveStudyLanguage];
 const CATEGORIES = new Set(['grammar', 'vocabulary', 'reading', 'listening', 'speaking', 'writing']);
 const LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
 const NOTE_ID = /^(grammar|vocabulary|reading|listening|speaking|writing)-(a1|a2|b1|b2|c1|c2)$/;
@@ -28,16 +29,17 @@ function invalidNote(res) {
   return res.status(400).json({ error: 'Не удалось определить конспект. Обнови страницу и попробуй снова.' });
 }
 
-router.get('/library', requireDatabase, requireUser, async (req, res, next) => {
+router.get('/library', studyAuth, async (req, res, next) => {
   try {
     const [notes, collections] = await Promise.all([
       pool.query(
         `SELECT note_id, title, summary, category, level, is_favorite, is_read,
                 last_score, first_opened_at, last_opened_at, read_at
          FROM knowledge_note_progress
-         WHERE user_id=$1 AND (is_favorite=TRUE OR is_read=TRUE OR last_opened_at IS NOT NULL)
+         WHERE user_id=$1 AND language_code=$2
+           AND (is_favorite=TRUE OR is_read=TRUE OR last_opened_at IS NOT NULL)
          ORDER BY is_favorite DESC, last_opened_at DESC NULLS LAST, updated_at DESC`,
-        [req.user.id]
+        [req.user.id, req.studyLanguageCode]
       ),
       pool.query(
         `SELECT c.id, c.name, c.description, c.created_at, c.updated_at,
@@ -49,51 +51,51 @@ router.get('/library', requireDatabase, requireUser, async (req, res, next) => {
                 ) AS note_ids
          FROM knowledge_collections c
          LEFT JOIN knowledge_collection_notes n ON n.collection_id=c.id
-         WHERE c.user_id=$1
+         WHERE c.user_id=$1 AND c.language_code=$2
          GROUP BY c.id
          ORDER BY c.updated_at DESC`,
-        [req.user.id]
+        [req.user.id, req.studyLanguageCode]
       )
     ]);
     res.json({ notes: notes.rows, collections: collections.rows });
   } catch (error) { next(error); }
 });
 
-router.get('/notes/:noteId', requireDatabase, requireUser, async (req, res, next) => {
+router.get('/notes/:noteId', studyAuth, async (req, res, next) => {
   if (!validNoteId(req.params.noteId)) return invalidNote(res);
   try {
     const { rows } = await pool.query(
       `SELECT note_id, title, summary, category, level, is_favorite, is_read,
               last_score, first_opened_at, last_opened_at, read_at
-       FROM knowledge_note_progress WHERE user_id=$1 AND note_id=$2`,
-      [req.user.id, req.params.noteId]
+       FROM knowledge_note_progress WHERE user_id=$1 AND language_code=$2 AND note_id=$3`,
+      [req.user.id, req.studyLanguageCode, req.params.noteId]
     );
     res.json({ progress: rows[0] || null });
   } catch (error) { next(error); }
 });
 
-router.post('/notes/:noteId/open', requireDatabase, requireUser, async (req, res, next) => {
+router.post('/notes/:noteId/open', studyAuth, async (req, res, next) => {
   if (!validNoteId(req.params.noteId)) return invalidNote(res);
   const meta = noteMeta(req.body);
   if (!meta.category || !meta.level) return res.status(400).json({ error: 'Некорректные данные конспекта.' });
   try {
     const { rows } = await pool.query(
       `INSERT INTO knowledge_note_progress
-         (user_id, note_id, title, summary, category, level, first_opened_at, last_opened_at)
-       VALUES ($1,$2,$3,$4,$5,$6,NOW(),NOW())
-       ON CONFLICT (user_id,note_id) DO UPDATE SET
+         (user_id, language_code, note_id, title, summary, category, level, first_opened_at, last_opened_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,NOW(),NOW())
+       ON CONFLICT (user_id,language_code,note_id) DO UPDATE SET
          title=EXCLUDED.title, summary=EXCLUDED.summary,
          category=EXCLUDED.category, level=EXCLUDED.level,
          first_opened_at=COALESCE(knowledge_note_progress.first_opened_at,NOW()),
          last_opened_at=NOW(), updated_at=NOW()
        RETURNING note_id, is_favorite, is_read, last_score, last_opened_at`,
-      [req.user.id, req.params.noteId, meta.title, meta.summary, meta.category, meta.level]
+      [req.user.id, req.studyLanguageCode, req.params.noteId, meta.title, meta.summary, meta.category, meta.level]
     );
     res.json({ progress: rows[0] });
   } catch (error) { next(error); }
 });
 
-router.put('/notes/:noteId', requireDatabase, requireUser, async (req, res, next) => {
+router.put('/notes/:noteId', studyAuth, async (req, res, next) => {
   if (!validNoteId(req.params.noteId)) return invalidNote(res);
   const meta = noteMeta(req.body);
   const favorite = typeof req.body?.is_favorite === 'boolean' ? req.body.is_favorite : null;
@@ -103,28 +105,28 @@ router.put('/notes/:noteId', requireDatabase, requireUser, async (req, res, next
   try {
     const { rows } = await pool.query(
       `INSERT INTO knowledge_note_progress
-         (user_id, note_id, title, summary, category, level, is_favorite, is_read, read_at)
-       VALUES ($1,$2,$3,$4,$5,$6,COALESCE($7,FALSE),COALESCE($8,FALSE),
-               CASE WHEN $8 IS TRUE THEN NOW() ELSE NULL END)
-       ON CONFLICT (user_id,note_id) DO UPDATE SET
+         (user_id, language_code, note_id, title, summary, category, level, is_favorite, is_read, read_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,COALESCE($8,FALSE),COALESCE($9,FALSE),
+               CASE WHEN $9 IS TRUE THEN NOW() ELSE NULL END)
+       ON CONFLICT (user_id,language_code,note_id) DO UPDATE SET
          title=EXCLUDED.title, summary=EXCLUDED.summary,
          category=EXCLUDED.category, level=EXCLUDED.level,
-         is_favorite=COALESCE($7,knowledge_note_progress.is_favorite),
-         is_read=COALESCE($8,knowledge_note_progress.is_read),
+         is_favorite=COALESCE($8,knowledge_note_progress.is_favorite),
+         is_read=COALESCE($9,knowledge_note_progress.is_read),
          read_at=CASE
-           WHEN $8 IS TRUE THEN COALESCE(knowledge_note_progress.read_at,NOW())
-           WHEN $8 IS FALSE THEN NULL
+           WHEN $9 IS TRUE THEN COALESCE(knowledge_note_progress.read_at,NOW())
+           WHEN $9 IS FALSE THEN NULL
            ELSE knowledge_note_progress.read_at
          END,
          updated_at=NOW()
        RETURNING note_id, is_favorite, is_read, last_score, read_at`,
-      [req.user.id, req.params.noteId, meta.title, meta.summary, meta.category, meta.level, favorite, read]
+      [req.user.id, req.studyLanguageCode, req.params.noteId, meta.title, meta.summary, meta.category, meta.level, favorite, read]
     );
     res.json({ progress: rows[0] });
   } catch (error) { next(error); }
 });
 
-router.get('/collections', requireDatabase, requireUser, async (req, res, next) => {
+router.get('/collections', studyAuth, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT c.id, c.name, c.description, c.created_at, c.updated_at,
@@ -133,23 +135,23 @@ router.get('/collections', requireDatabase, requireUser, async (req, res, next) 
                 FILTER (WHERE n.note_id IS NOT NULL), '[]'::json) AS note_ids
        FROM knowledge_collections c
        LEFT JOIN knowledge_collection_notes n ON n.collection_id=c.id
-       WHERE c.user_id=$1 GROUP BY c.id ORDER BY c.updated_at DESC`,
-      [req.user.id]
+       WHERE c.user_id=$1 AND c.language_code=$2 GROUP BY c.id ORDER BY c.updated_at DESC`,
+      [req.user.id, req.studyLanguageCode]
     );
     res.json({ collections: rows });
   } catch (error) { next(error); }
 });
 
-router.post('/collections', requireDatabase, requireUser, async (req, res, next) => {
+router.post('/collections', studyAuth, async (req, res, next) => {
   const name = cleanText(req.body?.name, 48);
   const description = cleanText(req.body?.description, 180);
   if (name.length < 2) return res.status(400).json({ error: 'Название подборки должно содержать минимум 2 символа.' });
   try {
-    const count = await pool.query('SELECT COUNT(*)::int AS count FROM knowledge_collections WHERE user_id=$1', [req.user.id]);
+    const count = await pool.query('SELECT COUNT(*)::int AS count FROM knowledge_collections WHERE user_id=$1 AND language_code=$2', [req.user.id, req.studyLanguageCode]);
     if (count.rows[0].count >= 30) return res.status(409).json({ error: 'Можно создать не более 30 подборок.' });
     const { rows } = await pool.query(
-      'INSERT INTO knowledge_collections (user_id,name,description) VALUES ($1,$2,$3) RETURNING id,name,description,created_at',
-      [req.user.id, name, description]
+      'INSERT INTO knowledge_collections (user_id,language_code,name,description) VALUES ($1,$2,$3,$4) RETURNING id,name,description,created_at',
+      [req.user.id, req.studyLanguageCode, name, description]
     );
     res.status(201).json({ collection: { ...rows[0], note_count: 0, note_ids: [] } });
   } catch (error) {
@@ -158,7 +160,7 @@ router.post('/collections', requireDatabase, requireUser, async (req, res, next)
   }
 });
 
-router.get('/collections/:id', requireDatabase, requireUser, async (req, res, next) => {
+router.get('/collections/:id', studyAuth, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT c.id, c.name, c.description,
@@ -166,19 +168,19 @@ router.get('/collections/:id', requireDatabase, requireUser, async (req, res, ne
                 FILTER (WHERE n.note_id IS NOT NULL), '[]'::json) AS note_ids
        FROM knowledge_collections c
        LEFT JOIN knowledge_collection_notes n ON n.collection_id=c.id
-       WHERE c.id=$1 AND c.user_id=$2 GROUP BY c.id`,
-      [req.params.id, req.user.id]
+       WHERE c.id=$1 AND c.user_id=$2 AND c.language_code=$3 GROUP BY c.id`,
+      [req.params.id, req.user.id, req.studyLanguageCode]
     );
     if (!rows[0]) return res.status(404).json({ error: 'Подборка не найдена.' });
     res.json({ collection: rows[0] });
   } catch (error) { next(error); }
 });
 
-router.post('/collections/:id/notes', requireDatabase, requireUser, async (req, res, next) => {
+router.post('/collections/:id/notes', studyAuth, async (req, res, next) => {
   const noteId = req.body?.note_id;
   if (!validNoteId(noteId)) return invalidNote(res);
   try {
-    const owned = await pool.query('SELECT id FROM knowledge_collections WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
+    const owned = await pool.query('SELECT id FROM knowledge_collections WHERE id=$1 AND user_id=$2 AND language_code=$3', [req.params.id, req.user.id, req.studyLanguageCode]);
     if (!owned.rows[0]) return res.status(404).json({ error: 'Подборка не найдена.' });
     await pool.query(
       `INSERT INTO knowledge_collection_notes (collection_id,note_id,position)
@@ -186,51 +188,51 @@ router.post('/collections/:id/notes', requireDatabase, requireUser, async (req, 
        ON CONFLICT (collection_id,note_id) DO NOTHING`,
       [req.params.id, noteId]
     );
-    await pool.query('UPDATE knowledge_collections SET updated_at=NOW() WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
+    await pool.query('UPDATE knowledge_collections SET updated_at=NOW() WHERE id=$1 AND user_id=$2 AND language_code=$3', [req.params.id, req.user.id, req.studyLanguageCode]);
     res.json({ ok: true });
   } catch (error) { next(error); }
 });
 
-router.delete('/collections/:id/notes/:noteId', requireDatabase, requireUser, async (req, res, next) => {
+router.delete('/collections/:id/notes/:noteId', studyAuth, async (req, res, next) => {
   if (!validNoteId(req.params.noteId)) return invalidNote(res);
   try {
     const result = await pool.query(
       `DELETE FROM knowledge_collection_notes n
        USING knowledge_collections c
-       WHERE n.collection_id=c.id AND c.id=$1 AND c.user_id=$2 AND n.note_id=$3`,
-      [req.params.id, req.user.id, req.params.noteId]
+       WHERE n.collection_id=c.id AND c.id=$1 AND c.user_id=$2 AND c.language_code=$4 AND n.note_id=$3`,
+      [req.params.id, req.user.id, req.params.noteId, req.studyLanguageCode]
     );
-    await pool.query('UPDATE knowledge_collections SET updated_at=NOW() WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
+    await pool.query('UPDATE knowledge_collections SET updated_at=NOW() WHERE id=$1 AND user_id=$2 AND language_code=$3', [req.params.id, req.user.id, req.studyLanguageCode]);
     if (!result.rowCount) return res.status(404).json({ error: 'Конспект не найден в этой подборке.' });
     res.json({ ok: true });
   } catch (error) { next(error); }
 });
 
-router.delete('/collections/:id', requireDatabase, requireUser, async (req, res, next) => {
+router.delete('/collections/:id', studyAuth, async (req, res, next) => {
   try {
-    const result = await pool.query('DELETE FROM knowledge_collections WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
+    const result = await pool.query('DELETE FROM knowledge_collections WHERE id=$1 AND user_id=$2 AND language_code=$3', [req.params.id, req.user.id, req.studyLanguageCode]);
     if (!result.rowCount) return res.status(404).json({ error: 'Подборка не найдена.' });
     res.json({ ok: true });
   } catch (error) { next(error); }
 });
 
-router.get('/map', requireDatabase, requireUser, async (req, res, next) => {
+router.get('/map', studyAuth, async (req, res, next) => {
   try {
     const [notes, quizzes, exercises, speaking, errors, recent, recentErrors] = await Promise.all([
       pool.query(
         `SELECT category, COUNT(*)::int AS notes,
                 COUNT(*) FILTER (WHERE is_read)::int AS read_notes,
                 COUNT(*) FILTER (WHERE is_favorite)::int AS favorites
-         FROM knowledge_note_progress WHERE user_id=$1 GROUP BY category`,
-        [req.user.id]
+         FROM knowledge_note_progress WHERE user_id=$1 AND language_code=$2 GROUP BY category`,
+        [req.user.id, req.studyLanguageCode]
       ),
       pool.query(
         `SELECT category, COUNT(*)::int AS attempts,
                 SUM(correct_count)::int AS correct,
                 SUM(question_count)::int AS questions,
                 ROUND(AVG(score))::int AS accuracy
-         FROM knowledge_quiz_attempts WHERE user_id=$1 GROUP BY category`,
-        [req.user.id]
+         FROM knowledge_quiz_attempts WHERE user_id=$1 AND language_code=$2 GROUP BY category`,
+        [req.user.id, req.studyLanguageCode]
       ),
       pool.query(
         `SELECT CASE WHEN e.skill='pronunciation' THEN 'speaking' ELSE e.skill END AS skill,
@@ -238,29 +240,29 @@ router.get('/map', requireDatabase, requireUser, async (req, res, next) => {
                 COUNT(*) FILTER (WHERE a.is_correct)::int AS correct,
                 ROUND(AVG(a.score))::int AS accuracy
          FROM exercise_attempts a JOIN exercises e ON e.id=a.exercise_id
-         WHERE a.user_id=$1
+         WHERE a.user_id=$1 AND a.language_code=$2
          GROUP BY CASE WHEN e.skill='pronunciation' THEN 'speaking' ELSE e.skill END`,
-        [req.user.id]
+        [req.user.id, req.studyLanguageCode]
       ),
       pool.query(
-        'SELECT COUNT(*)::int AS attempts, ROUND(AVG(word_match_score))::int AS accuracy FROM pronunciation_attempts WHERE user_id=$1',
-        [req.user.id]
+        'SELECT COUNT(*)::int AS attempts, ROUND(AVG(word_match_score))::int AS accuracy FROM pronunciation_attempts WHERE user_id=$1 AND language_code=$2',
+        [req.user.id, req.studyLanguageCode]
       ),
       pool.query(
-        'SELECT error_type, COUNT(*)::int AS count FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL GROUP BY error_type',
-        [req.user.id]
+        'SELECT error_type, COUNT(*)::int AS count FROM error_journal WHERE user_id=$1 AND language_code=$2 AND resolved_at IS NULL GROUP BY error_type',
+        [req.user.id, req.studyLanguageCode]
       ),
       pool.query(
         `SELECT note_id,title,category,level,last_score,is_read,is_favorite,last_opened_at
-         FROM knowledge_note_progress WHERE user_id=$1
+         FROM knowledge_note_progress WHERE user_id=$1 AND language_code=$2
          ORDER BY last_opened_at DESC NULLS LAST LIMIT 8`,
-        [req.user.id]
+        [req.user.id, req.studyLanguageCode]
       ),
       pool.query(
         `SELECT error_type,incorrect_form,correction,explanation,occurrences,updated_at
-         FROM error_journal WHERE user_id=$1 AND resolved_at IS NULL
+         FROM error_journal WHERE user_id=$1 AND language_code=$2 AND resolved_at IS NULL
          ORDER BY updated_at DESC LIMIT 8`,
-        [req.user.id]
+        [req.user.id, req.studyLanguageCode]
       )
     ]);
 
@@ -304,21 +306,22 @@ router.get('/map', requireDatabase, requireUser, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.get('/vocabulary', requireDatabase, requireUser, async (req, res, next) => {
+router.get('/vocabulary', studyAuth, async (req, res, next) => {
   try {
     const { rows } = await pool.query(
       `SELECT v.id,v.word,v.ipa,v.translation,v.definition,v.metadata,v.source,v.created_at,
               s.due_at,s.interval_days,s.repetitions,s.last_rating
        FROM learner_vocabulary v
-       LEFT JOIN srs_items s ON s.user_id=v.user_id AND s.item_type='vocabulary' AND s.item_ref=v.id::text
-       WHERE v.user_id=$1 ORDER BY v.created_at DESC LIMIT 200`,
-      [req.user.id]
+       LEFT JOIN srs_items s ON s.user_id=v.user_id AND s.language_code=v.language_code
+         AND s.item_type='vocabulary' AND s.item_ref=v.id::text
+       WHERE v.user_id=$1 AND v.language_code=$2 ORDER BY v.created_at DESC LIMIT 200`,
+      [req.user.id, req.studyLanguageCode]
     );
     res.json({ words: rows });
   } catch (error) { next(error); }
 });
 
-router.post('/vocabulary', requireDatabase, requireUser, async (req, res, next) => {
+router.post('/vocabulary', studyAuth, requireEnglishStudyLanguage, async (req, res, next) => {
   const word = cleanText(req.body?.word, 80);
   if (!word || !/^[a-z][a-z' -]{0,78}$/iu.test(word)) {
     return res.status(400).json({ error: 'Введи английское слово или фразовый глагол.' });
@@ -332,39 +335,39 @@ router.post('/vocabulary', requireDatabase, requireUser, async (req, res, next) 
     : '{}';
   try {
     const { rows } = await pool.query(
-      `INSERT INTO learner_vocabulary (user_id,word,ipa,translation,definition,metadata,source)
-       VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7)
-       ON CONFLICT (user_id,LOWER(word)) DO UPDATE SET
+      `INSERT INTO learner_vocabulary (user_id,language_code,word,ipa,translation,definition,metadata,source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8)
+       ON CONFLICT (user_id,language_code,LOWER(word)) DO UPDATE SET
          ipa=EXCLUDED.ipa, translation=EXCLUDED.translation,
          definition=EXCLUDED.definition, metadata=EXCLUDED.metadata,
          source=EXCLUDED.source, updated_at=NOW()
        RETURNING id,word,ipa,translation,definition,metadata,source,created_at`,
-      [req.user.id, word, ipa, translation, definition, metadata, source]
+      [req.user.id, req.studyLanguageCode, word, ipa, translation, definition, metadata, source]
     );
     await pool.query(
-      `INSERT INTO srs_items (user_id,item_type,item_ref,prompt,answer,explanation,due_at)
-       VALUES ($1,'vocabulary',$2,$3,$4,$5,NOW()+INTERVAL '1 day')
-       ON CONFLICT (user_id,item_type,item_ref) DO UPDATE SET
+      `INSERT INTO srs_items (user_id,language_code,item_type,item_ref,prompt,answer,explanation,due_at)
+       VALUES ($1,$2,'vocabulary',$3,$4,$5,$6,NOW()+INTERVAL '1 day')
+       ON CONFLICT (user_id,language_code,item_type,item_ref) DO UPDATE SET
          prompt=EXCLUDED.prompt,answer=EXCLUDED.answer,explanation=EXCLUDED.explanation,
          updated_at=NOW()`,
-      [req.user.id, rows[0].id.toString(), rows[0].word,
+      [req.user.id, req.studyLanguageCode, rows[0].id.toString(), rows[0].word,
        rows[0].translation || rows[0].definition || 'Review this word', rows[0].definition || null]
     );
     res.status(201).json({ word: rows[0] });
   } catch (error) { next(error); }
 });
 
-router.delete('/vocabulary/:id', requireDatabase, requireUser, async (req, res, next) => {
+router.delete('/vocabulary/:id', studyAuth, async (req, res, next) => {
   try {
-    await pool.query("DELETE FROM srs_items WHERE user_id=$1 AND item_type='vocabulary' AND item_ref=$2", [req.user.id, req.params.id]);
-    const result = await pool.query('DELETE FROM learner_vocabulary WHERE id=$1 AND user_id=$2', [req.params.id, req.user.id]);
+    await pool.query("DELETE FROM srs_items WHERE user_id=$1 AND language_code=$2 AND item_type='vocabulary' AND item_ref=$3", [req.user.id, req.studyLanguageCode, req.params.id]);
+    const result = await pool.query('DELETE FROM learner_vocabulary WHERE id=$1 AND user_id=$2 AND language_code=$3', [req.params.id, req.user.id, req.studyLanguageCode]);
     if (!result.rowCount) return res.status(404).json({ error: 'Слово не найдено.' });
     res.json({ ok: true });
   } catch (error) { next(error); }
 });
 
 const dictionaryEnrichLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
-router.post('/dictionary-enrich/:word', dictionaryEnrichLimiter, async (req, res) => {
+router.post('/dictionary-enrich/:word', studyAuth, requireEnglishStudyLanguage, dictionaryEnrichLimiter, async (req, res) => {
   const word = cleanText(req.params.word, 60);
   if (!/^[a-z][a-z' -]{0,58}$/iu.test(word)) return res.status(400).json({ error: 'Введи одно английское слово или короткую фразу.' });
   const definitions = Array.isArray(req.body?.definitions)
