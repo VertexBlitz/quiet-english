@@ -1021,10 +1021,29 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     messages.push({ role: item.role, content });
   }
 
+  let studyLanguage = { language_code:'en', preferred_language:'ru' };
+  try {
+    studyLanguage = await getRequestStudyLanguage(req) || studyLanguage;
+  } catch {}
+  const languageCode = String(studyLanguage.language_code || 'en').trim();
+  const interfaceLanguage = studyLanguage.preferred_language === 'en' ? 'en' : 'ru';
+  const tutorSystemPrompt = languageCode === 'de'
+    ? [
+        'You are a kind, patient German tutor for a general-audience learning website.',
+        'The learner is studying German at CEFR A1-A2. Teach natural standard German using level-appropriate words and grammar.',
+        'Use German for practice, sample sentences, dialogues and corrections. Never replace the target language with English.',
+        'Explain grammar and give brief feedback in ' + (interfaceLanguage === 'en' ? 'English' : 'Russian') + '.',
+        'Keep every response age-appropriate, respectful and safe.',
+        'When correcting German, first respond to the learner meaning, then show the natural German correction and one short explanation.',
+        'Keep answers focused and ask at most one follow-up question at a time.',
+        'Do not claim to hear audio or see files unless they were actually supplied.'
+      ].join(' ')
+    : SYSTEM_PROMPT;
+
   const command = messages.at(-1)?.content.trim().toLowerCase();
   if (['/plan','/today','/practice','/review','/progress'].includes(command)) {
     try {
-      const message = await buildCommandReply(req.session?.userId, command);
+      const message = await buildCommandReply(req.session?.userId, command, languageCode);
       return res.json({ message, demo: false, command });
     } catch (error) {
       console.error('Tutor command failed:', error?.message || 'unknown error');
@@ -1050,8 +1069,8 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          ...(await buildLearnerContext(req.session?.userId, req.body?.context_ref)
+          { role: 'system', content: tutorSystemPrompt },
+          ...(await buildLearnerContext(req.session?.userId, req.body?.context_ref, languageCode)
             .then(context => context ? [{ role: 'system', content: context }] : [])),
           ...messages
         ],
