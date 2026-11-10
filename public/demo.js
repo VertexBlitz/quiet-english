@@ -38,7 +38,8 @@
     srsItems: [],
     errors: [],
     activity: [],
-    skillPractice: []
+    skillPractice: [],
+    vocabulary: []
   });
 
   const freshState = () => ({
