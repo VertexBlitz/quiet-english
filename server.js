@@ -616,6 +616,51 @@ function cleanGeneratedPracticeSessions() {
 }
 
 async function buildGermanInstantPracticeExercise(request) {
+  if (['reading','listening'].includes(request.skill)) {
+    const passages = {
+      A1: {
+        title: 'Ein Tag in München',
+        passage: 'Mia wohnt in München. Sie steht um sieben Uhr auf und frühstückt mit ihrer Schwester. Um acht Uhr fährt sie mit dem Bus zur Schule. Nach dem Unterricht kauft sie Brot und Äpfel. Am Abend liest Mia ein Buch und telefoniert mit ihrer Freundin. Am Samstag besucht sie ihre Großeltern.',
+        questions: [
+          { prompt:'Wo wohnt Mia?', options:['In München','In Berlin','In Hamburg','In Wien'], correct_option_id:'a', explanation:'Im ersten Satz steht: Mia wohnt in München.' },
+          { prompt:'Wie fährt sie zur Schule?', options:['Mit dem Bus','Mit dem Zug','Mit dem Fahrrad','Zu Fuß'], correct_option_id:'a', explanation:'Mia fährt mit dem Bus zur Schule.' },
+          { prompt:'Was kauft sie nach dem Unterricht?', options:['Brot und Äpfel','Käse und Milch','Bücher und Stifte','Tee und Kaffee'], correct_option_id:'a', explanation:'Nach dem Unterricht kauft sie Brot und Äpfel.' },
+          { prompt:'Wen besucht Mia am Samstag?', options:['Ihre Großeltern','Ihre Lehrerin','Ihre Freundin','Ihre Nachbarin'], correct_option_id:'a', explanation:'Am Samstag besucht sie ihre Großeltern.' }
+        ]
+      },
+      A2: {
+        title: 'Ein Ausflug an den See',
+        passage: 'Am vergangenen Sonntag hat Jonas mit zwei Freunden einen Ausflug an einen See gemacht. Sie sind früh mit dem Zug gefahren, weil das Wetter am Morgen besonders schön war. Am Ufer haben sie gefrühstückt und danach eine kleine Wanderung gemacht. Gegen Mittag wurde es windig, deshalb sind sie in ein Café gegangen. Dort haben sie heiße Schokolade getrunken und ihre nächsten Ferien geplant.',
+        questions: [
+          { prompt:'Wann hat Jonas den Ausflug gemacht?', options:['Am vergangenen Sonntag','Am Samstagabend','Am Montagmorgen','Vor zwei Wochen'], correct_option_id:'a', explanation:'Der Text beginnt mit Am vergangenen Sonntag.' },
+          { prompt:'Warum sind sie früh gefahren?', options:['Weil das Wetter schön war','Weil das Café geschlossen war','Weil der Zug später fuhr','Weil sie arbeiten mussten'], correct_option_id:'a', explanation:'Sie sind früh gefahren, weil das Wetter am Morgen schön war.' },
+          { prompt:'Was haben sie am Ufer gemacht?', options:['Gefrühstückt','Fußball gespielt','Ein Museum besucht','Einkäufe gemacht'], correct_option_id:'a', explanation:'Am Ufer haben sie gefrühstückt.' },
+          { prompt:'Warum sind sie in ein Café gegangen?', options:['Weil es windig wurde','Weil es zu warm war','Weil der See geschlossen war','Weil sie den Zug verpasst hatten'], correct_option_id:'a', explanation:'Gegen Mittag wurde es windig.' }
+        ]
+      }
+    };
+    const item = passages[request.level];
+    if (!item) throw new Error('Для немецкого курса доступны только A1 и A2.');
+    return {
+      title: item.title,
+      instructions: request.interfaceLanguage === 'en'
+        ? 'Read the German text and answer the questions.'
+        : 'Прочитай немецкий текст и ответь на вопросы.',
+      passage: item.passage,
+      level: request.level,
+      skill: request.skill,
+      topic: request.topic,
+      languageCode: 'de',
+      questions: item.questions.map((question,index)=>({
+        id:'q'+(index+1),prompt:question.prompt,category:request.skill,
+        options:question.options.map((text,optionIndex)=>({id:['a','b','c','d'][optionIndex],text})),
+        correct_option_id:question.correct_option_id,
+        explanation:question.explanation,
+        learning_point:request.skill==='listening'?'Hörverstehen':'Leseverstehen'
+      }))
+    };
+  }
+
   const { rows } = await pool.query(
     `SELECT id, skill, level, objective, content, answer_key, explanation
      FROM exercises
