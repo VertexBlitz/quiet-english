@@ -719,7 +719,37 @@
     }
     currentLanguage = profile?.language_code || window.QEDemo?.getActiveLanguage?.() || 'en';
     speechLocale = currentLanguage === 'de' ? 'de-DE' : 'en-GB';
-    if (currentLanguage === 'de') Object.assign(tasks, germanTasks);
+    if (currentLanguage === 'de') {
+      Object.assign(tasks, germanTasks);
+      try {
+        let data;
+        if (demoMode && window.QEDemo) {
+          data = await window.QEDemo.request('/skill-tasks');
+        } else {
+          const response = await fetch('/api/learning/skill-tasks', { credentials: 'same-origin' });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload.error || 'Не удалось загрузить задания Skills Lab.');
+          data = payload;
+        }
+        const grouped = { listening: [], writing: [], speaking: [], pronunciation: [] };
+        for (const row of data.tasks || []) {
+          if (!grouped[row.skill]) continue;
+          grouped[row.skill].push({
+            ...row.content,
+            id: row.id,
+            level: row.level,
+            duration: row.duration_minutes,
+            title: row.title,
+            description: row.description
+          });
+        }
+        for (const skill of Object.keys(grouped)) {
+          if (grouped[skill].length) tasks[skill] = grouped[skill];
+        }
+      } catch (error) {
+        statusSummary.textContent = 'Используется встроенный набор заданий: ' + error.message;
+      }
+    }
     const pronunciationTab = tabs.find(tab => tab.dataset.skill === 'pronunciation');
     if (pronunciationTab) pronunciationTab.hidden = currentLanguage !== 'de';
     chooseSkill('listening');
