@@ -165,7 +165,7 @@ test('German A1-A2 course release includes its own 4-week curriculum and 28 publ
   assert.ok(migration.includes('mini_prompt_en TEXT'));
   assert.ok(learning.includes('germanPlacementQuestions'));
   assert.ok(learning.includes('estimateGermanLevel(correct)'));
-  assert.ok(learning.includes('German A1–A2'));
+  assert.ok(learning.includes('немецкий курс рассчитан на уровни A1–A2'));
   assert.ok(learning.includes('mini_prompt_ru'));
 });
 
@@ -182,7 +182,7 @@ test('German placement, AI practice, writing and speaking are constrained to A1-
   assert.ok(practice.includes("languageCode === 'de' && !['A1','A2'].includes(level)"));
   assert.ok(speaking.includes("languageCode === 'de' && !['A1','A2'].includes(level)"));
   assert.ok(server.includes('buildGermanInstantPracticeExercise'));
-  assert.ok(server.includes("language: 'german'"));
+  assert.ok(read('public/pronunciation.js').includes("language: activeLanguageCode === 'de' ? 'german' : 'english'"));
   assert.ok(writing.includes("req.studyLanguageCode === 'de'"));
   assert.ok(listening.includes("req.studyLanguageCode === 'de'"));
 });
@@ -210,7 +210,7 @@ test('German dictionary and AI Tutor use the active study language', () => {
   const server = read('server.js');
   const learning = read('src/routes/learning.js');
 
-  assert.ok(dictionary.includes("'/entries/'+activeLanguageCode+'/"));
+  assert.ok(dictionary.includes("api/v2/entries/'+activeLanguageCode+'/"));
   assert.ok(dictionary.includes('/dictionary-enrich/'));
   assert.ok(listeningTrainer.includes("activeLanguageCode==='de'?'german':'english'"));
   assert.ok(knowledge.includes('req.studyLanguage.english_name'));
