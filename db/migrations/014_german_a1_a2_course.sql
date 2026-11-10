@@ -7,6 +7,11 @@ ALTER TABLE plan_weeks
   ADD COLUMN IF NOT EXISTS objective_ru TEXT,
   ADD COLUMN IF NOT EXISTS objective_en TEXT;
 
+ALTER TABLE plan_days
+  ADD COLUMN IF NOT EXISTS mini_prompt_ru TEXT,
+  ADD COLUMN IF NOT EXISTS mini_prompt_en TEXT;
+
+
 INSERT INTO exercises
   (id,skill,level,objective,instructions,content,answer_key,explanation,
    estimated_time,tags,prerequisites,srs,success_criteria,language_code)
