@@ -1,7 +1,7 @@
 name: Quiet English 2.0 checks
 on:
   push:
-    branches: [quiet-english-2-mvp, main]
+    branches: [quiet-english-2-mvp, feature/multilingual-german, main]
   pull_request:
     branches: [main]
 jobs:
