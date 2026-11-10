@@ -84,6 +84,9 @@ app.post('/api/demo/placement/submit', sameOrigin, (req, res) => {
   if (placementQuestions.some(question => !answerMap.has(question.id))) {
     return res.status(400).json({ error: 'В ответах отсутствуют вопросы.' });
   }
+  if (placementQuestions.some(question => !question.options.some(option => option.id === answerMap.get(question.id)))) {
+    return res.status(400).json({ error: 'Один из вариантов ответа недействителен.' });
+  }
   const correct = placementQuestions.filter(question => answerMap.get(question.id) === question.answer).length;
   const level = estimateLevel(correct);
   res.json({
