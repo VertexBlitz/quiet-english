@@ -24,6 +24,20 @@ function learningMessage(node, message, isError = false) {
 
 const onboarding = $('[data-onboarding]');
 if (onboarding) {
+  const courseLanguageSelect = $('[data-course-language]', onboarding);
+  learningApi('/courses')
+    .then(({ courses }) => {
+      if (!courseLanguageSelect) return;
+      courseLanguageSelect.replaceChildren();
+      courses.filter(course => course.availability === 'active').forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.language_code;
+        option.textContent = course.native_name || course.name_en || course.language_code;
+        courseLanguageSelect.appendChild(option);
+        if (course.is_active) courseLanguageSelect.value = course.language_code;
+      });
+    })
+    .catch(() => {});
   learningApi('/profile')
     .then(({ profile }) => {
       if (!profile) return;
@@ -50,6 +64,14 @@ if (onboarding) {
     const submit = $('button[type="submit"]', onboarding);
     submit.disabled = true;
     try {
+      const targetLanguage = form.get('language_code') || 'en';
+      const currentProfile = await learningApi('/profile').catch(() => ({ profile: null }));
+      if (currentProfile.profile?.language_code !== targetLanguage) {
+        await learningApi('/courses', {
+          method: 'POST',
+          body: JSON.stringify({ language_code: targetLanguage })
+        });
+      }
       await learningApi('/onboarding', {
         method: 'PUT',
         body: JSON.stringify({
