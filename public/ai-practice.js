@@ -156,7 +156,7 @@
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(currentExercise.passage);
-    utterance.lang = 'en-US';
+    utterance.lang = activeStudyLanguageCode === 'de' ? 'de-DE' : 'en-US';
     utterance.rate = 0.9;
     window.speechSynthesis.speak(utterance);
   }
