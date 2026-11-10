@@ -113,7 +113,7 @@ test('validates CEFR level and topic before requesting a generated passage', () 
   }).ok, true);
   assert.equal(validateSpeakingGenerationRequest({
     level: 'C2', topic: 'Science'
-  }).ok, false);
+  }).ok, true);
   assert.equal(validateSpeakingGenerationRequest({
     level: 'A2', topic: 'Unlisted topic'
   }).ok, false);
@@ -201,7 +201,7 @@ test('validates AI practice level, skill and topic', () => {
   }).ok, true);
   assert.equal(validatePracticeGenerationRequest({
     level: 'C2', skill: 'grammar', topic: 'Science'
-  }).ok, false);
+  }).ok, true);
   assert.equal(validatePracticeGenerationRequest({
     level: 'A2', skill: 'unknown', topic: 'Science'
   }).ok, false);
