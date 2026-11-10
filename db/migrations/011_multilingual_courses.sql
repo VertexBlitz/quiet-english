@@ -54,6 +54,16 @@ SELECT user_id, 'en', goal, self_assessed_level, assessed_level,
 FROM learner_profiles
 ON CONFLICT (user_id, language_code) DO NOTHING;
 
+-- Defensive backfill for any legacy account missing its learner profile.
+INSERT INTO learner_courses (user_id, language_code)
+SELECT u.id, 'en'
+FROM users u
+WHERE NOT EXISTS (
+  SELECT 1 FROM learner_courses c
+  WHERE c.user_id=u.id AND c.language_code='en'
+)
+ON CONFLICT (user_id, language_code) DO NOTHING;
+
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS active_learner_course_id UUID;
 
