@@ -392,7 +392,7 @@ router.post('/dictionary-enrich/:word', studyAuth, dictionaryEnrichLimiter, asyn
           { role: 'user', content:
             'Explain the ' + req.studyLanguage.english_name + ' item "' + word + '" for a learner. Give translations in ' + (req.interfaceLanguage === 'en' ? 'English' : 'Russian') + '. Dictionary definitions for context: ' +
             JSON.stringify(definitions) +
-            '. Return JSON keys translation_ru, translation_en, collocations (3 objects with phrase, meaning_ru, meaning_en, example), phrasal_verbs (up to 3 objects with phrase, meaning_ru, meaning_en, example), and examples (3 objects with en, ru). For examples, "en" is the source-language sentence (German when the study language is German) and "ru" is its Russian translation. Return both translation_ru and translation_en. If the item is not a word that naturally forms phrasal verbs, return an empty phrasal_verbs array. Keep examples original, natural and concise. No Markdown.'
+            '. Return JSON keys translation_ru, translation_en, collocations (3 objects with phrase, meaning_ru, meaning_en, example), phrasal_verbs (up to 3 objects with phrase, meaning_ru, meaning_en, example), and examples (3 objects with en, ru). For examples, "en" is the sentence in the active study language and "ru" is its Russian translation. Return both translation_ru and translation_en. If the item is not a word that naturally forms phrasal verbs, return an empty phrasal_verbs array. Keep examples original, natural and concise. No Markdown.'
           }
         ],
         stream: false, max_tokens: 650, temperature: 0.25,

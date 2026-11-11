@@ -437,7 +437,8 @@ async function getRequestStudyLanguage(req) {
     return { language_code: 'en', course_status: 'available', speech_supported: true, preferred_language: 'ru' };
   }
   const { rows } = await pool.query(
-    `SELECT l.language_code, l.course_status, l.speech_supported, p.preferred_language
+    `SELECT l.language_code, l.english_name, l.native_name, l.locale,
+             l.course_status, l.speech_supported, p.preferred_language
      FROM learner_profiles p
      JOIN study_languages l ON l.language_code=p.active_learning_language_code
      WHERE p.user_id=$1`,
@@ -450,7 +451,7 @@ async function requireSupportedTargetCourse(req, res) {
   try {
     const language = await getRequestStudyLanguage(req);
     const code = language?.language_code?.trim();
-    if (!language || language.course_status !== 'available' || !['en','de'].includes(code)) {
+    if (!language || language.course_status !== 'available' || !code) {
       res.status(409).json({ error: 'Генератор для выбранного языка пока не готов.' });
       return null;
     }
@@ -499,7 +500,7 @@ app.post('/api/speaking/generate', speakingGenerationLimiter, async (req, res) =
 
   const { level, topic, avoid } = validated.value;
   const languageCode = language.language_code.trim();
-  const targetLanguage = languageCode === 'de' ? 'German' : 'English';
+  const targetLanguage = language.english_name || (languageCode === 'de' ? 'German' : 'English');
   const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' +
     encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID) + '/ai/v1/chat/completions';
   const variation = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
@@ -738,6 +739,53 @@ async function buildGermanInstantPracticeExercise(request) {
   };
 }
 
+async function buildCourseInstantPracticeExercise(request, languageCode, languageName) {
+  const requestedSkills = request.skill === 'mixed'
+    ? ['grammar','vocabulary','reading','listening','speaking','writing','pronunciation','review']
+    : [request.skill];
+  let { rows } = await pool.query(
+    `SELECT id,skill,level,objective,content,answer_key,explanation
+     FROM exercises
+     WHERE language_code=$1 AND status='published' AND level=$2
+       AND skill = ANY($3::text[])
+     ORDER BY RANDOM() LIMIT 12`,
+    [languageCode,request.level,requestedSkills]
+  );
+  if (!rows.length && request.skill === 'listening') {
+    const fallback = await pool.query(
+      `SELECT id,skill,level,objective,content,answer_key,explanation
+       FROM exercises
+       WHERE language_code=$1 AND status='published' AND level=$2
+       ORDER BY RANDOM() LIMIT 8`,
+      [languageCode,request.level]
+    );
+    rows = fallback.rows;
+  }
+  if (!rows.length) throw new Error('Для выбранного уровня пока недостаточно заданий на ' + languageName + '.');
+  const questions = rows.slice(0,5).map((row,index) => ({
+    id:'q'+(index+1),
+    prompt:row.content?.prompt || row.objective,
+    category:row.skill,
+    options:row.content?.options || [],
+    correct_option_id:row.answer_key?.correct_option_id,
+    explanation:row.explanation?.[request.interfaceLanguage] || row.explanation?.ru || '',
+    learning_point:row.objective
+  })).filter(item => item.options.length >= 2 && item.correct_option_id);
+  if (!questions.length) throw new Error('Для выбранного уровня пока недостаточно проверенных заданий.');
+  return {
+    title:request.level + ' · ' + languageName + ' · ' + (request.skill === 'mixed' ? 'Mix' : request.skill),
+    instructions:request.interfaceLanguage === 'en'
+      ? 'Choose the correct answer in ' + languageName + '.'
+      : 'Выбери правильный ответ на языке ' + languageName + '.',
+    passage:'',
+    level:request.level,
+    skill:request.skill,
+    topic:request.topic,
+    languageCode,
+    questions
+  };
+}
+
 app.post('/api/practice/instant', async (req, res) => {
   const language = await requireSupportedTargetCourse(req, res);
   if (!language) return;
@@ -753,9 +801,16 @@ app.post('/api/practice/instant', async (req, res) => {
       ...validated.value,
       interfaceLanguage: language.preferred_language === 'en' ? 'en' : 'ru'
     };
-    const exercise = language.language_code.trim() === 'de'
+    const languageCode = language.language_code.trim();
+    const exercise = languageCode === 'de'
       ? await buildGermanInstantPracticeExercise(request)
-      : buildInstantPracticeExercise(request);
+      : languageCode === 'en'
+        ? buildInstantPracticeExercise(request)
+        : await buildCourseInstantPracticeExercise(
+            request,
+            languageCode,
+            language.english_name || languageCode
+          );
     cleanGeneratedPracticeSessions();
     const exerciseId = randomUUID();
     generatedPracticeSessions.set(exerciseId, {
@@ -806,9 +861,6 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
   if (rawKnowledgeNoteId && !knowledgeNoteId) {
     return res.status(400).json({ error: 'Некорректный идентификатор конспекта.' });
   }
-  if (knowledgeNoteId && language.language_code.trim() === 'de') {
-    return res.status(409).json({ error: 'Тесты по немецким конспектам появятся вместе с отдельной базой знаний немецкого курса.' });
-  }
   if (knowledgeNoteId && !req.session?.userId) {
     return res.status(401).json({ error: 'Войди в аккаунт, чтобы сохранять результаты теста.' });
   }
@@ -848,7 +900,7 @@ app.post('/api/practice/generate', practiceGenerationLimiter, async (req, res) =
         messages: [
           {
             role: 'system',
-            content: 'You are an expert but kind ' + (language.language_code.trim() === 'de' ? 'German' : 'English') + ' teacher creating original, age-appropriate school exercises. Use the target language for all learner-facing text. Strictly follow the requested JSON schema. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
+            content: 'You are an expert but kind ' + (language.english_name || 'target-language') + ' teacher creating original, age-appropriate school exercises. Use ' + (language.english_name || 'the selected target language') + ' for all learner-facing text. Strictly follow the requested JSON schema. Never include personal data, dangerous instructions, sexual content, graphic violence, self-harm, or copied published text.'
           },
           {
             role: 'user',
@@ -1067,18 +1119,28 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
   } catch {}
   const languageCode = String(studyLanguage.language_code || 'en').trim();
   const interfaceLanguage = studyLanguage.preferred_language === 'en' ? 'en' : 'ru';
-  const tutorSystemPrompt = languageCode === 'de'
-    ? [
-        'You are a kind, patient German tutor for a general-audience learning website.',
-        'The learner is studying German at CEFR A1-A2. Teach natural standard German using level-appropriate words and grammar.',
-        'Use German for practice, sample sentences, dialogues and corrections. Never replace the target language with English.',
-        'Explain grammar and give brief feedback in ' + (interfaceLanguage === 'en' ? 'English' : 'Russian') + '.',
-        'Keep every response age-appropriate, respectful and safe.',
-        'When correcting German, first respond to the learner meaning, then show the natural German correction and one short explanation.',
-        'Keep answers focused and ask at most one follow-up question at a time.',
-        'Do not claim to hear audio or see files unless they were actually supplied.'
-      ].join(' ')
-    : SYSTEM_PROMPT;
+  let tutorSystemPrompt = SYSTEM_PROMPT;
+  if (languageCode !== 'en') {
+    const targetLanguage = studyLanguage.english_name || 'the selected language';
+    let learnerLevel = 'A2';
+    try {
+      const profile = await pool.query(
+        'SELECT COALESCE(assessed_level,self_assessed_level,$3) AS level FROM learner_language_profiles WHERE user_id=$1 AND language_code=$2',
+        [req.session?.userId || null,languageCode,'A2']
+      );
+      learnerLevel = profile.rows[0]?.level || 'A2';
+    } catch {}
+    tutorSystemPrompt = [
+      'You are a kind, patient ' + targetLanguage + ' tutor for a general-audience learning website.',
+      'The learner is studying ' + targetLanguage + ' at CEFR ' + learnerLevel + '. Teach accurate, natural language appropriate to this level.',
+      'Use ' + targetLanguage + ' for practice, sample sentences, dialogues and corrections. Do not replace the target language with English.',
+      'Explain grammar and give brief feedback in ' + (interfaceLanguage === 'en' ? 'English' : 'Russian') + '.',
+      'Keep every response age-appropriate, respectful and safe.',
+      'When correcting the learner, first respond to the meaning, then show a natural ' + targetLanguage + ' correction and one short explanation.',
+      'Keep answers focused and ask at most one follow-up question at a time.',
+      'Do not claim to hear audio or see files unless they were actually supplied.'
+    ].join(' ');
+  }
 
   const command = messages.at(-1)?.content.trim().toLowerCase();
   if (['/plan','/today','/practice','/review','/progress'].includes(command)) {

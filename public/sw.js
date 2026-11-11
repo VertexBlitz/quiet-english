@@ -1,4 +1,4 @@
-const CACHE='quiet-english-shell-v9';
+const CACHE='quiet-english-shell-v10';
 const SHELL=["/manifest.webmanifest","/icons/icon-192.png","/icons/icon-512.png","/icons/apple-touch-icon.png","/pwa-install.js","/library.html","/knowledge-map.html","/placement.html","/exercise.html","/topics.html","/login.html","/register.html","/account.html","/subscription.html","/privacy.html","/terms.html","/onboarding.html","/","/index.html","/method.html","/plan.html","/practice.html","/writing.html","/listening.html","/dictionary.html","/progress.html","/calendar.html","/studio.html","/offline.html","/styles.css","/i18n.js","/session.js","/learning.js","/ai-practice.js","/pronunciation.js","/pronunciation-content.js","/pronunciation-scoring.js","/pronunciation-storage.js","/writing.js","/listening.js","/listening-trainer.js","/dictionary.js","/analytics.js","/calendar.js","/studio.js","/offline-client.js","/offline.js","/coach-practice.js","/pronunciation.html","/knowledge.html","/review.html"]
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
@@ -20,7 +20,7 @@ self.addEventListener('fetch',event=>{
     // /styles.css entry even when the browser requests /styles.css?v=...
     const cachedAsset = url.pathname === '/styles.css'
       ? cache.match(request, { ignoreSearch: true })
-      : cache.match(request);
+      : (url.search ? cache.match(request, { ignoreSearch: true }) : cache.match(request));
 
     return cachedAsset.then(hit=>hit||fetch(request).then(response=>{
       if(response.ok&&response.type==='basic'){

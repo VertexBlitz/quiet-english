@@ -1,6 +1,6 @@
 import { compareTranscript } from '/pronunciation-scoring.js';
 import { readLocalPronunciationHistory, saveLocalPronunciationAttempt } from '/pronunciation-storage.js';
-import { PASSAGES, GERMAN_PASSAGES, buildProgressSeries, getReviewWords } from '/pronunciation-content.js';
+import { PASSAGES, GERMAN_PASSAGES, LANGUAGE_PASSAGES, buildProgressSeries, getReviewWords } from '/pronunciation-content.js';
 
 const pronRoot = document.querySelector('[data-pronunciation-page]');
 
@@ -31,6 +31,9 @@ if (pronRoot) {
 
   let transcriberPromise = null;
   let activeLanguageCode = 'en';
+  let activeLanguageLocale = 'en-US';
+  const WHISPER_LANGUAGES = { en:'english', de:'german', es:'spanish', fr:'french', it:'italian', pt:'portuguese', pl:'polish', ja:'japanese' };
+  const LANGUAGE_LOCALES = { en:'en-US', de:'de-DE', es:'es-ES', fr:'fr-FR', it:'it-IT', pt:'pt-PT', pl:'pl-PL', ja:'ja-JP' };
   let recorder = null;
   let mediaStream = null;
   let chunks = [];
@@ -65,7 +68,7 @@ if (pronRoot) {
   };
 
   const selectedPrompt = () => promptList.querySelector('input[name="pron-prompt"]:checked');
-  const basePassages = () => activeLanguageCode === 'de' ? GERMAN_PASSAGES : PASSAGES;
+  const basePassages = () => activeLanguageCode === 'de' ? GERMAN_PASSAGES : (LANGUAGE_PASSAGES[activeLanguageCode] || PASSAGES);
   const allPassages = () => [...generatedPassages, ...basePassages()];
   const selectedPassage = () => allPassages().find(item => item.id === selectedPrompt()?.dataset.passageId);
   const selectedText = () => activeReviewText || selectedPrompt()?.value || basePassages()[0].text;
@@ -106,7 +109,7 @@ if (pronRoot) {
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = activeLanguageCode === 'de' ? 'de-DE' : 'en-US';
+    utterance.lang = activeLanguageLocale || LANGUAGE_LOCALES[activeLanguageCode] || 'en-US';
     utterance.rate = 0.88;
     window.speechSynthesis.speak(utterance);
   }
@@ -586,7 +589,7 @@ if (pronRoot) {
       const transcriber = await getTranscriber();
       message(t('Whisper распознаёт речь прямо на устройстве. Это может занять некоторое время.', 'Whisper is transcribing speech on this device. This may take a little while.'));
       const output = await transcriber(samples, {
-        language: activeLanguageCode === 'de' ? 'german' : 'english',
+        language: WHISPER_LANGUAGES[activeLanguageCode] || 'english',
         task: 'transcribe'
       });
       const recognizedText = String(output?.text || '').trim();
@@ -697,26 +700,28 @@ if (pronRoot) {
 
   engineBadge.textContent = 'WHISPER · ON-DEVICE';
   async function initializeActiveLanguage() {
+    let activeLanguageName = 'English';
     try {
       const response = await fetch('/api/learning/languages', { credentials: 'same-origin' });
       const data = await response.json().catch(() => ({}));
       const active = Array.isArray(data.languages) ? data.languages.find(item => item.is_active) : null;
-      if (active && ['en','de'].includes(String(active.language_code).trim())) {
+      if (active && /^[a-z]{2}$/.test(String(active.language_code).trim())) {
         activeLanguageCode = String(active.language_code).trim();
+        activeLanguageLocale = active.locale || LANGUAGE_LOCALES[activeLanguageCode] || 'en-US';
+        activeLanguageName = active.native_name || active.english_name || activeLanguageName;
       }
     } catch {}
     generatedPassages = [];
-    [...levelFilter.options].forEach(option => {
-      option.disabled = activeLanguageCode === 'de' &&
-        !['ALL','A1','A2'].includes(option.value);
-    });
+    [...levelFilter.options].forEach(option => { option.disabled = false; });
     levelFilter.value = 'ALL';
     renderPassages();
     await loadHistory();
     checkAiGeneratorStatus();
-    message(activeLanguageCode === 'de'
-      ? t('Выбери немецкий текст A1–A2, сгенерируй новый или потренируй произношение.', 'Choose a German A1–A2 passage, generate a new one or practise speaking.')
-      : t('Выбери уровень и текст, сгенерируй новый вариант или используй библиотеку A1–C1.', 'Choose a level and passage, generate a new one or use the A1–C1 library.'));
+    const currentName = activeLanguageName;
+    message(t(
+      'Выбери текст ' + currentName + ' нужного уровня A1–C2 или сгенерируй новый.',
+      'Choose a ' + currentName + ' passage at A1–C2 or generate a new one.'
+    ));
     updateRecordAvailability();
   }
   void initializeActiveLanguage();

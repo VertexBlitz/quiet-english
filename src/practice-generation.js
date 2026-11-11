@@ -1,5 +1,7 @@
 const LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
 const SKILLS = new Set(['grammar', 'vocabulary', 'reading', 'listening', 'mixed']);
+const LANGUAGE_NAMES = { en:'English', de:'German', es:'Spanish', fr:'French', it:'Italian', pt:'Portuguese', pl:'Polish', ja:'Japanese' };
+const LANGUAGE_LOCALES = { en:'en-US', de:'de-DE', es:'es-ES', fr:'fr-FR', it:'it-IT', pt:'pt-PT', pl:'pl-PL', ja:'ja-JP' };
 const TOPICS = new Set([
   'Any topic', 'Everyday life', 'Travel', 'Science', 'History and culture',
   'Technology', 'Environment', 'Education', 'Books and media'
@@ -63,11 +65,11 @@ export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [],
       ).join('\n')
     : '';
 
-  const targetLanguage = languageCode === 'de' ? 'German' : 'English';
+  const targetLanguage = LANGUAGE_NAMES[languageCode] || 'English';
   const explanationLanguage = interfaceLanguage === 'en' ? 'English' : 'Russian';
   return [
     'Create an original ' + targetLanguage + '-learning exercise for CEFR ' + level + ' (' + levelGuide + ').',
-    languageCode === 'de' ? 'All passage text, prompts, answer options and correct answers must be natural standard German calibrated to CEFR ' + level + '. Use the grammar, vocabulary, idioms and register expected at this level, with accurate ä, ö, ü and ß.' : 'All learner-facing exercise text must be natural standard English.',
+    'All passage text, prompts, answer options and correct answers must be natural standard ' + targetLanguage + ' calibrated to CEFR ' + level + '. Use the grammar, vocabulary, idioms and register expected at this level.',
     'Write explanations in ' + explanationLanguage + '.',
     'Type: ' + skill + '. Topic: ' + topic + '.',
     taskGuide,
@@ -178,7 +180,7 @@ export function parseGeneratedPracticeExercise(content, { level, skill, topic, l
           ? option
           : (option?.text ?? option?.value ?? option?.content ?? option?.option ?? option?.answer)
       )).slice(0, 120);
-      const normalized = text.toLocaleLowerCase(languageCode === 'de' ? 'de-DE' : 'en-US');
+      const normalized = text.toLocaleLowerCase(LANGUAGE_LOCALES[languageCode] || 'en-US');
 
       if (!text || ids.has(optionId) || seenTexts.has(normalized)) {
         throw new Error('Варианты ответа в вопросе ' + (index + 1) + ' пустые или повторяются.');

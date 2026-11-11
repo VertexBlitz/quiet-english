@@ -2,6 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  COURSE_LANGUAGES,
+  COURSE_QUESTION_BANKS,
+  getCoursePlacementQuestions,
+  getPublicCoursePlacementQuestions,
+  estimateCourseLevel
+} from '../src/content/multilingual-courses.js';
 
 const read = file => fs.readFileSync(path.join(process.cwd(), file), 'utf8');
 
@@ -75,7 +82,7 @@ test('onboarding and plan screens expose a separate target-language selector', (
   assert.ok(client.includes('/languages/activate'));
   assert.ok(client.includes("language_code: form.get('language_code') || 'en'"));
   assert.ok(styles.includes('.study-language-control'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v9'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v10'"));
   assert.ok(serviceWorker.includes('"/onboarding.html"'));
 });
 
@@ -90,7 +97,7 @@ test('only supported study languages can reach language-specific generators', ()
 
   assert.ok(db.includes('export function requireEnglishStudyLanguage'));
   assert.ok(db.includes('export function requireSpeechSupport'));
-  assert.ok(writing.includes("req.studyLanguageCode === 'de'"));
+  assert.ok(writing.includes('req.studyLanguage.english_name'));
   assert.ok(studyTools.includes('const LEVELS = [\'A1\',\'A2\',\'B1\',\'B2\',\'C1\',\'C2\']'));
   assert.ok(studyTools.includes('loadActiveStudyLanguage'));
   assert.ok(pronunciation.includes('loadActiveStudyLanguage, requireSpeechSupport'));
@@ -98,7 +105,8 @@ test('only supported study languages can reach language-specific generators', ()
   assert.ok(server.includes("app.post('/api/practice/generate'"));
   assert.ok(server.includes("app.post('/api/speaking/generate'"));
   assert.ok(server.includes('requireSupportedTargetCourse(req, res)'));
-  assert.ok(server.includes("!['en','de'].includes(code)"));
+  assert.ok(!server.includes("!['en','de'].includes(code)"));
+  assert.ok(server.includes("language.course_status !== 'available'"));
   assert.ok(learning.includes("if (!selectedTemplate && profile.language_code !== 'en')"));
 });
 
@@ -217,8 +225,9 @@ test('German Speaking Lab uses a multilingual local model, German passages and U
   const route = read('src/routes/pronunciation.js');
 
   assert.ok(client.includes("onnx-community/whisper-tiny"));
-  assert.ok(client.includes("language: activeLanguageCode === 'de' ? 'german' : 'english'"));
-  assert.ok(client.includes("utterance.lang = activeLanguageCode === 'de' ? 'de-DE' : 'en-US'"));
+  assert.ok(client.includes("language: WHISPER_LANGUAGES[activeLanguageCode] || 'english'"));
+  assert.ok(client.includes("utterance.lang = activeLanguageLocale || LANGUAGE_LOCALES[activeLanguageCode] || 'en-US'"));
+  assert.ok(client.includes('LANGUAGE_PASSAGES[activeLanguageCode]'));
   assert.ok(content.includes('export const GERMAN_PASSAGES'));
   assert.ok(scoring.includes('\\p{L}'));
   assert.ok(storage.includes('byLanguage[languageCode]'));
@@ -234,10 +243,12 @@ test('German dictionary and AI Tutor use the active study language', () => {
 
   assert.ok(dictionary.includes("api/v2/entries/'+activeLanguageCode+'/"));
   assert.ok(dictionary.includes('/dictionary-enrich/'));
-  assert.ok(listeningTrainer.includes("activeLanguageCode==='de'?'german':'english'"));
+  assert.ok(listeningTrainer.includes("WHISPER_LANGUAGES[activeLanguageCode]||'english'"));
+  assert.ok(listeningTrainer.includes('active.locale||LANGUAGE_LOCALES[activeLanguageCode]'));
   assert.ok(knowledge.includes('req.studyLanguage.english_name'));
   assert.ok(knowledge.includes('translation_en'));
-  assert.ok(server.includes('You are a kind, patient German tutor'));
+  assert.ok(server.includes("const targetLanguage = studyLanguage.english_name || 'the selected language'"));
+  assert.ok(server.includes("'You are a kind, patient ' + targetLanguage + ' tutor"));
   assert.ok(server.includes('buildCommandReply(req.session?.userId, command, languageCode)'));
   assert.ok(server.includes('buildLearnerContext(req.session?.userId, req.body?.context_ref, languageCode)'));
   assert.ok(learning.includes("'communication'"));
@@ -250,5 +261,54 @@ test('German listening materials are filtered separately from English resources'
   assert.ok(library.includes('learngerman.dw.com'));
   assert.ok(library.includes('deutsch.vhs-lernportal.de'));
   assert.ok(library.includes('item.language === activeStudyLanguageCode'));
-  assert.ok(trainer.includes("activeLanguageCode==='de'?'de-DE'"));
+  assert.ok(trainer.includes('active.locale||LANGUAGE_LOCALES[activeLanguageCode]||\'en-US\''));
+  assert.ok(library.includes("if (active && /^[a-z]{2}$/.test(String(active.language_code).trim()))"));
+});
+
+
+test('six additional study languages each have A1-C2 content, placement and level-specific plans', () => {
+  const codes = ['es','fr','it','pt','pl','ja'];
+  const levels = ['A1','A2','B1','B2','C1','C2'];
+  const seed = read('scripts/seed-multilingual-courses.js');
+  const migration = read('db/migrations/016_multilingual_course_seed_state.sql');
+  const pronunciation = read('public/pronunciation-content.js');
+  const client = read('public/learning.js');
+  const onboarding = read('public/onboarding.html');
+  const practice = read('src/practice-generation.js');
+  const speaking = read('src/speaking.js');
+  const server = read('server.js');
+
+  assert.deepEqual(Object.keys(COURSE_LANGUAGES).sort(), codes.slice().sort());
+  for (const code of codes) {
+    assert.ok(COURSE_LANGUAGES[code].nativeName, code + ' needs its native display name');
+    for (const level of levels) {
+      assert.equal(COURSE_QUESTION_BANKS[code][level].length, 8, code + ' ' + level + ' must have 8 exercises');
+      assert.ok(seed.includes("level_min: level") && seed.includes("level_max: level"));
+    }
+    assert.equal(getCoursePlacementQuestions(code).length, 30, code + ' must have 30 placement questions');
+    assert.equal(getPublicCoursePlacementQuestions(code).length, 30);
+    assert.equal(estimateCourseLevel(code, []), 'A1');
+    assert.ok(pronunciation.includes(code + ': ['), code + ' needs pronunciation passages');
+    assert.ok(onboarding.includes('value="' + code + '"'), code + ' must appear in onboarding');
+  }
+  assert.ok(seed.includes("status: 'published'"));
+  assert.ok(seed.includes("course_status='available',speech_supported=TRUE"));
+  assert.ok(migration.includes('language_course_seed_versions'));
+  assert.ok(client.includes('selected.native_name +'));
+  assert.ok(practice.includes("pl:'Polish'") && practice.includes("ja:'Japanese'"));
+  assert.ok(speaking.includes('CEFR ' + "' + level"));
+  assert.ok(server.includes('buildCourseInstantPracticeExercise'));
+});
+
+test('multilingual database migration seeds 36 four-week CEFR templates and 288 starter exercises', () => {
+  const seed = read('scripts/seed-multilingual-courses.js');
+  const migration = read('db/migrations/016_multilingual_course_seed_state.sql');
+  const migrate = read('scripts/migrate.js');
+  assert.ok(seed.includes('const LEVELS = [\'A1\',\'A2\',\'B1\',\'B2\',\'C1\',\'C2\']'));
+  assert.ok(seed.includes('bank.length !== 8'));
+  assert.ok(seed.includes('const templates = templateRows(languageCode)'));
+  assert.ok(seed.includes('duration_weeks: 4'));
+  assert.ok(seed.includes('language_course_seed_versions'));
+  assert.ok(migration.includes('REFERENCES study_languages(language_code)'));
+  assert.ok(migrate.includes('await seedMultilingualCourses(pool)'));
 });

@@ -1,4 +1,5 @@
 const ALLOWED_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
+const LANGUAGE_NAMES = { en:'English', de:'German', es:'Spanish', fr:'French', it:'Italian', pt:'Portuguese', pl:'Polish', ja:'Japanese' };
 const ALLOWED_TOPICS = new Set([
   'Everyday life', 'Travel', 'History and culture', 'Science',
   'Technology', 'Environment', 'Education', 'Books and media'
@@ -40,10 +41,10 @@ export function buildSpeakingGenerationPrompt({ level, topic, avoid = [], langua
     ? '\nDo not repeat or closely paraphrase these recent passages:\n' + avoid.map((item, index) => (index + 1) + '. ' + item).join('\n')
     : '';
 
-  const targetLanguage = languageCode === 'de' ? 'German' : 'English';
+  const targetLanguage = LANGUAGE_NAMES[languageCode] || 'English';
   return [
     'Create one original ' + targetLanguage + ' reading passage for a learner at CEFR ' + level + '.',
-    languageCode === 'de' ? 'This is a German CEFR ' + level + ' learning task. Use natural standard German with grammar, vocabulary, idioms and register appropriate to this level, including accurate ä, ö, ü and ß.' : 'Use natural standard English.',
+    'This is a ' + targetLanguage + ' CEFR ' + level + ' learning task. Use natural standard ' + targetLanguage + ' with grammar, vocabulary, idioms and register appropriate to this level.',
     'Topic: ' + topic + '.',
     'Length and language: ' + wordGuide + '.',
     'The passage must be suitable for reading aloud in no more than 28 seconds.',

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
+import { seedMultilingualCourses } from './seed-multilingual-courses.js';
 import {
   getDatabaseSchema,
   getPostgresSchemaOptions,
@@ -84,7 +85,8 @@ try {
     }
   }
 
-  console.log('Quiet English database schema is up to date.');
+  await seedMultilingualCourses(pool);
+  console.log('Quiet English database schema and multilingual course catalog are up to date.');
 } catch (error) {
   console.error('Migration failed:', error.message);
   process.exitCode = 1;
