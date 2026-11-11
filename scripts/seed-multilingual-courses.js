@@ -6,7 +6,7 @@ import {
 } from '../src/content/multilingual-courses.js';
 
 const LEVELS = ['A1','A2','B1','B2','C1','C2'];
-const COURSE_CONTENT_VERSION = 1;
+const COURSE_CONTENT_VERSION = 2;
 const themeRu = {
   A1: ['Приветствия и знакомство','Повседневные действия','Люди и места','Практические ситуации'],
   A2: ['Опыт и прошлое','Планы и сравнения','Город и путешествия','Повседневные разговоры'],
@@ -36,10 +36,16 @@ function exerciseRows(languageCode) {
     }
     bank.forEach((item, index) => {
       if (!item.prompt || !Array.isArray(item.options) || item.options.length !== 3 ||
-          !Number.isInteger(item.answer) || item.answer < 0 || item.answer > 2) {
+          !Number.isInteger(item.answer) || item.answer < 0 || item.answer > 2 ||
+          (item.skill === 'listening' && (typeof item.passage !== 'string' || item.passage.trim().length < 40))) {
         throw new Error('Invalid exercise item: ' + languageCode + ' ' + level + ' #' + (index + 1));
       }
-      const objective = COURSE_OBJECTIVES[level];
+      const objective = item.skill === 'listening'
+        ? {
+            ru: 'Понять основную мысль и ключевые детали короткого текста на слух.',
+            en: 'Understand the main idea and key details in a short spoken passage.'
+          }
+        : COURSE_OBJECTIVES[level];
       const id = languageCode.toUpperCase() + '-' + level + '-' + String(index + 1).padStart(2,'0');
       const options = item.options.map((text, optionIndex) => ({
         id: ['a','b','c'][optionIndex],
@@ -51,10 +57,10 @@ function exerciseRows(languageCode) {
         level,
         objective: objective.ru,
         instructions: {
-          ru: 'Выбери один правильный вариант.',
-          en: 'Choose one correct option.'
+          ru: item.skill === 'listening' ? 'Прослушай текст и выбери правильный ответ.' : 'Выбери один правильный вариант.',
+          en: item.skill === 'listening' ? 'Listen to the passage and choose the correct answer.' : 'Choose one correct option.'
         },
-        content: { type: 'multiple_choice', prompt: item.prompt, options },
+        content: { type: 'multiple_choice', prompt: item.prompt, options, ...(item.passage ? { passage: item.passage } : {}) },
         answer_key: { correct_option_id: ['a','b','c'][item.answer] },
         explanation: { ru: item.explanationRu, en: item.explanationEn },
         estimated_time: item.skill === 'reading' || item.skill === 'listening' ? 5 : 4,
@@ -62,9 +68,9 @@ function exerciseRows(languageCode) {
         prerequisites: [],
         srs: {
           enabled: true,
-          item_type: item.skill === 'vocabulary' ? 'vocabulary' : 'grammar_rule'
+          item_type: item.skill === 'vocabulary' ? 'vocabulary' : item.skill === 'listening' ? 'listening' : 'grammar_rule'
         },
-        success_criteria: 'Choose the correct target-language form in context.',
+        success_criteria: item.skill === 'listening' ? 'Identify key information in a spoken target-language passage.' : 'Choose the correct target-language form in context.',
         objective_i18n: objective,
         language_code: languageCode,
         status: 'published',

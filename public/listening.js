@@ -97,20 +97,43 @@ if (listeningRoot) {
     }
   );
 
+
+  // Additional audio and course resources from established providers.
+  resources.push(
+    {title:'Podcasts in Spanish · niveles 1–3',titleEn:'Podcasts in Spanish · levels 1–3',level:'A2',levels:['A2','B1','B2','C1'],topic:'podcast',provider:'Podcasts in Spanish',kind:'Podcasts · conversaciones · niveles',kindEn:'Podcasts · conversations · levels',url:'https://www.podcastsinspanish.org/',description:'Подкасты с естественными диалогами и уровнями от начального до продвинутого.',descriptionEn:'Podcasts with natural conversations and beginner-to-advanced level bands.',language:'es'},
+    {title:'AVE Global · cursos de español',titleEn:'AVE Global · Spanish courses',level:'A1',levels:['A1','A2','B1','B2','C1'],topic:'study',provider:'Instituto Cervantes',kind:'Vídeos · ejercicios · A1–C1',kindEn:'Videos · exercises · A1–C1',url:'https://pro.cervantes.es/es/atenas/aprender-espanol/cursos-espanol-linea-ave',description:'Курсы Instituto Cervantes с видео и интерактивными заданиями по уровням A1–C1.',descriptionEn:'Instituto Cervantes courses with videos and interactive activities from A1 to C1.',language:'es'},
+    {title:'Première classe · français',titleEn:'Première classe · French',level:'A1',levels:['A1'],topic:'daily',provider:'TV5MONDE',kind:'Vidéos · exercices débutants',kindEn:'Videos · beginner exercises',url:'https://apprendre.tv5monde.com/en/exercices/premiere-classe',description:'Бесплатная серия видеоуроков и упражнений для начинающих.',descriptionEn:'A free collection of beginner video lessons and exercises.',language:'fr'},
+    {title:'Italiano per stranieri',titleEn:'Italian for learners',level:'A1',levels:['A1','A2','B1','B2'],topic:'study',provider:'RAI Scuola',kind:'Percorsi · video · ascolto',kindEn:'Courses · video · listening',url:'https://www.raiscuola.rai.it/italianoperstranieri',description:'Учебные курсы итальянского с материалами по уровням A1–B2.',descriptionEn:'Italian learning courses and materials organised across A1–B2.',language:'it'},
+    {title:'Voci d’Italia · podcast',titleEn:'Voci d’Italia · podcast',level:'B1',levels:['B1','B2','C1','C2'],topic:'podcast',provider:'Loescher',kind:'Podcast · conversazioni autentiche',kindEn:'Podcast · authentic conversations',url:'https://italianoperstranieri.loescher.it/',description:'Подкасты с естественной итальянской речью для тренировки понимания на слух.',descriptionEn:'Podcasts featuring authentic Italian speech for listening practice.',language:'it'},
+    {title:'Podcasts · RTP Ensina',titleEn:'Podcasts · RTP Ensina',level:'B1',levels:['B1','B2','C1','C2'],topic:'podcast',provider:'RTP Ensina',kind:'Podcasts · temas educativos',kindEn:'Podcasts · educational topics',url:'https://ensina.rtp.pt/podcasts/',description:'Подкасты общественного вещателя Португалии, посвящённые образовательным темам.',descriptionEn:'Podcasts from Portugal’s public broadcaster on educational topics.',language:'pt'},
+    {title:'Na Ponta da Língua · podcast',titleEn:'Na Ponta da Língua · podcast',level:'B1',levels:['B1','B2','C1','C2'],topic:'podcast',provider:'Antena 1 · RTP',kind:'Podcast · língua portuguesa',kindEn:'Podcast · Portuguese language',url:'https://antena1.rtp.pt/podcast/na-ponta-da-lingua/',description:'Короткие выпуски о языке, словоупотреблении и тонкостях португальской речи.',descriptionEn:'Short episodes about language, usage and nuances of Portuguese.',language:'pt'},
+    {title:'Materiały audio · język polski',titleEn:'Polish learning materials · audio',level:'A1',levels:['A1','A2','B1'],topic:'study',provider:'Urząd do Spraw Cudzoziemców',kind:'Audio · podręczniki · ćwiczenia',kindEn:'Audio · textbooks · exercises',url:'https://www.gov.pl/web/udsc-en/materialy-dydaktyczne-do-nauki-jezyka-polskiego---dla-doroslych',description:'Бесплатные материалы для изучающих польский, включая аудиофайлы и учебные пособия.',descriptionEn:'Free Polish-learning materials, including audio files and course books.',language:'pl'},
+    {title:'Audio lessons · Easy Japanese',titleEn:'Audio lessons · Easy Japanese',level:'A1',levels:['A1','A2'],topic:'daily',provider:'Japan Foundation',kind:'Audio lessons · 48 lessons',kindEn:'Audio lessons · 48 lessons',url:'https://www.la.jpf.go.jp/jle-learners-resources',description:'Подборка аудиоуроков японского, включая серию Easy Japanese из 48 занятий.',descriptionEn:'A curated set of Japanese audio lessons, including the 48-lesson Easy Japanese series.',language:'ja'}
+  );
+
   const grid = listeningRoot.querySelector('[data-listening-grid]');
   const levelFilter = listeningRoot.querySelector('[data-level-filter]');
   const topicFilter = listeningRoot.querySelector('[data-topic-filter]');
   const count = listeningRoot.querySelector('[data-library-count]');
   const language = () => document.documentElement.lang === 'en' ? 'en' : 'ru';
   let activeStudyLanguageCode = 'en';
+  const languageSpeechLabels = { en:['английскую речь','English'],de:['немецкую речь','German'],es:['испанскую речь','Spanish'],fr:['французскую речь','French'],it:['итальянскую речь','Italian'],pt:['португальскую речь','Portuguese'],pl:['польскую речь','Polish'],ja:['японскую речь','Japanese'] };
 
   function render() {
     const level = levelFilter.value;
     const topic = topicFilter.value;
     const lang = language();
+    const speechLabel = languageSpeechLabels[activeStudyLanguageCode] || languageSpeechLabels.en;
+    const titleNode = listeningRoot.querySelector('[data-listening-title]');
+    const descriptionNode = listeningRoot.querySelector('[data-listening-description]');
+    if (titleNode) titleNode.textContent = lang === 'en' ? 'Listen to ' + speechLabel[1] + '.' : 'Слушай ' + speechLabel[0] + '.';
+    if (descriptionNode) descriptionNode.textContent = lang === 'en'
+      ? 'Build listening confidence in ' + speechLabel[1] + '. Use level-matched practice and carefully selected external audio resources.'
+      : 'Тренируй понимание устной речи на изучаемом языке. Используй упражнения своего уровня и подобранные аудиоматериалы.';
     const matching = resources.filter(item =>
       item.language === activeStudyLanguageCode &&
-      (level === 'all' || item.level === level) && (topic === 'all' || item.topic === topic)
+      (level === 'all' || item.level === level || (Array.isArray(item.levels) && item.levels.includes(level))) &&
+      (topic === 'all' || item.topic === topic)
     );
     grid.replaceChildren();
     count.textContent = lang === 'en' ? matching.length + ' resources' : matching.length + ' материалов';
@@ -126,7 +149,7 @@ if (listeningRoot) {
       card.className = 'listening-card';
       const meta = document.createElement('p');
       meta.className = 'eyebrow';
-      meta.textContent = item.level + ' · ' + item.provider;
+      meta.textContent = (item.levels ? item.levels[0] + '–' + item.levels[item.levels.length - 1] : item.level) + ' · ' + item.provider;
       const title = document.createElement('h3');
       title.textContent = lang === 'en' ? item.titleEn : item.title;
       const description = document.createElement('p');
@@ -161,4 +184,5 @@ if (listeningRoot) {
     render();
   }
   void loadStudyLanguage();
+  window.addEventListener('quietenglish:languagechange', () => { void loadStudyLanguage(); });
 }

@@ -740,10 +740,12 @@ async function buildGermanInstantPracticeExercise(request) {
 }
 
 async function buildCourseInstantPracticeExercise(request, languageCode, languageName) {
+  // Mixed practice is deliberately limited to text-based exercise types.
+  // Listening is served only from rows with a real level-matched audio script.
   const requestedSkills = request.skill === 'mixed'
-    ? ['grammar','vocabulary','reading','listening','speaking','writing','pronunciation','review']
+    ? ['grammar','vocabulary','reading']
     : [request.skill];
-  let { rows } = await pool.query(
+  const { rows: foundRows } = await pool.query(
     `SELECT id,skill,level,objective,content,answer_key,explanation
      FROM exercises
      WHERE language_code=$1 AND status='published' AND level=$2
@@ -751,17 +753,10 @@ async function buildCourseInstantPracticeExercise(request, languageCode, languag
      ORDER BY RANDOM() LIMIT 12`,
     [languageCode,request.level,requestedSkills]
   );
-  if (!rows.length && request.skill === 'listening') {
-    const fallback = await pool.query(
-      `SELECT id,skill,level,objective,content,answer_key,explanation
-       FROM exercises
-       WHERE language_code=$1 AND status='published' AND level=$2
-       ORDER BY RANDOM() LIMIT 8`,
-      [languageCode,request.level]
-    );
-    rows = fallback.rows;
-  }
-  if (!rows.length) throw new Error('Для выбранного уровня пока недостаточно заданий на ' + languageName + '.');
+  const rows = request.skill === 'listening'
+    ? foundRows.filter(row => typeof row.content?.passage === 'string' && row.content.passage.trim().length >= 40)
+    : foundRows;
+  if (!rows.length) throw new Error('Для выбранного уровня пока нет опубликованных заданий нужного типа на ' + languageName + '.');
   const questions = rows.slice(0,5).map((row,index) => ({
     id:'q'+(index+1),
     prompt:row.content?.prompt || row.objective,
@@ -774,10 +769,12 @@ async function buildCourseInstantPracticeExercise(request, languageCode, languag
   if (!questions.length) throw new Error('Для выбранного уровня пока недостаточно проверенных заданий.');
   return {
     title:request.level + ' · ' + languageName + ' · ' + (request.skill === 'mixed' ? 'Mix' : request.skill),
-    instructions:request.interfaceLanguage === 'en'
-      ? 'Choose the correct answer in ' + languageName + '.'
-      : 'Выбери правильный ответ на языке ' + languageName + '.',
-    passage:'',
+    instructions:request.skill === 'listening'
+      ? (request.interfaceLanguage === 'en' ? 'Listen to the passage, then choose the correct answer.' : 'Прослушай текст, затем выбери правильный ответ.')
+      : (request.interfaceLanguage === 'en'
+        ? 'Choose the correct answer in ' + languageName + '.'
+        : 'Выбери правильный ответ на языке ' + languageName + '.'),
+    passage:request.skill === 'listening' ? rows[0].content.passage : '',
     level:request.level,
     skill:request.skill,
     topic:request.topic,

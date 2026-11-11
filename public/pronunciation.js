@@ -34,6 +34,16 @@ if (pronRoot) {
   let activeLanguageLocale = 'en-US';
   const WHISPER_LANGUAGES = { en:'english', de:'german', es:'spanish', fr:'french', it:'italian', pt:'portuguese', pl:'polish', ja:'japanese' };
   const LANGUAGE_LOCALES = { en:'en-US', de:'de-DE', es:'es-ES', fr:'fr-FR', it:'it-IT', pt:'pt-PT', pl:'pl-PL', ja:'ja-JP' };
+  const LANGUAGE_LABELS = {
+    en:{ru:'английском',en:'English',speechRu:'английскую',speechEn:'English'},
+    de:{ru:'немецком',en:'German',speechRu:'немецкую',speechEn:'German'},
+    es:{ru:'испанском',en:'Spanish',speechRu:'испанскую',speechEn:'Spanish'},
+    fr:{ru:'французском',en:'French',speechRu:'французскую',speechEn:'French'},
+    it:{ru:'итальянском',en:'Italian',speechRu:'итальянскую',speechEn:'Italian'},
+    pt:{ru:'португальском',en:'Portuguese',speechRu:'португальскую',speechEn:'Portuguese'},
+    pl:{ru:'польском',en:'Polish',speechRu:'польскую',speechEn:'Polish'},
+    ja:{ru:'японском',en:'Japanese',speechRu:'японскую',speechEn:'Japanese'}
+  };
   let recorder = null;
   let mediaStream = null;
   let chunks = [];
@@ -700,7 +710,6 @@ if (pronRoot) {
 
   engineBadge.textContent = 'WHISPER · ON-DEVICE';
   async function initializeActiveLanguage() {
-    let activeLanguageName = 'English';
     try {
       const response = await fetch('/api/learning/languages', { credentials: 'same-origin' });
       const data = await response.json().catch(() => ({}));
@@ -708,7 +717,6 @@ if (pronRoot) {
       if (active && /^[a-z]{2}$/.test(String(active.language_code).trim())) {
         activeLanguageCode = String(active.language_code).trim();
         activeLanguageLocale = active.locale || LANGUAGE_LOCALES[activeLanguageCode] || 'en-US';
-        activeLanguageName = active.native_name || active.english_name || activeLanguageName;
       }
     } catch {}
     generatedPassages = [];
@@ -717,29 +725,25 @@ if (pronRoot) {
     renderPassages();
     await loadHistory();
     checkAiGeneratorStatus();
-    const currentName = activeLanguageName;
+    const labels = LANGUAGE_LABELS[activeLanguageCode] || LANGUAGE_LABELS.en;
+    const isEnglishUi = document.documentElement.lang === 'en';
+    const titleNode = pronRoot.querySelector('[data-pronunciation-title]');
+    const descriptionNode = pronRoot.querySelector('[data-pronunciation-description]');
+    if (titleNode) titleNode.textContent = isEnglishUi
+      ? 'Practise pronunciation in ' + labels.en + '.'
+      : 'Практикуй произношение на ' + labels.ru + ' языке.';
+    if (descriptionNode) descriptionNode.textContent = isEnglishUi
+      ? 'Whisper transcribes ' + labels.speechEn + ' speech in your browser. Compare the words with the passage and review your result. Your recording stays on this device.'
+      : 'Whisper распознаёт ' + labels.speechRu + ' речь прямо в браузере. Сравни распознанные слова с текстом и разбери результат. Запись остаётся на устройстве.';
     message(t(
-      'Выбери текст ' + currentName + ' нужного уровня A1–C2 или сгенерируй новый.',
-      'Choose a ' + currentName + ' passage at A1–C2 or generate a new one.'
+      'Выбери текст на ' + labels.ru + ' языке нужного уровня A1–C2 или сгенерируй новый.',
+      'Choose a ' + labels.en + ' passage at A1–C2 or generate a new one.'
     ));
     updateRecordAvailability();
   }
   void initializeActiveLanguage();
 
-  window.addEventListener('quietenglish:languagechange', () => {
-    renderPassages(selectedPassage()?.id || '');
-    if (latestResult) {
-      renderResult(latestResult.recognizedText, latestResult.analysis, latestResult.duration, false);
-    }
-    renderHistory(latestAttempts);
-    if (lastStatusPair) statusNode.textContent = t(lastStatusPair[0], lastStatusPair[1]);
-    if (lastGeneratorPair) aiGeneratorStatus.textContent = t(lastGeneratorPair[0], lastGeneratorPair[1]);
-    generateButton.textContent = generateButton.disabled ? t('Создаём…', 'Generating…') : t('Сгенерировать ↗', 'Generate ↗');
-    recordLabel.textContent = recorder ? t('Остановить запись', 'Stop recording') : t('Начать запись', 'Start recording');
-    const count = promptList.querySelectorAll('.pron-prompt').length;
-    const countNode = pronRoot.querySelector('[data-pron-count]');
-    if (countNode) countNode.textContent = count + (document.documentElement.lang === 'en' ? (count === 1 ? ' passage' : ' passages') : (count === 1 ? ' задание' : count >= 2 && count <= 4 ? ' задания' : ' заданий'));
-  });
+  window.addEventListener('quietenglish:languagechange', () => { void initializeActiveLanguage(); });
 
 
 }

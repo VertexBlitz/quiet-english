@@ -386,6 +386,474 @@ export const COURSE_QUESTION_BANKS = {
   }
 };
 
+// One level-matched listening task per language and CEFR band.
+const COURSE_LISTENING_TASKS = {
+  "es": {
+    "A1": {
+      "passage": "Hola, me llamo Lucía. Vivo cerca del parque. Cada mañana camino hasta la parada y tomo el autobús de las ocho. Después de clase compro pan y vuelvo a casa.",
+      "prompt": "¿A qué hora toma Lucía el autobús?",
+      "options": [
+        "A las ocho.",
+        "A las nueve.",
+        "A las diez."
+      ],
+      "answer": 0,
+      "explanationRu": "Lucía говорит, что садится на автобус в восемь.",
+      "explanationEn": "Lucía says she takes the eight o’clock bus."
+    },
+    "A2": {
+      "passage": "El sábado pasado, Marcos fue al mercado con su hermana. Compraron verduras, hablaron con un vendedor y después almorzaron en una cafetería pequeña. Por la tarde regresaron a casa en metro.",
+      "prompt": "¿Dónde almorzaron Marcos y su hermana?",
+      "options": [
+        "En una cafetería.",
+        "En el mercado.",
+        "En casa."
+      ],
+      "answer": 0,
+      "explanationRu": "После рынка они пообедали в небольшой кофейне.",
+      "explanationEn": "After the market, they had lunch in a small café."
+    },
+    "B1": {
+      "passage": "El centro cultural del barrio ha cambiado su horario para que más personas puedan asistir a los talleres. Ahora abre también los sábados por la mañana. La directora espera que la medida ayude especialmente a quienes trabajan durante la semana.",
+      "prompt": "¿Por qué abre ahora el centro los sábados?",
+      "options": [
+        "Para facilitar la asistencia a más personas.",
+        "Para reducir el número de talleres.",
+        "Para trasladarse a otro barrio."
+      ],
+      "answer": 0,
+      "explanationRu": "Новое расписание должно помочь тем, кто занят в будние дни.",
+      "explanationEn": "The new schedule is intended to help people who are busy during the week."
+    },
+    "B2": {
+      "passage": "La biblioteca municipal ha puesto en marcha un sistema de préstamo de herramientas. Los vecinos pueden reservar taladros, cajas de herramientas y pequeños aparatos en línea. El proyecto pretende reducir compras innecesarias y fomentar la colaboración, aunque los usuarios deben devolver cada objeto en buen estado y dentro del plazo acordado.",
+      "prompt": "¿Cuál es uno de los objetivos del proyecto?",
+      "options": [
+        "Evitar compras innecesarias.",
+        "Ampliar el horario de la biblioteca.",
+        "Vender herramientas usadas."
+      ],
+      "answer": 0,
+      "explanationRu": "Совместное пользование инструментами должно сократить лишние покупки.",
+      "explanationEn": "Sharing tools is intended to reduce unnecessary purchases."
+    },
+    "C1": {
+      "passage": "El informe advierte que la recuperación de los espacios verdes no puede evaluarse únicamente por la superficie plantada. También importan la continuidad ecológica, el mantenimiento a largo plazo y la participación de quienes habitan el entorno. Sin esos factores, una intervención visualmente atractiva puede producir beneficios limitados.",
+      "prompt": "¿Qué crítica plantea el informe?",
+      "options": [
+        "Que medir solo la superficie plantada es insuficiente.",
+        "Que los espacios verdes deberían diseñarse solo por su aspecto.",
+        "Que la participación vecinal encarece siempre los proyectos."
+      ],
+      "answer": 0,
+      "explanationRu": "Отчёт предлагает учитывать не только площадь, но и экологические и социальные факторы.",
+      "explanationEn": "The report argues that area alone is not enough; ecological and social factors also matter."
+    },
+    "C2": {
+      "passage": "La autora sostiene que la aparente neutralidad de una clasificación depende de decisiones previas: qué se mide, qué se excluye y qué umbrales se consideran relevantes. Por ello, presentar los resultados como una descripción incontestable puede ocultar los supuestos que condicionan su interpretación.",
+      "prompt": "¿Qué riesgo señala la autora?",
+      "options": [
+        "Que se oculten los supuestos de la clasificación.",
+        "Que se recopilen demasiados datos irrelevantes.",
+        "Que toda clasificación resulte necesariamente inútil."
+      ],
+      "answer": 0,
+      "explanationRu": "Автор предупреждает, что за нейтральной классификацией могут скрываться предпосылки.",
+      "explanationEn": "The author warns that apparently neutral classifications can conceal underlying assumptions."
+    }
+  },
+  "fr": {
+    "A1": {
+      "passage": "Bonjour, je m’appelle Léa. J’habite près de la gare. Chaque matin, je prends le bus à huit heures et j’arrive à l’école un peu avant neuf heures. Après les cours, je retrouve mon amie au parc.",
+      "prompt": "À quelle heure Léa prend-elle le bus ?",
+      "options": [
+        "À huit heures.",
+        "À neuf heures.",
+        "À dix heures."
+      ],
+      "answer": 0,
+      "explanationRu": "Леа садится на автобус в восемь часов.",
+      "explanationEn": "Léa takes the bus at eight o’clock."
+    },
+    "A2": {
+      "passage": "Dimanche dernier, Paul a visité un musée avec ses cousins. Ils ont regardé une exposition de photographies, puis ils ont pris un goûter dans un café près du musée. Ils sont rentrés en tramway.",
+      "prompt": "Qu’ont-ils fait après le musée ?",
+      "options": [
+        "Ils ont pris un goûter.",
+        "Ils sont allés au cinéma.",
+        "Ils ont pris le train."
+      ],
+      "answer": 0,
+      "explanationRu": "После музея они перекусили в кафе.",
+      "explanationEn": "After the museum, they had a snack in a café."
+    },
+    "B1": {
+      "passage": "La mairie organise désormais un atelier de réparation chaque premier mercredi du mois. Les habitants peuvent apporter de petits appareils en panne et apprendre à les réparer avec des bénévoles. L’objectif est de prolonger la durée de vie des objets et de partager des compétences pratiques.",
+      "prompt": "Quel est l’objectif principal de l’atelier ?",
+      "options": [
+        "Prolonger la vie des objets et partager des savoir-faire.",
+        "Vendre de nouveaux appareils ménagers.",
+        "Remplacer les cours du soir."
+      ],
+      "answer": 0,
+      "explanationRu": "Мастерская помогает дольше использовать вещи и обмениваться практическими навыками.",
+      "explanationEn": "The workshop helps people keep objects useful for longer and share practical skills."
+    },
+    "B2": {
+      "passage": "Le nouveau service de vélos partagés sera d’abord disponible dans les quartiers proches des gares. La ville souhaite observer les habitudes de déplacement avant d’étendre le dispositif. Les responsables précisent que le succès du projet dépendra autant de l’entretien des vélos que de la qualité des pistes cyclables.",
+      "prompt": "Pourquoi le service sera-t-il lancé progressivement ?",
+      "options": [
+        "Pour observer les usages avant de l’étendre.",
+        "Parce que les vélos ne sont pas encore conçus.",
+        "Pour supprimer les transports en commun."
+      ],
+      "answer": 0,
+      "explanationRu": "Город хочет сначала оценить спрос и привычки пользователей.",
+      "explanationEn": "The city wants to assess demand and travel habits before expanding the service."
+    },
+    "C1": {
+      "passage": "Dans son intervention, la chercheuse distingue la disponibilité d’une information de son accessibilité réelle. Un document peut être public tout en restant difficile à comprendre, à retrouver ou à exploiter. Elle recommande donc d’évaluer les dispositifs non seulement selon leur ouverture juridique, mais aussi selon les obstacles pratiques qu’ils laissent subsister.",
+      "prompt": "Quelle distinction la chercheuse met-elle en avant ?",
+      "options": [
+        "Entre la disponibilité formelle et l’accessibilité réelle de l’information.",
+        "Entre les documents imprimés et les archives privées.",
+        "Entre la publication scientifique et la communication orale."
+      ],
+      "answer": 0,
+      "explanationRu": "Информация может быть формально открытой, но практически труднодоступной.",
+      "explanationEn": "Information may be formally public but still difficult to access in practice."
+    },
+    "C2": {
+      "passage": "Le conférencier observe que la multiplication des indicateurs n’améliore pas automatiquement la qualité d’une décision. Lorsque les mesures sont choisies sans expliciter les finalités auxquelles elles répondent, elles risquent de déplacer le débat vers ce qui est aisément quantifiable plutôt que vers ce qui est véritablement pertinent.",
+      "prompt": "Quel déplacement du débat est décrit ?",
+      "options": [
+        "Des enjeux pertinents vers les éléments les plus faciles à mesurer.",
+        "Des données publiques vers les témoignages personnels.",
+        "Des décisions collectives vers les préférences individuelles."
+      ],
+      "answer": 0,
+      "explanationRu": "Докладчик описывает подмену важных целей тем, что проще измерить.",
+      "explanationEn": "The speaker describes replacing important goals with whatever is easiest to measure."
+    }
+  },
+  "it": {
+    "A1": {
+      "passage": "Ciao, mi chiamo Anna e abito vicino alla scuola. Ogni mattina faccio colazione alle sette e prendo l’autobus alle otto. Dopo le lezioni torno a casa con mia sorella.",
+      "prompt": "A che ora Anna prende l’autobus?",
+      "options": [
+        "Alle otto.",
+        "Alle sette.",
+        "Alle nove."
+      ],
+      "answer": 0,
+      "explanationRu": "Анна садится на автобус в восемь.",
+      "explanationEn": "Anna takes the bus at eight."
+    },
+    "A2": {
+      "passage": "Sabato scorso Giulia è andata in centro con un’amica. Hanno visitato una libreria, comprato un quaderno e poi hanno pranzato in una pizzeria. Nel pomeriggio sono tornate a casa a piedi.",
+      "prompt": "Dove hanno pranzato le due amiche?",
+      "options": [
+        "In pizzeria.",
+        "In libreria.",
+        "A casa."
+      ],
+      "answer": 0,
+      "explanationRu": "Подруги пообедали в пиццерии.",
+      "explanationEn": "The two friends had lunch in a pizzeria."
+    },
+    "B1": {
+      "passage": "Il quartiere ha inaugurato un piccolo orto condiviso. Ogni famiglia può coltivare alcune piante e partecipare agli incontri del sabato. Gli organizzatori spiegano che l’iniziativa serve non solo a produrre verdura, ma anche a creare occasioni di incontro tra vicini.",
+      "prompt": "Quale altro scopo ha l’orto condiviso oltre a produrre verdura?",
+      "options": [
+        "Favorire gli incontri tra i vicini.",
+        "Costruire un nuovo parcheggio.",
+        "Organizzare lezioni di cucina professionale."
+      ],
+      "answer": 0,
+      "explanationRu": "Огород задуман также как место общения соседей.",
+      "explanationEn": "The shared garden is also intended to bring neighbours together."
+    },
+    "B2": {
+      "passage": "Il museo sperimenterà un’apertura serale il giovedì per tre mesi. La direzione vuole capire se l’orario aggiuntivo attirerà persone che durante il giorno lavorano o studiano. I risultati saranno valutati considerando non soltanto il numero dei visitatori, ma anche i costi organizzativi.",
+      "prompt": "Come sarà valutata la sperimentazione?",
+      "options": [
+        "Considerando visitatori e costi organizzativi.",
+        "Contando soltanto i biglietti venduti online.",
+        "Confrontando esclusivamente le mostre temporanee."
+      ],
+      "answer": 0,
+      "explanationRu": "Оценка будет учитывать и посещаемость, и организационные расходы.",
+      "explanationEn": "The trial will be assessed using both visitor numbers and organisational costs."
+    },
+    "C1": {
+      "passage": "La relazione sottolinea che la trasparenza amministrativa non coincide con la semplice pubblicazione dei dati. Perché siano effettivamente utilizzabili, le informazioni devono essere documentate, aggiornate e presentate in un formato che consenta confronti attendibili. In caso contrario, l’abbondanza di dati può generare più confusione che controllo.",
+      "prompt": "Quale condizione rende i dati realmente utilizzabili?",
+      "options": [
+        "Documentazione, aggiornamento e formato confrontabile.",
+        "La pubblicazione di un numero maggiore di tabelle.",
+        "L’eliminazione delle note metodologiche."
+      ],
+      "answer": 0,
+      "explanationRu": "Данные должны быть описаны, актуальны и сопоставимы.",
+      "explanationEn": "Data must be documented, up to date and presented in a comparable format."
+    },
+    "C2": {
+      "passage": "Il relatore invita a distinguere la coerenza interna di un argomento dalla solidità delle sue premesse. Un ragionamento può essere formalmente impeccabile e tuttavia condurre a conclusioni fragili se i presupposti iniziali sono incompleti o non giustificati. La valutazione critica deve quindi risalire anche alle condizioni da cui l’argomentazione prende avvio.",
+      "prompt": "Quale limite del ragionamento viene evidenziato?",
+      "options": [
+        "Una forma corretta non garantisce premesse solide.",
+        "Ogni argomento complesso è necessariamente contraddittorio.",
+        "Le conclusioni non dipendono mai dalle premesse."
+      ],
+      "answer": 0,
+      "explanationRu": "Безупречная логическая форма не компенсирует слабые предпосылки.",
+      "explanationEn": "Correct logical form cannot compensate for weak or unjustified premises."
+    }
+  },
+  "pt": {
+    "A1": {
+      "passage": "Olá, chamo-me Inês e moro perto da escola. Todos os dias tomo o pequeno-almoço às sete e apanho o autocarro às oito. Depois das aulas vou para casa com a minha irmã.",
+      "prompt": "A que horas apanha Inês o autocarro?",
+      "options": [
+        "Às oito.",
+        "Às sete.",
+        "Às nove."
+      ],
+      "answer": 0,
+      "explanationRu": "Инеш садится на автобус в восемь.",
+      "explanationEn": "Inês takes the bus at eight."
+    },
+    "A2": {
+      "passage": "No sábado passado, o Miguel foi ao centro com um amigo. Visitaram uma livraria, compraram um mapa e almoçaram num restaurante pequeno. À tarde regressaram a casa de metro.",
+      "prompt": "O que fizeram depois de visitar a livraria?",
+      "options": [
+        "Almoçaram num restaurante.",
+        "Foram ao cinema.",
+        "Voltaram imediatamente para casa."
+      ],
+      "answer": 0,
+      "explanationRu": "После книжного магазина друзья пообедали в небольшом ресторане.",
+      "explanationEn": "After the bookshop, the friends had lunch in a small restaurant."
+    },
+    "B1": {
+      "passage": "A biblioteca do bairro vai organizar um clube de leitura às quartas-feiras. Os participantes podem escolher os livros em conjunto e conversar sobre as histórias. A bibliotecária espera que a atividade atraia também pessoas que raramente visitam a biblioteca.",
+      "prompt": "O que espera a bibliotecária?",
+      "options": [
+        "Atrair novos leitores para a biblioteca.",
+        "Reduzir o número de livros disponíveis.",
+        "Substituir todas as atividades de sábado."
+      ],
+      "answer": 0,
+      "explanationRu": "Библиотекарь надеется привлечь людей, которые редко приходят в библиотеку.",
+      "explanationEn": "The librarian hopes to attract people who do not often visit the library."
+    },
+    "B2": {
+      "passage": "A cidade vai testar uma nova linha de autocarro durante seis meses. O percurso liga zonas residenciais ao hospital e à universidade. Antes de decidir se o serviço será permanente, a autarquia vai analisar a frequência dos passageiros, a pontualidade e os custos de funcionamento.",
+      "prompt": "Que fatores serão analisados durante o teste?",
+      "options": [
+        "Passageiros, pontualidade e custos.",
+        "Apenas o preço dos bilhetes.",
+        "O número de automóveis vendidos na cidade."
+      ],
+      "answer": 0,
+      "explanationRu": "Город будет оценивать число пассажиров, пунктуальность и расходы.",
+      "explanationEn": "The city will assess passenger numbers, punctuality and operating costs."
+    },
+    "C1": {
+      "passage": "O estudo conclui que a participação pública não deve ser medida apenas pelo número de pessoas presentes numa reunião. Importa igualmente saber quem conseguiu intervir, se as propostas foram consideradas e de que modo as decisões finais justificam as escolhas feitas. Sem essa análise, a participação pode tornar-se apenas um indicador superficial.",
+      "prompt": "Que crítica é feita à medição da participação pública?",
+      "options": [
+        "A presença, por si só, não revela a influência real dos participantes.",
+        "O número de reuniões é sempre demasiado elevado.",
+        "As decisões finais não devem ser explicadas."
+      ],
+      "answer": 0,
+      "explanationRu": "Одного подсчёта присутствующих недостаточно, чтобы оценить реальное влияние участников.",
+      "explanationEn": "Counting attendees alone does not show whether participants had real influence."
+    },
+    "C2": {
+      "passage": "A investigadora argumenta que uma política pública não pode ser considerada eficaz apenas porque alcançou a meta inicialmente anunciada. É necessário examinar os efeitos não previstos, a distribuição dos benefícios e os custos transferidos para grupos menos visíveis. A avaliação, por conseguinte, deve confrontar os resultados com os critérios e pressupostos que orientaram a intervenção.",
+      "prompt": "O que deve incluir uma avaliação mais completa?",
+      "options": [
+        "Efeitos imprevistos, distribuição dos benefícios e custos.",
+        "Apenas a comparação com a meta inicial.",
+        "Só os resultados apresentados no primeiro relatório."
+      ],
+      "answer": 0,
+      "explanationRu": "Полная оценка учитывает неожиданные последствия, распределение выгод и перенесённые затраты.",
+      "explanationEn": "A full assessment considers unintended effects, how benefits are distributed and where costs fall."
+    }
+  },
+  "pl": {
+    "A1": {
+      "passage": "Cześć, mam na imię Ola. Mieszkam blisko szkoły. Każdego ranka jem śniadanie o siódmej i jadę autobusem o ósmej. Po lekcjach wracam do domu z koleżanką.",
+      "prompt": "O której godzinie Ola jedzie autobusem?",
+      "options": [
+        "O ósmej.",
+        "O siódmej.",
+        "O dziewiątej."
+      ],
+      "answer": 0,
+      "explanationRu": "Оля едет на автобусе в восемь.",
+      "explanationEn": "Ola takes the bus at eight."
+    },
+    "A2": {
+      "passage": "W zeszłą sobotę Paweł pojechał z siostrą do centrum. Najpierw odwiedzili księgarnię, potem zjedli obiad w małej restauracji. Po południu wrócili do domu tramwajem.",
+      "prompt": "Gdzie Paweł i jego siostra zjedli obiad?",
+      "options": [
+        "W małej restauracji.",
+        "W księgarni.",
+        "W domu."
+      ],
+      "answer": 0,
+      "explanationRu": "Они пообедали в небольшом ресторане.",
+      "explanationEn": "They had lunch in a small restaurant."
+    },
+    "B1": {
+      "passage": "W bibliotece osiedlowej rozpoczął się klub rozmów. Spotkania odbywają się w każdy czwartek i są otwarte dla osób uczących się polskiego. Uczestnicy rozmawiają o codziennych sprawach, a wolontariusz pomaga im znaleźć właściwe słowa.",
+      "prompt": "Kiedy odbywają się spotkania klubu?",
+      "options": [
+        "W każdy czwartek.",
+        "W każdą sobotę.",
+        "Raz w miesiącu."
+      ],
+      "answer": 0,
+      "explanationRu": "Клуб встречается каждый четверг.",
+      "explanationEn": "The club meets every Thursday."
+    },
+    "B2": {
+      "passage": "Miasto planuje przebudowę placu przed dworcem. Projekt przewiduje więcej miejsca dla pieszych, stojaki rowerowe i niewielką strefę zieleni. Zanim rozpoczną się prace, urząd zbierze opinie mieszkańców i sprawdzi, jak zmieni się ruch w okolicy.",
+      "prompt": "Co urząd zrobi przed rozpoczęciem prac?",
+      "options": [
+        "Zb na opinie mieszkańców i przeanalizuje ruch.",
+        "Zamknie dworzec na cały rok.",
+        "Usunie wszystkie miejsca dla rowerów."
+      ],
+      "answer": 0,
+      "explanationRu": "Перед началом работ город соберёт мнения жителей и изучит транспортную ситуацию.",
+      "explanationEn": "Before work begins, the city will collect residents’ views and analyse local traffic."
+    },
+    "C1": {
+      "passage": "Raport wskazuje, że skuteczność programu edukacyjnego zależy nie tylko od liczby uczestników. Istotne są również regularność udziału, dostępność wsparcia i możliwość wykorzystania zdobytej wiedzy w praktyce. Autorzy zalecają więc ocenę długofalowych rezultatów zamiast opierania się wyłącznie na frekwencji.",
+      "prompt": "Na czym autorzy zalecają oprzeć ocenę programu?",
+      "options": [
+        "Na długofalowych rezultatach i praktycznym wykorzystaniu wiedzy.",
+        "Wyłącznie na liczbie zapisanych osób.",
+        "Tylko na kosztach organizacji zajęć."
+      ],
+      "answer": 0,
+      "explanationRu": "Авторы предлагают оценивать долгосрочные результаты, а не только посещаемость.",
+      "explanationEn": "The authors recommend assessing long-term outcomes, not attendance alone."
+    },
+    "C2": {
+      "passage": "Prelegent zauważa, że pozorna sprzeczność między danymi często wynika z odmiennych definicji lub zakresów pomiaru. Zanim uzna się wyniki za niezgodne, należy ustalić, czy odnoszą się do tych samych zjawisk, okresów i grup. Dopiero wtedy porównanie może prowadzić do rzetelnych wniosków.",
+      "prompt": "Co należy zrobić przed uznaniem danych za sprzeczne?",
+      "options": [
+        "Sprawdzić definicje, zakres pomiaru i porównywane grupy.",
+        "Odrzucić wyniki, które różnią się od oczekiwań.",
+        "Wybrać tylko najnowszy zestaw danych."
+      ],
+      "answer": 0,
+      "explanationRu": "Сначала нужно убедиться, что сравниваются одинаковые явления, периоды и группы.",
+      "explanationEn": "First check whether the same phenomena, periods and groups are being compared."
+    }
+  },
+  "ja": {
+    "A1": {
+      "passage": "こんにちは。わたしはゆきです。学校の近くに住んでいます。毎朝七時に朝ごはんを食べて、八時にバスに乗ります。学校のあと、友だちと図書館へ行きます。",
+      "prompt": "ゆきさんは何時にバスに乗りますか。",
+      "options": [
+        "八時です。",
+        "七時です。",
+        "九時です。"
+      ],
+      "answer": 0,
+      "explanationRu": "Юки садится на автобус в восемь часов.",
+      "explanationEn": "Yuki gets on the bus at eight o’clock."
+    },
+    "A2": {
+      "passage": "先週の日曜日、健太さんは妹と町の中心へ行きました。本屋で本を一冊買ってから、小さなレストランで昼ごはんを食べました。そのあと、電車で家に帰りました。",
+      "prompt": "健太さんは本屋のあとで何をしましたか。",
+      "options": [
+        "レストランで昼ごはんを食べました。",
+        "映画を見ました。",
+        "公園で走りました。"
+      ],
+      "answer": 0,
+      "explanationRu": "После книжного магазина Кэнта пообедал в ресторане.",
+      "explanationEn": "After the bookshop, Kenta had lunch at a restaurant."
+    },
+    "B1": {
+      "passage": "市立図書館では、来月から外国語の会話クラブを始めます。毎週水曜日の夕方に集まり、参加者は短い記事を読んだり、日常生活について話したりします。初めて参加する人も歓迎されています。",
+      "prompt": "会話クラブはいつ開かれますか。",
+      "options": [
+        "毎週水曜日の夕方です。",
+        "毎週月曜日の朝です。",
+        "月に一度の日曜日です。"
+      ],
+      "answer": 0,
+      "explanationRu": "Разговорный клуб будет проходить каждый вечер среды.",
+      "explanationEn": "The conversation club meets every Wednesday evening."
+    },
+    "B2": {
+      "passage": "駅前の広場を改修する計画について、市は住民説明会を開きました。計画には歩行者用の広い通路、自転車置き場、植栽スペースが含まれています。市は説明会で出た意見を整理し、最終案に反映できるか検討するとしています。",
+      "prompt": "市は説明会のあと、何をする予定ですか。",
+      "options": [
+        "住民の意見を整理して最終案への反映を検討する。",
+        "すぐに工事を始める。",
+        "自転車置き場を計画から外す。"
+      ],
+      "answer": 0,
+      "explanationRu": "Город собирается систематизировать мнения жителей и решить, как учесть их в окончательном проекте.",
+      "explanationEn": "The city plans to organise residents’ feedback and consider including it in the final proposal."
+    },
+    "C1": {
+      "passage": "調査報告書は、オンライン講座の修了率だけでは学習効果を十分に把握できないと指摘しています。受講者が内容をどの程度理解し、実際の課題に応用できたかも確認する必要があります。そのため、筆者は複数の評価方法を組み合わせるよう提案しています。",
+      "prompt": "筆者が提案している評価方法は何ですか。",
+      "options": [
+        "複数の評価方法を組み合わせること。",
+        "修了率だけで判断すること。",
+        "受講時間を短くすること。"
+      ],
+      "answer": 0,
+      "explanationRu": "Автор предлагает объединить несколько способов оценки обучения.",
+      "explanationEn": "The author recommends combining several assessment methods."
+    },
+    "C2": {
+      "passage": "報告者によれば、統計的に有意な差が確認されたとしても、それだけで実務上重要な差があるとは限りません。効果の大きさ、測定の不確実性、対象集団への影響を併せて検討しなければ、数値の解釈を誤るおそれがあります。",
+      "prompt": "報告者が統計的有意性以外に確認すべきだと述べているものは何ですか。",
+      "options": [
+        "効果の大きさや不確実性、対象集団への影響。",
+        "調査に使った表の色。",
+        "結果を発表した順番。"
+      ],
+      "answer": 0,
+      "explanationRu": "Нужно также учитывать размер эффекта, неопределённость и влияние на целевую группу.",
+      "explanationEn": "Effect size, uncertainty and impact on the target group must also be considered."
+    }
+  }
+};
+for (const [languageCode, levels] of Object.entries(COURSE_LISTENING_TASKS)) {
+  for (const level of ['A1','A2','B1','B2','C1','C2']) {
+    const bank = COURSE_QUESTION_BANKS[languageCode]?.[level];
+    const task = levels[level];
+    if (!bank || !task) throw new Error('Missing listening content: ' + languageCode + ' ' + level);
+    const index = bank.reduce((found, item, itemIndex) =>
+      itemIndex >= 5 && item.skill === 'grammar' ? itemIndex : found, -1);
+    if (index < 0) throw new Error('No safe listening replacement slot: ' + languageCode + ' ' + level);
+    bank[index] = {
+      ...bank[index],
+      skill: 'listening',
+      prompt: task.prompt,
+      options: task.options,
+      answer: task.answer,
+      explanationRu: task.explanationRu,
+      explanationEn: task.explanationEn,
+      passage: task.passage
+    };
+  }
+}
+
 export const COURSE_MINI_PROMPTS = {
   es: ['Describe tu rutina con tres frases.','Explica qué hiciste ayer y qué harás mañana.','Da tu opinión y apóyala con dos razones.','Resume una idea compleja con tus propias palabras.'],
   fr: ['Décris ta journée en trois phrases.','Explique ce que tu as fait hier et ce que tu feras demain.','Donne ton avis et justifie-le par deux raisons.','Résume une idée complexe avec tes propres mots.'],
