@@ -29,7 +29,19 @@ async function loadActiveStudyLanguage(){
   }
  }catch{}
  const accent=$('[data-listening-accent]');
- if(accent){accent.value=activeLanguageLocale;accent.disabled=true;}
+ if(accent){
+  if(activeLanguageCode==='en'){
+   accent.disabled=false;
+  }else{
+   accent.replaceChildren();
+   const option=document.createElement('option');
+   option.value=activeLanguageLocale;
+   option.textContent=activeLanguageLocale;
+   accent.append(option);
+   accent.value=activeLanguageLocale;
+   accent.disabled=true;
+  }
+ }
  const level=$('[data-listening-level]');
  if(level){[...level.options].forEach(option=>{option.disabled=false;});level.value='A1';}
 }
@@ -136,20 +148,18 @@ async function addWord(word,button){
  const original=button.textContent;
  try{
   let ipa='',audio='',definitions=[],synonyms=[],antonyms=[];
-  if(activeLanguageCode!=='de'){
-   try{
-    const response=await fetch('https://api.dictionaryapi.dev/api/v2/entries/'+activeLanguageCode+'/'+encodeURIComponent(word));
-    const entries=await response.json();
-    if(response.ok&&Array.isArray(entries)&&entries.length){
-     const first=entries[0],meanings=first.meanings||[],phonetics=first.phonetics||[];
-     ipa=first.phonetic||(phonetics.find(item=>item.text)||{}).text||'';
-     audio=(phonetics.find(item=>item.audio&&item.audio.startsWith('https://'))||{}).audio||'';
-     definitions=meanings.flatMap(item=>(item.definitions||[]).slice(0,2).map(def=>def.definition).filter(Boolean)).slice(0,6);
-     synonyms=[...new Set(meanings.flatMap(item=>item.synonyms||[]))].slice(0,10);
-     antonyms=[...new Set(meanings.flatMap(item=>item.antonyms||[]))].slice(0,10);
-    }
-   }catch(error){console.info('External word dictionary unavailable:',error.message);}
-  }
+  try{
+   const response=await fetch('https://api.dictionaryapi.dev/api/v2/entries/'+activeLanguageCode+'/'+encodeURIComponent(word));
+   const entries=await response.json();
+   if(response.ok&&Array.isArray(entries)&&entries.length){
+    const first=entries[0],meanings=first.meanings||[],phonetics=first.phonetics||[];
+    ipa=first.phonetic||(phonetics.find(item=>item.text)||{}).text||'';
+    audio=(phonetics.find(item=>item.audio&&item.audio.startsWith('https://'))||{}).audio||'';
+    definitions=meanings.flatMap(item=>(item.definitions||[]).slice(0,2).map(def=>def.definition).filter(Boolean)).slice(0,6);
+    synonyms=[...new Set(meanings.flatMap(item=>item.synonyms||[]))].slice(0,10);
+    antonyms=[...new Set(meanings.flatMap(item=>item.antonyms||[]))].slice(0,10);
+   }
+  }catch(error){console.info('External word dictionary unavailable:',error.message);}
   let enrichment={};
   const enriched=await fetch('/api/knowledge/dictionary-enrich/'+encodeURIComponent(word),{
    method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
