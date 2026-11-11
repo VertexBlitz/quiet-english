@@ -68,7 +68,7 @@ router.post('/writing/review',writingLimiter,async function(req,res,next) {
   try {
     const profile = await pool.query("SELECT COALESCE(assessed_level,self_assessed_level,$2) AS level FROM learner_language_profiles WHERE user_id=$1 AND language_code=$3",[req.user.id,level,req.studyLanguageCode]);
     const actualLevel = profile.rows[0] && LEVELS.includes(profile.rows[0].level) ? profile.rows[0].level : level;
-    const targetLanguage = req.studyLanguageCode === 'de' ? 'German' : 'English';
+    const targetLanguage = req.studyLanguage.english_name || 'English';
     const system = [
       'You are a careful, supportive ' + targetLanguage + ' writing teacher for a general-audience learning service.',
       'The learner is practising ' + targetLanguage + '. All corrections and the natural_version must remain in ' + targetLanguage + '.',
