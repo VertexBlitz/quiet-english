@@ -261,7 +261,7 @@ test('German listening materials are filtered separately from English resources'
   assert.ok(library.includes('learngerman.dw.com'));
   assert.ok(library.includes('deutsch.vhs-lernportal.de'));
   assert.ok(library.includes('item.language === activeStudyLanguageCode'));
-  assert.ok(trainer.includes('activeLanguageLocale||LANGUAGE_LOCALES[activeLanguageCode]||\'en-US\''));
+  assert.ok(trainer.includes('active.locale||LANGUAGE_LOCALES[activeLanguageCode]||\'en-US\''));
   assert.ok(library.includes("if (active && /^[a-z]{2}$/.test(String(active.language_code).trim()))"));
 });
 
