@@ -106,6 +106,11 @@ async function loadStudyLanguageOptions() {
             'Немецкий доступен на уровнях A1–C2: отдельная 4-недельная программа и 28 заданий для выбранного уровня.',
             'German is available from A1 to C2, with a dedicated 4-week plan and 28 exercises at each level.'
           );
+        } else if (selected.course_status === 'available') {
+          node.textContent = learningT(
+            selected.native_name + ' доступен на уровнях A1–C2. ' + statusText(selected) + '.',
+            selected.english_name + ' is available at CEFR levels A1–C2. ' + statusText(selected) + '.'
+          );
         } else {
           node.textContent = learningT('Сейчас изучается: ', 'Currently learning: ') +
             selected.native_name + ' · ' + statusText(selected);
