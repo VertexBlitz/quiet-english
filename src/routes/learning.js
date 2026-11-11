@@ -1,6 +1,7 @@
 import express from 'express';
 import { pool, requireDatabase, requireUser, recordActivity } from '../db.js';
 import { estimateLevel, publicQuestions, placementQuestions, estimateGermanLevel, publicGermanQuestions, germanPlacementQuestions } from '../content/placement.js';
+import { COURSE_LANGUAGES, COURSE_MINI_PROMPTS, getCoursePlacementQuestions, getPublicCoursePlacementQuestions, estimateCourseLevel } from '../content/multilingual-courses.js';
 
 const router = express.Router();
 router.use(requireDatabase, requireUser);
@@ -135,9 +136,15 @@ async function generatePlan(userId) {
       );
       for (let dayInWeek = 1; dayInWeek <= 7; dayInWeek++) {
         const day = (week - 1) * 7 + dayInWeek;
+        const coursePrompts = COURSE_MINI_PROMPTS[profile.language_code];
         const miniPrompt = profile.language_code === 'de'
           ? (germanMiniPrompts[profile.level] || germanMiniPrompts.A1)[(day - 1) % 4]
-          : { ru: miniPrompts[(day - 1) % miniPrompts.length], en: miniPrompts[(day - 1) % miniPrompts.length] };
+          : coursePrompts
+            ? {
+                ru: 'Ответь на ' + (COURSE_LANGUAGES[profile.language_code]?.englishName || 'изучаемом языке') + ': ' + coursePrompts[(day - 1) % coursePrompts.length],
+                en: 'Respond in ' + (COURSE_LANGUAGES[profile.language_code]?.englishName || 'the target language') + ': ' + coursePrompts[(day - 1) % coursePrompts.length]
+              }
+            : { ru: miniPrompts[(day - 1) % miniPrompts.length], en: miniPrompts[(day - 1) % miniPrompts.length] };
         await client.query(
           `INSERT INTO plan_days
              (plan_id,week_id,day_index,main_task_id,review_item_limit,mini_prompt,mini_prompt_ru,mini_prompt_en)
@@ -344,7 +351,16 @@ router.get('/placement/questions', async (req, res, next) => {
         note: 'Предварительная оценка немецкого A1–C2. Это не официальный сертификат CEFR.'
       });
     }
-    if (languageCode !== 'en') return res.status(409).json({ error: 'Тест уровня для выбранного языка ещё готовится.' });
+    if (languageCode !== 'en') {
+      const questions = getPublicCoursePlacementQuestions(languageCode);
+      if (!questions) return res.status(409).json({ error: 'Тест уровня для выбранного языка ещё готовится.' });
+      const languageName = COURSE_LANGUAGES[languageCode]?.englishName || languageCode;
+      return res.json({
+        language_code: languageCode,
+        questions,
+        note: 'Предварительная оценка ' + languageName + ' A1–C2. Это не официальный сертификат CEFR.'
+      });
+    }
     res.json({ language_code: 'en', questions: publicQuestions(), note: 'Короткая предварительная оценка, не официальный сертификат CEFR.' });
   } catch (error) { next(error); }
 });
@@ -359,7 +375,7 @@ router.post('/placement/submit', async (req, res, next) => {
     const languageCode = active.rows[0]?.active_learning_language_code || 'en';
     const questions = languageCode === 'de'
       ? germanPlacementQuestions
-      : languageCode === 'en' ? placementQuestions : null;
+      : languageCode === 'en' ? placementQuestions : getCoursePlacementQuestions(languageCode);
     if (!questions) return res.status(409).json({ error: 'Тест уровня для выбранного языка ещё готовится.' });
     if (!Array.isArray(answers) || answers.length !== questions.length) {
       return res.status(400).json({ error: 'Ответь на все вопросы теста.' });
@@ -367,7 +383,9 @@ router.post('/placement/submit', async (req, res, next) => {
     const answerMap = new Map(answers.map(item => [item?.id, item?.option_id]));
     if (questions.some(q => !answerMap.has(q.id))) return res.status(400).json({ error: 'В ответах отсутствуют вопросы.' });
     const correct = questions.filter(q => answerMap.get(q.id) === q.answer).length;
-    const level = languageCode === 'de' ? estimateGermanLevel(correct, answers) : estimateLevel(correct);
+    const level = languageCode === 'de'
+      ? estimateGermanLevel(correct, answers)
+      : languageCode === 'en' ? estimateLevel(correct) : estimateCourseLevel(languageCode, answers);
     await pool.query(
       'INSERT INTO placement_attempts (user_id, language_code, answers, correct_count, total_questions, estimated_level) VALUES ($1,$2,$3::jsonb,$4,$5,$6)',
       [req.user.id, languageCode, JSON.stringify(answers), correct, questions.length, level]
