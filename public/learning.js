@@ -212,6 +212,13 @@ if (placementRoot) {
   learningApi('/placement/questions')
     .then(data => {
       questions = data.questions;
+      const placementDescription = $('[data-placement-description]', placementRoot);
+      if (placementDescription) {
+        placementDescription.textContent = learningT(
+          questions.length + ' коротких вопросов помогут оценить грамматику и словарный запас. Результат предварительный, не официальный сертификат.',
+          questions.length + ' short questions help estimate your grammar and vocabulary. This is a preliminary estimate, not an official certificate.'
+        );
+      }
       const container = $('[data-questions]', placementRoot);
       container.replaceChildren();
       questions.forEach((question, index) => {
