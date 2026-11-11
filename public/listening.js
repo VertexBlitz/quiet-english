@@ -156,12 +156,8 @@ if (listeningRoot) {
         activeStudyLanguageCode = String(active.language_code).trim();
       }
     } catch {}
-    if (activeStudyLanguageCode === 'de') {
-      [...levelFilter.options].forEach(option => {
-        option.disabled = !['all','A1','A2'].includes(option.value);
-      });
-      levelFilter.value = 'all';
-    }
+    [...levelFilter.options].forEach(option => { option.disabled = false; });
+    levelFilter.value = 'all';
     render();
   }
   void loadStudyLanguage();
