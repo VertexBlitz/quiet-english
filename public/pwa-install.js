@@ -20,8 +20,8 @@
       card.hidden = false;
       if (message) {
         message.textContent = t(
-          'На iPhone: нажми «Поделиться» в Safari, затем «На экран Домой».',
-          'On iPhone: tap Share in Safari, then choose Add to Home Screen.'
+          'Чтобы добавить сайт на экран «Домой», открой его во внешнем Safari, затем нажми «Поделиться» → «На экран Домой».',
+          'To add this site to your Home Screen, open it in the Safari app, then tap Share → Add to Home Screen.'
         );
       }
       if (button) button.hidden = true;
