@@ -437,7 +437,8 @@ async function getRequestStudyLanguage(req) {
     return { language_code: 'en', course_status: 'available', speech_supported: true, preferred_language: 'ru' };
   }
   const { rows } = await pool.query(
-    `SELECT l.language_code, l.course_status, l.speech_supported, p.preferred_language
+    `SELECT l.language_code, l.english_name, l.native_name, l.locale,
+             l.course_status, l.speech_supported, p.preferred_language
      FROM learner_profiles p
      JOIN study_languages l ON l.language_code=p.active_learning_language_code
      WHERE p.user_id=$1`,
