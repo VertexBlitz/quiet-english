@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Quiet English — персональная платформа для изучения английского языка с AI-практикой, планом занятий и отслеживанием прогресса.">
-  <link rel="stylesheet" href="/styles.css?v=20261109-mobile-fix-2">
+  <link rel="stylesheet" href="/styles.css?v=20261111-home-mobile-1">
   <link rel="manifest" href="/manifest.webmanifest?v=20261109-app-1">
   <meta name="theme-color" content="#FAFAFA">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <script defer src="/session.js"></script>
   <script defer src="/offline-client.js"></script>
   <script defer src="/app.js"></script>
-  <script defer src="/pwa-install.js"></script>
+  <script defer src="/pwa-install.js?v=20261111-ios-guide-1"></script>
 </head>
 <body>
   <header class="topbar wrap">
@@ -29,13 +29,6 @@
     </div>
   </header>
 
-  <section class="wrap pwa-install-card" data-pwa-install-card hidden aria-live="polite">
-    <div>
-      <p class="eyebrow">QUIET ENGLISH APP</p>
-      <p data-pwa-install-message data-ru="Установи Quiet English на своё устройство для быстрого доступа." data-en="Install Quiet English on your device for quick access.">Установи Quiet English на своё устройство для быстрого доступа.</p>
-    </div>
-    <button class="button" type="button" data-pwa-install-button hidden data-ru="Установить приложение" data-en="Install app">Установить приложение</button>
-  </section>
 
   <main class="wrap" id="main-content">
     <section class="panel home-hero reveal">
@@ -54,6 +47,15 @@
         <span data-ru="Уровни CEFR · короткие занятия · реальные результаты" data-en="CEFR levels · focused sessions · real progress">Уровни CEFR · короткие занятия · реальные результаты</span>
       </div>
     </section>
+
+    
+  <section class="pwa-install-card" data-pwa-install-card hidden aria-live="polite">
+    <div>
+      <p class="eyebrow">QUIET ENGLISH APP</p>
+      <p data-pwa-install-message data-ru="Установи Quiet English на своё устройство для быстрого доступа." data-en="Install Quiet English on your device for quick access.">Установи Quiet English на своё устройство для быстрого доступа.</p>
+    </div>
+    <button class="button" type="button" data-pwa-install-button hidden data-ru="Установить приложение" data-en="Install app">Установить приложение</button>
+  </section>
 
     <section class="home-intro reveal">
       <div>
