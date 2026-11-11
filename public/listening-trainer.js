@@ -12,7 +12,9 @@ const questionsNode=$('[data-listening-questions]');
 const resultNode=$('[data-listening-result]');
 const transcribeButton=$('[data-listening-transcribe]');
 let objectUrl='',sessionId='',startedAt=0,preparedSentences=[],preparedQuestions=[],localAudio=null;
-let transcriberPromise=null,repeatEnd=null,activeLanguageCode='en';
+let transcriberPromise=null,repeatEnd=null,activeLanguageCode='en',activeLanguageLocale='en-US';
+const WHISPER_LANGUAGES={en:'english',de:'german',es:'spanish',fr:'french',it:'italian',pt:'portuguese',pl:'polish',ja:'japanese'};
+const LANGUAGE_LOCALES={en:'en-US',de:'de-DE',es:'es-ES',fr:'fr-FR',it:'it-IT',pt:'pt-PT',pl:'pl-PL',ja:'ja-JP'};
 const MODEL_ID='onnx-community/whisper-tiny';
 const TRANSFORMERS_URL='https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2';
 const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;};
@@ -23,12 +25,10 @@ async function loadActiveStudyLanguage(){
   const active=Array.isArray(data.languages)?data.languages.find(item=>item.is_active):null;
   if(active&&['en','de'].includes(String(active.language_code).trim()))activeLanguageCode=String(active.language_code).trim();
  }catch{}
- if(activeLanguageCode==='de'){
-  const accent=$('[data-listening-accent]');
-  if(accent){accent.value='de-DE';accent.disabled=true;}
-  const level=$('[data-listening-level]');
-  if(level){[...level.options].forEach(option=>option.disabled=!['A1','A2'].includes(option.value));level.value='A1';}
- }
+ const accent=$('[data-listening-accent]');
+ if(accent){accent.value=activeLanguageLocale;accent.disabled=true;}
+ const level=$('[data-listening-level]');
+ if(level){[...level.options].forEach(option=>{option.disabled=false;});level.value='A1';}
 }
 void loadActiveStudyLanguage();
 function message(text,error){status.textContent=text||'';status.classList.toggle('error-text',!!error);status.classList.toggle('success-text',!error);}
@@ -55,10 +55,10 @@ $('[data-listening-speed]').addEventListener('change',event=>{player.playbackRat
 function speak(text){
  if(!('speechSynthesis'in window))return;
  const utterance=new SpeechSynthesisUtterance(text);
- utterance.lang=activeLanguageCode==='de'?'de-DE':($('[data-listening-accent]').value||'en-GB');
+ utterance.lang=activeLanguageLocale||LANGUAGE_LOCALES[activeLanguageCode]||'en-US';
  utterance.rate=Number($('[data-listening-speed]').value)||0.9;
  const voices=speechSynthesis.getVoices();
- const preferred=voices.find(v=>v.lang===utterance.lang)||voices.find(v=>v.lang.startsWith(activeLanguageCode==='de'?'de':'en'));
+ const preferred=voices.find(v=>v.lang===utterance.lang)||voices.find(v=>v.lang.toLowerCase().startsWith(activeLanguageCode));
  if(preferred)utterance.voice=preferred;
  speechSynthesis.cancel();speechSynthesis.speak(utterance);
 }
@@ -105,7 +105,7 @@ transcribeButton.addEventListener('click',async()=>{
   const samples=await toSamples(localAudio);
   const transcriber=await getTranscriber();
   message('Whisper распознаёт речь в браузере. Это может занять некоторое время…');
-  const result=await transcriber(samples,{language:activeLanguageCode==='de'?'german':'english',task:'transcribe'});
+  const result=await transcriber(samples,{language:WHISPER_LANGUAGES[activeLanguageCode]||'english',task:'transcribe'});
   const text=String(result&&result.text||'').trim();
   if(!text)throw Error('Не удалось распознать речь. Попробуй запись с более чётким звучанием.');
   transcript.value=text;transcript.dispatchEvent(new Event('input',{bubbles:true}));
