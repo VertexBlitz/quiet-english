@@ -13,8 +13,10 @@ const resultNode=$('[data-listening-result]');
 const transcribeButton=$('[data-listening-transcribe]');
 let objectUrl='',sessionId='',startedAt=0,preparedSentences=[],preparedQuestions=[],localAudio=null;
 let transcriberPromise=null,repeatEnd=null,activeLanguageCode='en',activeLanguageLocale='en-US';
+let activeLanguageName='English';
 const WHISPER_LANGUAGES={en:'english',de:'german',es:'spanish',fr:'french',it:'italian',pt:'portuguese',pl:'polish',ja:'japanese'};
 const LANGUAGE_LOCALES={en:'en-US',de:'de-DE',es:'es-ES',fr:'fr-FR',it:'it-IT',pt:'pt-PT',pl:'pl-PL',ja:'ja-JP'};
+const LANGUAGE_VOICE_LABELS={en:'English',de:'Deutsch',es:'Español',fr:'Français',it:'Italiano',pt:'Português',pl:'Polski',ja:'日本語'};
 const MODEL_ID='onnx-community/whisper-tiny';
 const TRANSFORMERS_URL='https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2';
 const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;};
@@ -26,26 +28,29 @@ async function loadActiveStudyLanguage(){
   if(active&&/^[a-z]{2}$/.test(String(active.language_code).trim())){
    activeLanguageCode=String(active.language_code).trim();
    activeLanguageLocale=active.locale||LANGUAGE_LOCALES[activeLanguageCode]||'en-US';
+   activeLanguageName=active.native_name||LANGUAGE_VOICE_LABELS[activeLanguageCode]||active.english_name||'English';
   }
  }catch{}
  const accent=$('[data-listening-accent]');
  if(accent){
-  if(activeLanguageCode==='en'){
-   accent.disabled=false;
-  }else{
-   accent.replaceChildren();
+  const options=activeLanguageCode==='en'
+   ? [['en-GB','English · British'],['en-US','English · American'],['en-AU','English · Australian']]
+   : [[activeLanguageLocale,activeLanguageName+' · '+activeLanguageLocale]];
+  accent.replaceChildren();
+  options.forEach(([value,label])=>{
    const option=document.createElement('option');
-   option.value=activeLanguageLocale;
-   option.textContent=activeLanguageLocale;
+   option.value=value;
+   option.textContent=label;
    accent.append(option);
-   accent.value=activeLanguageLocale;
-   accent.disabled=true;
-  }
+  });
+  accent.value=options[0][0];
+  accent.disabled=options.length===1;
  }
  const level=$('[data-listening-level]');
  if(level){[...level.options].forEach(option=>{option.disabled=false;});level.value='A1';}
 }
 void loadActiveStudyLanguage();
+window.addEventListener('quietenglish:languagechange',()=>{void loadActiveStudyLanguage();});
 function message(text,error){status.textContent=text||'';status.classList.toggle('error-text',!!error);status.classList.toggle('success-text',!error);}
 function setAudio(source){
  if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl='';}
