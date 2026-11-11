@@ -291,7 +291,7 @@ test('six additional study languages each have A1-C2 content, placement and leve
     assert.ok(pronunciation.includes(code + ': ['), code + ' needs pronunciation passages');
     assert.ok(onboarding.includes('value="' + code + '"'), code + ' must appear in onboarding');
   }
-  assert.ok(seed.includes('published,'));
+  assert.ok(seed.includes("status: 'published'"));
   assert.ok(seed.includes("course_status='available',speech_supported=TRUE"));
   assert.ok(migration.includes('language_course_seed_versions'));
   assert.ok(client.includes('selected.native_name +'));
