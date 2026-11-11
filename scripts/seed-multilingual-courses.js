@@ -40,7 +40,12 @@ function exerciseRows(languageCode) {
           (item.skill === 'listening' && (typeof item.passage !== 'string' || item.passage.trim().length < 40))) {
         throw new Error('Invalid exercise item: ' + languageCode + ' ' + level + ' #' + (index + 1));
       }
-      const objective = COURSE_OBJECTIVES[level];
+      const objective = item.skill === 'listening'
+        ? {
+            ru: 'Понять основную мысль и ключевые детали короткого текста на слух.',
+            en: 'Understand the main idea and key details in a short spoken passage.'
+          }
+        : COURSE_OBJECTIVES[level];
       const id = languageCode.toUpperCase() + '-' + level + '-' + String(index + 1).padStart(2,'0');
       const options = item.options.map((text, optionIndex) => ({
         id: ['a','b','c'][optionIndex],
@@ -52,8 +57,8 @@ function exerciseRows(languageCode) {
         level,
         objective: objective.ru,
         instructions: {
-          ru: 'Выбери один правильный вариант.',
-          en: 'Choose one correct option.'
+          ru: item.skill === 'listening' ? 'Прослушай текст и выбери правильный ответ.' : 'Выбери один правильный вариант.',
+          en: item.skill === 'listening' ? 'Listen to the passage and choose the correct answer.' : 'Choose one correct option.'
         },
         content: { type: 'multiple_choice', prompt: item.prompt, options, ...(item.passage ? { passage: item.passage } : {}) },
         answer_key: { correct_option_id: ['a','b','c'][item.answer] },
@@ -63,9 +68,9 @@ function exerciseRows(languageCode) {
         prerequisites: [],
         srs: {
           enabled: true,
-          item_type: item.skill === 'vocabulary' ? 'vocabulary' : 'grammar_rule'
+          item_type: item.skill === 'vocabulary' ? 'vocabulary' : item.skill === 'listening' ? 'listening' : 'grammar_rule'
         },
-        success_criteria: 'Choose the correct target-language form in context.',
+        success_criteria: item.skill === 'listening' ? 'Identify key information in a spoken target-language passage.' : 'Choose the correct target-language form in context.',
         objective_i18n: objective,
         language_code: languageCode,
         status: 'published',
