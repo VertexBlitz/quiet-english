@@ -40,6 +40,63 @@ if (listeningRoot) {
     }
   );
 
+  resources.push(
+    {
+      title:'AVE Global · Español',titleEn:'AVE Global · Spanish',
+      level:'A1',topic:'study',provider:'Instituto Cervantes',
+      kind:'Demo · vídeos · ejercicios',kindEn:'Demo · videos · exercises',
+      url:'https://ave.cervantes.es/pruebe-los-cursos-de-espanol-en-linea-ave-global',
+      description:'Демо-практика испанского с материалами разных уровней CEFR.',
+      descriptionEn:'Spanish course demo with activities across CEFR level bands.',
+      language:'es'
+    },
+    {
+      title:'Apprendre le français · TV5MONDE',titleEn:'Learn French · TV5MONDE',
+      level:'A1',topic:'study',provider:'TV5MONDE',
+      kind:'A1–B2 · vidéos · compréhension orale',kindEn:'A1–B2 · videos · listening comprehension',
+      url:'https://apprendre.tv5monde.com/en',
+      description:'Бесплатные упражнения по французскому на основе видео; внешняя библиотека охватывает A1–B2.',
+      descriptionEn:'Free French video-based exercises; the external library covers A1–B2.',
+      language:'fr'
+    },
+    {
+      title:'L’italiano online',titleEn:'Italian online learning resources',
+      level:'A1',topic:'study',provider:'CPIA Roma',
+      kind:'A1–C2 · corsi · ascolto',kindEn:'A1–C2 · courses · listening',
+      url:'https://www.cpia4lazio.edu.it/scheda-didattica/litaliano-online/',
+      description:'Подборка итальянских курсов и упражнений, включая материалы Loescher для разных уровней.',
+      descriptionEn:'A directory of Italian courses and exercises, including Loescher resources for different levels.',
+      language:'it'
+    },
+    {
+      title:'Plataforma de Português Online',titleEn:'Portuguese Online Platform',
+      level:'A1',topic:'daily',provider:'AIMA',
+      kind:'Áudio · vídeo · vocabulário',kindEn:'Audio · video · vocabulary',
+      url:'https://aima.gov.pt/pt/lingua-portuguesa/plataforma-de-portugues-online',
+      description:'Бесплатная платформа европейского португальского с текстом, аудио и видео; представлены уровни A и B.',
+      descriptionEn:'A free European Portuguese platform with text, audio and video; it offers levels A and B.',
+      language:'pt'
+    },
+    {
+      title:'Kurse und Übungen · Polski',titleEn:'Polish courses and exercises',
+      level:'A1',topic:'study',provider:'Freie Universität Berlin',
+      kind:'A1–C1 · аудио · задания',kindEn:'A1–C1 · audio · exercises',
+      url:'https://www.sprachenzentrum.fu-berlin.de/slz/sprachen-links/polnisch/kurse_und_uebungen/index.html',
+      description:'Подборка учебных материалов по польскому: от начального уровня до продвинутых, включая аудио A1–A2.',
+      descriptionEn:'A directory of Polish learning materials from beginner to advanced, including A1–A2 audio.',
+      language:'pl'
+    },
+    {
+      title:'Easy Japanese · NHK WORLD',titleEn:'Easy Japanese · NHK WORLD',
+      level:'A1',topic:'daily',provider:'NHK WORLD-JAPAN',
+      kind:'Аудио · текст · диалоги',kindEn:'Audio · text · dialogues',
+      url:'https://www.nhk.or.jp/lesson/',
+      description:'Бесплатные аудиоуроки японского для начального уровня с диалогами и текстом.',
+      descriptionEn:'Free beginner Japanese audio lessons with dialogues and accompanying text.',
+      language:'ja'
+    }
+  );
+
   const grid = listeningRoot.querySelector('[data-listening-grid]');
   const levelFilter = listeningRoot.querySelector('[data-level-filter]');
   const topicFilter = listeningRoot.querySelector('[data-topic-filter]');
@@ -95,7 +152,7 @@ if (listeningRoot) {
       const response = await fetch('/api/learning/languages', { credentials:'same-origin' });
       const data = await response.json().catch(() => ({}));
       const active = Array.isArray(data.languages) ? data.languages.find(item => item.is_active) : null;
-      if (active && ['en','de'].includes(String(active.language_code).trim())) {
+      if (active && /^[a-z]{2}$/.test(String(active.language_code).trim())) {
         activeStudyLanguageCode = String(active.language_code).trim();
       }
     } catch {}
