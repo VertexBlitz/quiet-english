@@ -69,7 +69,7 @@ export function buildPracticeGenerationPrompt({ level, skill, topic, avoid = [],
   const explanationLanguage = interfaceLanguage === 'en' ? 'English' : 'Russian';
   return [
     'Create an original ' + targetLanguage + '-learning exercise for CEFR ' + level + ' (' + levelGuide + ').',
-    languageCode === 'de' ? 'All passage text, prompts, answer options and correct answers must be natural standard German calibrated to CEFR ' + level + '. Use the grammar, vocabulary, idioms and register expected at this level, with accurate ä, ö, ü and ß.' : 'All learner-facing exercise text must be natural standard English.',
+    'All passage text, prompts, answer options and correct answers must be natural standard ' + targetLanguage + ' calibrated to CEFR ' + level + '. Use the grammar, vocabulary, idioms and register expected at this level.',
     'Write explanations in ' + explanationLanguage + '.',
     'Type: ' + skill + '. Topic: ' + topic + '.',
     taskGuide,
