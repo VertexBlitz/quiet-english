@@ -1,6 +1,7 @@
 (() => {
 const root=document.querySelector('[data-dictionary-page]');if(!root)return;const $=s=>root.querySelector(s),form=$('[data-dictionary-search]'),input=form.elements.word,status=$('[data-dictionary-status]'),entryNode=$('[data-dictionary-entry]'),savedNode=$('[data-saved-words]'),count=$('[data-word-count]'),t=(r,e)=>document.documentElement.lang==='en'?e:r,locale=()=>document.documentElement.lang==='en'?'en-GB':'ru-RU',make=(tag,c,txt)=>{const n=document.createElement(tag);if(c)n.className=c;if(txt!=null)n.textContent=txt;return n;};
-let activeEntry=null,activeLanguageCode='en';
+let activeEntry=null,activeLanguageCode='en',activeLanguageLocale='en-US';
+const LANGUAGE_LOCALES={en:'en-US',de:'de-DE',es:'es-ES',fr:'fr-FR',it:'it-IT',pt:'pt-PT',pl:'pl-PL',ja:'ja-JP'};
 function msg(x,error=false){status.textContent=x||'';status.classList.toggle('error-text',error);status.classList.toggle('success-text',!error);}
 async function api(path,opt={}){const r=await fetch('/api/knowledge'+path,{credentials:'same-origin',...opt,headers:{...(opt.body?{'Content-Type':'application/json'}:{}),...(opt.headers||{})}}),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Request failed.');return d;}
 function audioUrl(x){try{const u=new URL(x.startsWith('//')?'https:'+x:x);return u.protocol==='https:'?u.href:'';}catch{return '';}}
@@ -59,7 +60,7 @@ async function search(word){
   submit.disabled=false;
  }
 }
-function render(d){activeEntry=d;entryNode.replaceChildren();entryNode.hidden=false;const head=make('div','dictionary-entry-head');head.append(make('h2','',d.word),make('span','dictionary-ipa',d.ipa||''));const listen=make('button','knowledge-print-button',t('▶ Произношение','▶ Pronunciation'));listen.type='button';listen.onclick=async()=>{if(d.audio){try{await new Audio(d.audio).play();return;}catch{}}if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(d.word);u.lang=activeLanguageCode==='de'?'de-DE':'en-US';window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}};head.append(listen);const translation=make('p','dictionary-translation',d.translation||t('Перевод не найден.','Translation unavailable.')),definition=make('p','knowledge-muted',d.definition||''),save=make('button','button',t('Сохранить в мой словарь +','Save to my dictionary +'));save.type='button';save.onclick=async()=>{save.disabled=true;try{await api('/vocabulary',{method:'POST',body:JSON.stringify({word:d.word,ipa:d.ipa,translation:d.translation,definition:d.definition,metadata:{synonyms:d.synonyms,antonyms:d.antonyms,collocations:d.collocations,phrasal_verbs:d.phrasal_verbs,examples:d.examples,audio:d.audio},source:new URLSearchParams(location.search).get('source')==='listening'?'listening':'dictionary'})});msg(t('Слово сохранено.','Word saved.'));loadSaved();}catch(e){msg(e.message,true);}finally{save.disabled=false;}};entryNode.append(head,translation,definition,save);
+function render(d){activeEntry=d;entryNode.replaceChildren();entryNode.hidden=false;const head=make('div','dictionary-entry-head');head.append(make('h2','',d.word),make('span','dictionary-ipa',d.ipa||''));const listen=make('button','knowledge-print-button',t('▶ Произношение','▶ Pronunciation'));listen.type='button';listen.onclick=async()=>{if(d.audio){try{await new Audio(d.audio).play();return;}catch{}}if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(d.word);u.lang=activeLanguageLocale||LANGUAGE_LOCALES[activeLanguageCode]||'en-US';window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}};head.append(listen);const translation=make('p','dictionary-translation',d.translation||t('Перевод не найден.','Translation unavailable.')),definition=make('p','knowledge-muted',d.definition||''),save=make('button','button',t('Сохранить в мой словарь +','Save to my dictionary +'));save.type='button';save.onclick=async()=>{save.disabled=true;try{await api('/vocabulary',{method:'POST',body:JSON.stringify({word:d.word,ipa:d.ipa,translation:d.translation,definition:d.definition,metadata:{synonyms:d.synonyms,antonyms:d.antonyms,collocations:d.collocations,phrasal_verbs:d.phrasal_verbs,examples:d.examples,audio:d.audio},source:new URLSearchParams(location.search).get('source')==='listening'?'listening':'dictionary'})});msg(t('Слово сохранено.','Word saved.'));loadSaved();}catch(e){msg(e.message,true);}finally{save.disabled=false;}};entryNode.append(head,translation,definition,save);
 const synonyms=section(t('Синонимы','Synonyms'),d.synonyms,x=>make('span','dictionary-tag',x)),antonyms=section(t('Антонимы','Antonyms'),d.antonyms,x=>make('span','dictionary-tag',x));
 const coll=section(t('Collocations','Collocations'),d.collocations,x=>{const c=make('article','dictionary-detail-card');c.append(make('strong','',x.phrase),make('p','',x.meaning_ru||''),make('p','dictionary-example',x.example||''));return c;});
 const phras=section(t('Фразовые глаголы','Phrasal verbs'),d.phrasal_verbs,x=>{const c=make('article','dictionary-detail-card');c.append(make('strong','',x.phrase),make('p','',x.meaning_ru||''),make('p','dictionary-example',x.example||''));return c;});
@@ -71,7 +72,10 @@ async function initDictionary(){
   const response=await fetch('/api/learning/languages',{credentials:'same-origin'});
   const data=await response.json().catch(()=>({}));
   const active=Array.isArray(data.languages)?data.languages.find(item=>item.is_active):null;
-  if(active&&['en','de'].includes(String(active.language_code).trim()))activeLanguageCode=String(active.language_code).trim();
+  if(active&&/^[a-z]{2}$/.test(String(active.language_code).trim())){
+   activeLanguageCode=String(active.language_code).trim();
+   activeLanguageLocale=active.locale||LANGUAGE_LOCALES[activeLanguageCode]||'en-US';
+  }
  }catch{}
  await loadSaved();
  const initialParams=new URLSearchParams(location.search),initialWord=initialParams.get('word');
