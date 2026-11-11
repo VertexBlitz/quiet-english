@@ -6,7 +6,7 @@ import {
 } from '../src/content/multilingual-courses.js';
 
 const LEVELS = ['A1','A2','B1','B2','C1','C2'];
-const COURSE_CONTENT_VERSION = 1;
+const COURSE_CONTENT_VERSION = 2;
 const themeRu = {
   A1: ['Приветствия и знакомство','Повседневные действия','Люди и места','Практические ситуации'],
   A2: ['Опыт и прошлое','Планы и сравнения','Город и путешествия','Повседневные разговоры'],
@@ -36,7 +36,8 @@ function exerciseRows(languageCode) {
     }
     bank.forEach((item, index) => {
       if (!item.prompt || !Array.isArray(item.options) || item.options.length !== 3 ||
-          !Number.isInteger(item.answer) || item.answer < 0 || item.answer > 2) {
+          !Number.isInteger(item.answer) || item.answer < 0 || item.answer > 2 ||
+          (item.skill === 'listening' && (typeof item.passage !== 'string' || item.passage.trim().length < 40))) {
         throw new Error('Invalid exercise item: ' + languageCode + ' ' + level + ' #' + (index + 1));
       }
       const objective = COURSE_OBJECTIVES[level];
@@ -54,7 +55,7 @@ function exerciseRows(languageCode) {
           ru: 'Выбери один правильный вариант.',
           en: 'Choose one correct option.'
         },
-        content: { type: 'multiple_choice', prompt: item.prompt, options },
+        content: { type: 'multiple_choice', prompt: item.prompt, options, ...(item.passage ? { passage: item.passage } : {}) },
         answer_key: { correct_option_id: ['a','b','c'][item.answer] },
         explanation: { ru: item.explanationRu, en: item.explanationEn },
         estimated_time: item.skill === 'reading' || item.skill === 'listening' ? 5 : 4,
