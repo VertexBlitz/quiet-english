@@ -18,9 +18,7 @@ self.addEventListener('fetch',event=>{
   event.respondWith(caches.open(CACHE).then(cache=>{
     // HTML uses a version query string for CSS. Match the shell's canonical
     // /styles.css entry even when the browser requests /styles.css?v=...
-    const cachedAsset = url.pathname === '/styles.css'
-      ? cache.match(request, { ignoreSearch: true })
-      : cache.match(request);
+    const cachedAsset = cache.match(request, { ignoreSearch: true });
 
     return cachedAsset.then(hit=>hit||fetch(request).then(response=>{
       if(response.ok&&response.type==='basic'){
