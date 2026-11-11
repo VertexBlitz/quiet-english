@@ -700,6 +700,7 @@ if (pronRoot) {
 
   engineBadge.textContent = 'WHISPER · ON-DEVICE';
   async function initializeActiveLanguage() {
+    let activeLanguageName = 'English';
     try {
       const response = await fetch('/api/learning/languages', { credentials: 'same-origin' });
       const data = await response.json().catch(() => ({}));
@@ -707,6 +708,7 @@ if (pronRoot) {
       if (active && /^[a-z]{2}$/.test(String(active.language_code).trim())) {
         activeLanguageCode = String(active.language_code).trim();
         activeLanguageLocale = active.locale || LANGUAGE_LOCALES[activeLanguageCode] || 'en-US';
+        activeLanguageName = active.native_name || active.english_name || activeLanguageName;
       }
     } catch {}
     generatedPassages = [];
@@ -715,7 +717,7 @@ if (pronRoot) {
     renderPassages();
     await loadHistory();
     checkAiGeneratorStatus();
-    const currentName = active?.native_name || ({en:'English',de:'Deutsch',es:'Español',fr:'Français',it:'Italiano',pt:'Português',pl:'Polski',ja:'日本語'}[activeLanguageCode] || 'English');
+    const currentName = activeLanguageName;
     message(t(
       'Выбери текст ' + currentName + ' нужного уровня A1–C2 или сгенерируй новый.',
       'Choose a ' + currentName + ' passage at A1–C2 or generate a new one.'
