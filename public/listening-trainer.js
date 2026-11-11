@@ -23,7 +23,10 @@ async function loadActiveStudyLanguage(){
   const response=await fetch('/api/learning/languages',{credentials:'same-origin'});
   const data=await response.json().catch(()=>({}));
   const active=Array.isArray(data.languages)?data.languages.find(item=>item.is_active):null;
-  if(active&&['en','de'].includes(String(active.language_code).trim()))activeLanguageCode=String(active.language_code).trim();
+  if(active&&/^[a-z]{2}$/.test(String(active.language_code).trim())){
+   activeLanguageCode=String(active.language_code).trim();
+   activeLanguageLocale=active.locale||LANGUAGE_LOCALES[activeLanguageCode]||'en-US';
+  }
  }catch{}
  const accent=$('[data-listening-accent]');
  if(accent){accent.value=activeLanguageLocale;accent.disabled=true;}
@@ -55,7 +58,7 @@ $('[data-listening-speed]').addEventListener('change',event=>{player.playbackRat
 function speak(text){
  if(!('speechSynthesis'in window))return;
  const utterance=new SpeechSynthesisUtterance(text);
- utterance.lang=activeLanguageLocale||LANGUAGE_LOCALES[activeLanguageCode]||'en-US';
+ utterance.lang=activeLanguageCode==='en'?($('[data-listening-accent]').value||activeLanguageLocale):activeLanguageLocale;
  utterance.rate=Number($('[data-listening-speed]').value)||0.9;
  const voices=speechSynthesis.getVoices();
  const preferred=voices.find(v=>v.lang===utterance.lang)||voices.find(v=>v.lang.toLowerCase().startsWith(activeLanguageCode));
