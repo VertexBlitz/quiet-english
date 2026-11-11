@@ -101,11 +101,6 @@ async function loadStudyLanguageOptions() {
       document.querySelectorAll('[data-study-language-status]').forEach(node => {
         if (!selected) {
           node.textContent = learningT('Выбери доступный учебный курс.', 'Choose an available course.');
-        } else if (selected.language_code === 'de') {
-          node.textContent = learningT(
-            'Немецкий доступен на уровнях A1–C2: отдельная 4-недельная программа и 28 заданий для выбранного уровня.',
-            'German is available from A1 to C2, with a dedicated 4-week plan and 28 exercises at each level.'
-          );
         } else if (selected.course_status === 'available') {
           node.textContent = learningT(
             selected.native_name + ' доступен на уровнях A1–C2. ' + statusText(selected) + '.',
