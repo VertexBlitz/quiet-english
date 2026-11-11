@@ -4,6 +4,8 @@
 
   const STORE_KEY = 'quiet-english-ai-practice-history-v1';
   let activeStudyLanguageCode = 'en';
+  let activeStudyLanguageLocale = 'en-US';
+  const STUDY_LANGUAGE_LOCALES = { en:'en-US', de:'de-DE', es:'es-ES', fr:'fr-FR', it:'it-IT', pt:'pt-PT', pl:'pl-PL', ja:'ja-JP' };
   const $ = selector => root.querySelector(selector);
   const level = $('[data-ai-level]');
   const skill = $('[data-ai-skill]');
@@ -115,6 +117,7 @@
         : null;
       if (active && typeof active.language_code === 'string') {
         activeStudyLanguageCode = active.language_code.trim().toLowerCase();
+        activeStudyLanguageLocale = active.locale || STUDY_LANGUAGE_LOCALES[activeStudyLanguageCode] || 'en-US';
       }
     } catch {}
     renderHistory();
@@ -156,7 +159,11 @@
     }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(currentExercise.passage);
-    utterance.lang = activeStudyLanguageCode === 'de' ? 'de-DE' : 'en-US';
+    utterance.lang = activeStudyLanguageLocale || STUDY_LANGUAGE_LOCALES[activeStudyLanguageCode] || 'en-US';
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(voice => voice.lang.toLowerCase() === utterance.lang.toLowerCase()) ||
+      voices.find(voice => voice.lang.toLowerCase().startsWith(activeStudyLanguageCode));
+    if (preferredVoice) utterance.voice = preferredVoice;
     utterance.rate = 0.9;
     window.speechSynthesis.speak(utterance);
   }
@@ -489,6 +496,7 @@
   historySection.hidden = true;
   void loadActiveStudyLanguage();
   window.addEventListener('quietenglish:languagechange', () => {
+    void loadActiveStudyLanguage();
     renderHistory();
     if (currentExercise) {
       meta.textContent = currentExercise.level + ' · ' + skillLabel(currentExercise.skill) + ' · ' + currentExercise.topic;
