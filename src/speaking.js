@@ -44,7 +44,7 @@ export function buildSpeakingGenerationPrompt({ level, topic, avoid = [], langua
   const targetLanguage = LANGUAGE_NAMES[languageCode] || 'English';
   return [
     'Create one original ' + targetLanguage + ' reading passage for a learner at CEFR ' + level + '.',
-    languageCode === 'de' ? 'This is a German CEFR ' + level + ' learning task. Use natural standard German with grammar, vocabulary, idioms and register appropriate to this level, including accurate ä, ö, ü and ß.' : 'Use natural standard English.',
+    'This is a ' + targetLanguage + ' CEFR ' + level + ' learning task. Use natural standard ' + targetLanguage + ' with grammar, vocabulary, idioms and register appropriate to this level.',
     'Topic: ' + topic + '.',
     'Length and language: ' + wordGuide + '.',
     'The passage must be suitable for reading aloud in no more than 28 seconds.',
