@@ -409,7 +409,7 @@ test('mobile PWA cache refreshes the shared UI and the learning method page is b
   }
   assert.ok(method.includes('viewport-fit=cover'));
   assert.ok(home.includes('viewport-fit=cover'));
-  assert.ok(home.includes('/styles.css?v=20261109-mobile-fix-2'));
+  assert.ok(home.includes('/styles.css?v=20261111-home-mobile-1'));
   assert.ok(styles.includes('background:#fff'));
   assert.ok(styles.includes('env(safe-area-inset-bottom, 0px)'));
 });
