@@ -117,7 +117,7 @@ test('offline storage and service-worker cache are present after release updates
   const dictionary = read('public/dictionary.html');
   assert.ok(offlineClient.includes('window.QuietOffline = { save, all, remove }'));
   assert.ok(offlineClient.includes('navigator.serviceWorker.register'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v11'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v12'"));
   assert.ok(serviceWorker.includes("url.pathname === '/' ? '/' : url.pathname"));
   assert.ok(serviceWorker.includes("url.pathname === '/styles.css'"));
   assert.ok(serviceWorker.includes('cache.match(request, { ignoreSearch: true })'));
@@ -242,7 +242,7 @@ test('PWA manifest, install metadata, and offline shell are configured', () => {
   assert.ok(index.includes('data-pwa-install-card'));
   assert.ok(installScript.includes('beforeinstallprompt'));
   assert.ok(installScript.includes('На экран Домой'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v11'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v12'"));
   assert.ok(serviceWorker.includes('"/manifest.webmanifest"'));
   assert.ok(serviceWorker.includes('"/library.html"'));
 });
@@ -399,7 +399,7 @@ test('mobile PWA cache refreshes the shared UI and the learning method page is b
   const home = read('public/index.html');
   const styles = read('public/styles.css');
 
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v11'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v12'"));
   assert.ok(serviceWorker.includes('"/method.html"'));
   assert.ok(serviceWorker.includes('"/pronunciation.js"'));
   assert.ok(method.includes('data-title-ru='));
@@ -409,7 +409,7 @@ test('mobile PWA cache refreshes the shared UI and the learning method page is b
   }
   assert.ok(method.includes('viewport-fit=cover'));
   assert.ok(home.includes('viewport-fit=cover'));
-  assert.ok(home.includes('/styles.css?v=20261111-home-mobile-1'));
+  assert.ok(home.includes('/styles.css?v=20261114-dashboard-1'));
   assert.ok(styles.includes('background:#fff'));
   assert.ok(styles.includes('env(safe-area-inset-bottom, 0px)'));
 });
@@ -436,4 +436,51 @@ test('homepage editorial labels and feature tags follow the selected language', 
   }
   assert.ok(home.includes('data-ru=" / ЛИЧНОЕ ОБУЧЕНИЕ"'));
   assert.ok(method.includes('data-ru=" / ЛИЧНОЕ ОБУЧЕНИЕ"'));
+});
+
+
+test('signed-in home page presents a personalized Today dashboard backed by actual account data', () => {
+  const home = read('public/index.html');
+  const dashboard = read('public/home-dashboard.js');
+  const worker = read('public/sw.js');
+  assert.ok(home.includes('data-home-dashboard'));
+  assert.ok(home.includes('/home-dashboard.js'));
+  assert.ok(dashboard.includes('/api/auth/me'));
+  assert.ok(dashboard.includes('/api/learning/today'));
+  assert.ok(dashboard.includes('/api/learning/progress'));
+  assert.ok(dashboard.includes('/api/learning/review/queue'));
+  assert.ok(dashboard.includes('/exercise.html?id='));
+  assert.ok(worker.includes('"/home-dashboard.js"'));
+  assert.ok(worker.includes('"/tutor.html"'));
+});
+
+test('guided conversation scenarios submit through the existing AI tutor', () => {
+  const tutor = read('public/tutor.html');
+  const app = read('public/app.js');
+  assert.ok(tutor.includes('data-conversation-prompt'));
+  assert.ok(tutor.includes('At a station'));
+  assert.ok(tutor.includes('At a café'));
+  assert.ok(app.includes("querySelectorAll('[data-conversation-prompt]')"));
+  assert.ok(app.includes('form.requestSubmit()'));
+});
+
+test('account can export a local PDF report as well as its JSON data', () => {
+  const page = read('public/account.html');
+  const client = read('public/account.js');
+  assert.ok(page.includes('/vendor/html2pdf.bundle.min.js'));
+  assert.ok(page.includes('data-export-pdf'));
+  assert.ok(page.includes('/onboarding.html'));
+  assert.ok(client.includes('window.html2pdf'));
+  assert.ok(client.includes('quiet-english-learning-report.pdf'));
+  assert.ok(client.includes('/api/auth/export'));
+});
+
+test('analytics and progress labels react to the selected RU or EN interface language', () => {
+  const analytics = read('public/analytics.js');
+  const page = read('public/progress.html');
+  assert.ok(analytics.includes("window.addEventListener('quietenglish:languagechange'"));
+  assert.ok(analytics.includes("grammar:'Грамматика'"));
+  assert.ok(analytics.includes("grammar:'Grammar'"));
+  assert.ok(page.includes('data-en="All time"'));
+  assert.ok(page.includes('data-en="Learning activity."'));
 });

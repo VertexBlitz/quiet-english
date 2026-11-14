@@ -82,7 +82,7 @@ test('onboarding and plan screens expose a separate target-language selector', (
   assert.ok(client.includes('/languages/activate'));
   assert.ok(client.includes("language_code: form.get('language_code') || 'en'"));
   assert.ok(styles.includes('.study-language-control'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v11'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v12'"));
   assert.ok(serviceWorker.includes('"/onboarding.html"'));
 });
 
