@@ -1,5 +1,6 @@
 const authForm = document.querySelector('[data-auth-form]');
 const authStatus = document.querySelector('[data-auth-status]');
+const registrationBlockers = document.querySelector('[data-registration-blockers]');
 
 async function authRequest(path, body) {
   const response = await fetch('/api/auth' + path, {
@@ -9,68 +10,267 @@ async function authRequest(path, body) {
     body: JSON.stringify(body)
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Не удалось выполнить запрос.');
+  if (!response.ok) {
+    const error = new Error(data.error || 'Не удалось выполнить запрос.');
+    error.status = response.status;
+    error.code = typeof data.code === 'string' ? data.code : null;
+    throw error;
+  }
   return data;
 }
 
 function showAuthMessage(message, isError = false) {
-  if (!authStatus) return;
-  authStatus.textContent = message;
-  authStatus.classList.toggle('error-text', isError);
-  authStatus.classList.toggle('success-text', !isError);
+  if (authStatus) {
+    authStatus.textContent = message;
+    authStatus.classList.toggle('error-text', isError);
+    authStatus.classList.toggle('success-text', !isError);
+  }
+
+  if (registrationBlockers) {
+    registrationBlockers.replaceChildren();
+    registrationBlockers.hidden = true;
+  }
 }
 
-const ageSelect = document.querySelector('#age-band');
-const guardianFields = document.querySelector('#guardian-fields');
-function updateGuardianFields() {
-  if (!ageSelect || !guardianFields) return;
-  guardianFields.hidden = ageSelect.value === '18_plus';
+function showRegistrationUnavailable(data) {
+  const blockers = Array.isArray(data?.blockers)
+    ? data.blockers.filter(item => typeof item === 'string' && item.trim())
+    : [];
+
+  if (!blockers.length || !registrationBlockers) {
+    showAuthMessage(
+      data?.message || 'Регистрация пока недоступна. Попробуй обновить страницу позже.',
+      true
+    );
+    return;
+  }
+
+  showAuthMessage('Регистрация пока недоступна. Причины:', true);
+
+  blockers.forEach(message => {
+    const item = document.createElement('li');
+    item.textContent = message;
+    registrationBlockers.append(item);
+  });
+
+  registrationBlockers.hidden = false;
 }
-ageSelect?.addEventListener('change', updateGuardianFields);
-updateGuardianFields();
 
 if (authForm?.dataset.authForm === 'register') {
-  authForm.addEventListener('submit', async event => {
-    event.preventDefault();
-    const form = new FormData(authForm);
-    const button = authForm.querySelector('button[type="submit"]');
-    button.disabled = true;
+  const registerButton = authForm.querySelector('button[type="submit"]');
+  const resendButton = authForm.querySelector('[data-resend-verification]');
+  const captchaContainer = authForm.querySelector('[data-turnstile-captcha]');
+  const ageBandField = authForm.querySelector('[name="age_band"]');
+  const countryField = authForm.querySelector('[name="country_code"]');
+  const adultFields = authForm.querySelector('[data-adult-fields]');
+  let pendingVerificationEmail = '';
+  let registrationAvailable = false;
+  let captchaToken = '';
+  let captchaWidgetId = null;
+
+  function setGroupState(container, visible) {
+    if (!container) return;
+    container.hidden = !visible;
+    container.querySelectorAll('[data-required="true"]').forEach(field => {
+      field.required = visible;
+    });
+  }
+
+  function updateRegisterButton() {
+    if (registerButton) {
+      registerButton.disabled = !registrationAvailable ||
+        !captchaToken ||
+        ageBandField?.value !== '18_plus' ||
+        !['DE', 'IT'].includes(countryField?.value) ||
+        !authForm.checkValidity();
+    }
+  }
+
+  function resetCaptcha() {
+    captchaToken = '';
+    if (window.turnstile && captchaWidgetId !== null) {
+      window.turnstile.reset(captchaWidgetId);
+    }
+    updateRegisterButton();
+  }
+
+  function loadTurnstileScript() {
+    if (window.turnstile) return Promise.resolve();
+
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-turnstile-api]');
+      if (existing) {
+        existing.addEventListener('load', resolve, { once: true });
+        existing.addEventListener('error', reject, { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      script.dataset.turnstileApi = 'true';
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Не удалось загрузить проверку безопасности.'));
+      document.head.append(script);
+    });
+  }
+
+  resendButton?.addEventListener('click', async () => {
+    if (!pendingVerificationEmail) return;
+    resendButton.disabled = true;
     try {
-      const data = await authRequest('/register', {
-        email: form.get('email'),
-        password: form.get('password'),
-        age_band: form.get('age_band'),
-        country_code: String(form.get('country_code') || '').trim().toUpperCase(),
-        guardian_email: form.get('guardian_email'),
-        preferred_language: form.get('preferred_language') || 'ru',
-        terms_accepted: form.get('terms_accepted') === 'on',
-        privacy_accepted: form.get('privacy_accepted') === 'on'
-      });
-      showAuthMessage(data.message || 'Проверь почту для продолжения.');
-      authForm.reset();
-      updateGuardianFields();
+      const data = await authRequest('/resend-verification', { email: pendingVerificationEmail });
+      showAuthMessage(data.message || 'Проверь почту.');
     } catch (error) {
       showAuthMessage(error.message, true);
     } finally {
-      button.disabled = false;
+      resendButton.disabled = false;
+    }
+  });
+
+  if (registerButton) registerButton.disabled = true;
+  setGroupState(adultFields, true);
+
+  authForm.addEventListener('input', updateRegisterButton);
+  authForm.addEventListener('change', updateRegisterButton);
+
+  fetch('/api/registration-status', { cache: 'no-store' })
+    .then(async response => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Не удалось проверить регистрацию.');
+      return data;
+    })
+    .then(async data => {
+      if (data.available !== true) {
+        showRegistrationUnavailable(data);
+        return;
+      }
+      if (typeof data.captchaSiteKey !== 'string' || !data.captchaSiteKey.trim()) {
+        showAuthMessage('Проверка безопасности не настроена. Регистрация пока недоступна.', true);
+        return;
+      }
+
+      await loadTurnstileScript();
+      if (!window.turnstile || !captchaContainer) {
+        throw new Error('Не удалось инициализировать проверку безопасности.');
+      }
+
+      const widgetId = window.turnstile.render(captchaContainer, {
+        sitekey: data.captchaSiteKey,
+        action: 'qe_registration',
+        theme: 'light',
+        callback(token) {
+          captchaToken = token;
+          updateRegisterButton();
+          showAuthMessage('Проверка безопасности пройдена.');
+        },
+        'expired-callback'() {
+          captchaToken = '';
+          updateRegisterButton();
+          showAuthMessage('Проверка безопасности истекла. Пройди её ещё раз.', true);
+        },
+        'error-callback'() {
+          captchaToken = '';
+          updateRegisterButton();
+          showAuthMessage('Не удалось пройти проверку безопасности. Попробуй ещё раз.', true);
+        }
+      });
+
+      if (widgetId === null || widgetId === undefined) {
+        throw new Error('Не удалось инициализировать проверку безопасности.');
+      }
+
+      captchaWidgetId = widgetId;
+      registrationAvailable = true;
+      updateRegisterButton();
+    })
+    .catch(error => showAuthMessage(error.message, true));
+
+  authForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (ageBandField?.value !== '18_plus') {
+      showAuthMessage('На этапе пилотного запуска регистрация доступна только с 18 лет.', true);
+      return;
+    }
+    if (!authForm.checkValidity()) {
+      authForm.reportValidity();
+      return;
+    }
+    if (!captchaToken) {
+      showAuthMessage('Сначала пройди проверку безопасности.', true);
+      return;
+    }
+
+    const form = new FormData(authForm);
+    if (registerButton) registerButton.disabled = true;
+
+    try {
+      const email = String(form.get('email') || '').trim().toLowerCase();
+      const data = await authRequest('/register', {
+        email,
+        password: form.get('password'),
+        age_band: '18_plus',
+        country_code: countryField?.value || '',
+        preferred_language: document.documentElement.lang === 'en' ? 'en' : 'ru',
+        adult_confirmed: form.get('adult_confirmed') === 'on',
+        terms_accepted: form.get('terms_accepted') === 'on',
+        privacy_accepted: form.get('privacy_accepted') === 'on',
+        personal_data_accepted: form.get('personal_data_accepted') === 'on',
+        turnstile_token: captchaToken
+      });
+      pendingVerificationEmail = email;
+      // The provider may accept a message without it reaching the inbox.
+      // Keep resend available until the user confirms the address.
+      if (resendButton) resendButton.hidden = false;
+      showAuthMessage(data.message || 'Проверь почту для продолжения.');
+      authForm.reset();
+    } catch (error) {
+      showAuthMessage(error.message, true);
+    } finally {
+      resetCaptcha();
     }
   });
 }
-
 if (authForm?.dataset.authForm === 'login') {
+  const loginButton = authForm.querySelector('button[type="submit"]');
+  const resendLoginButton = authForm.querySelector('[data-resend-login-verification]');
+  const emailField = authForm.querySelector('[name="email"]');
+
+  resendLoginButton?.addEventListener('click', async () => {
+    const email = String(emailField?.value || '').trim().toLowerCase();
+    if (!emailField?.checkValidity() || !email) {
+      emailField?.reportValidity();
+      return;
+    }
+
+    resendLoginButton.disabled = true;
+    try {
+      const data = await authRequest('/resend-verification', { email });
+      showAuthMessage(data.message || 'Если аккаунт существует и email не подтверждён, письмо отправлено.');
+    } catch (error) {
+      showAuthMessage(error.message, true);
+    } finally {
+      resendLoginButton.disabled = false;
+    }
+  });
+
   authForm.addEventListener('submit', async event => {
     event.preventDefault();
     const form = new FormData(authForm);
-    const button = authForm.querySelector('button[type="submit"]');
-    button.disabled = true;
+    loginButton.disabled = true;
+    if (resendLoginButton) resendLoginButton.hidden = true;
     try {
       await authRequest('/login', { email: form.get('email'), password: form.get('password') });
       const me = await fetch('/api/auth/me', { credentials: 'same-origin' }).then(r => r.ok ? r.json() : null);
       location.href = me?.user?.onboarding_completed_at ? '/plan.html' : '/onboarding.html';
     } catch (error) {
       showAuthMessage(error.message, true);
+      if (resendLoginButton && error.code === 'EMAIL_NOT_VERIFIED') {
+        resendLoginButton.hidden = false;
+      }
     } finally {
-      button.disabled = false;
+      loginButton.disabled = false;
     }
   });
 }
@@ -112,22 +312,4 @@ if (verifyPage) {
   else authRequest('/verify-email', { token })
     .then(data => showAuthMessage(data.message))
     .catch(error => showAuthMessage(error.message, true));
-}
-
-const guardianPage = document.querySelector('[data-guardian-consent]');
-if (guardianPage) {
-  const form = guardianPage.querySelector('form');
-  form?.addEventListener('submit', async event => {
-    event.preventDefault();
-    const checked = form.querySelector('[name="is_parent_or_guardian"]')?.checked;
-    try {
-      const data = await authRequest('/guardian-consent', {
-        token: new URLSearchParams(location.search).get('token'),
-        is_parent_or_guardian: checked === true
-      });
-      showAuthMessage(data.message);
-    } catch (error) {
-      showAuthMessage(error.message, true);
-    }
-  });
 }

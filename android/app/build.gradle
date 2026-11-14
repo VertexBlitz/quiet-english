@@ -1,0 +1,54 @@
+plugins {
+    id "com.android.application"
+}
+
+def releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+def appVersionCodeValue = providers.gradleProperty("appVersionCode").getOrElse("1").toInteger()
+def appVersionNameValue = providers.gradleProperty("appVersionName").getOrElse("1.0.0-preview")
+
+android {
+    namespace "com.vertexblitz.quietenglish.preview"
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "com.vertexblitz.quietenglish.preview"
+        minSdk 23
+        targetSdk 36
+        // Play requires a strictly increasing versionCode for each release.
+        versionCode appVersionCodeValue
+        versionName appVersionNameValue
+    }
+
+    signingConfigs {
+        release {
+            if (releaseKeystorePath != null && !releaseKeystorePath.isBlank()) {
+                storeFile file(releaseKeystorePath)
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+        }
+        release {
+            minifyEnabled false
+            if (releaseKeystorePath != null && !releaseKeystorePath.isBlank()) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.7.3"
+}

@@ -1,10 +1,24 @@
 <!doctype html>
-<html lang="ru"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Create account — Quiet English</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css"><script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/auth.js"></script>
-</head><body><header class="topbar wrap">
+<html lang="ru">
+<head>
+  <link rel="stylesheet" href="/styles.css?v=20261108-style-restore-1">
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account — Quiet English</title>
+  
+  <script defer src="/i18n.js"></script>
+  <script defer src="/session.js?v=20261108-public-signup-3"></script>
+  <script defer src="/auth.js?v=20261108-registration-status-2"></script>
+  <link rel="manifest" href="/manifest.webmanifest?v=20261109-app-1">
+<meta name="theme-color" content="#FAFAFA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Quiet English">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+</head>
+<body>
+<header class="topbar wrap">
   <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
   <nav aria-label="Main navigation">
     <a href="/plan.html" data-i18n="nav_plan" data-ru="План" data-en="Plan">План</a>
@@ -19,30 +33,70 @@
     <a class="account-link" href="/login.html" data-i18n="nav_account" data-ru="Аккаунт" data-en="Account">Аккаунт</a>
   </div>
 </header>
-<main class="wrap auth-layout"><section class="panel auth-card">
-<p class="eyebrow">YOUR LEARNING SPACE</p><h1 data-ru="Создай аккаунт." data-en="Create your account.">Создай аккаунт.</h1>
-<p class="lead" data-ru="Сохраняй план, задания и прогресс на всех своих устройствах." data-en="Save your plan, exercises and progress across devices.">Сохраняй план, задания и прогресс на всех своих устройствах.</p>
-<form data-auth-form="register" data-auth-status-id="auth-status">
-<label>Email<input type="email" name="email" autocomplete="email" required maxlength="254"></label>
-<label data-ru="Пароль (не менее 12 символов)" data-en="Password (at least 12 characters)">Пароль (не менее 12 символов)<input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="200" required></label>
-<label data-ru="Возрастная категория" data-en="Age range">Возрастная категория
-<select id="age-band" name="age_band" required>
-<option value="13_15" data-ru="13–15 лет" data-en="13–15">13–15 лет</option>
-<option value="16_17" data-ru="16–17 лет" data-en="16–17">16–17 лет</option>
-<option value="18_plus" data-ru="18 лет и старше" data-en="18 or older">18 лет и старше</option>
-</select></label>
-<div class="form-grid">
-<label data-ru="Код страны (например, FI)" data-en="Country code (for example, FI)">Код страны (например, FI)<input name="country_code" autocomplete="country" placeholder="FI" maxlength="2" required></label>
-<label data-ru="Язык интерфейса" data-en="Interface language">Язык интерфейса<select name="preferred_language"><option value="ru">Русский</option><option value="en">English</option></select></label>
-</div>
-<div id="guardian-fields" class="notice-card">
-<label data-ru="Email родителя или опекуна" data-en="Parent or guardian email">Email родителя или опекуна<input type="email" name="guardian_email" autocomplete="off" maxlength="254"></label>
-<p class="fine-print" data-ru="Для пользователей младше 18 лет Quiet English запрашивает подтверждение родителя или законного опекуна. На этот адрес придёт отдельное письмо." data-en="For users under 18, Quiet English requests confirmation from a parent or legal guardian. A separate email will be sent to this address.">Для пользователей младше 18 лет Quiet English запрашивает подтверждение родителя или законного опекуна. На этот адрес придёт отдельное письмо.</p>
-</div>
-<label class="check-row"><input type="checkbox" name="terms_accepted" required><span data-ru="Я принимаю Условия использования." data-en="I accept the Terms of Service.">Я принимаю <a href="/terms.html">Условия использования</a>.</span></label>
-<label class="check-row"><input type="checkbox" name="privacy_accepted" required><span data-ru="Я ознакомился(ась) с Политикой конфиденциальности." data-en="I have read the Privacy Notice.">Я ознакомился(ась) с <a href="/privacy.html">Политикой конфиденциальности</a>.</span></label>
-<p class="form-status" data-auth-status id="auth-status" aria-live="polite"></p>
-<button class="button" type="submit" data-ru="Создать аккаунт" data-en="Create account">Создать аккаунт <span>↗</span></button>
-</form>
-<p class="auth-foot" data-ru="Уже есть аккаунт? " data-en="Already have an account? ">Уже есть аккаунт? <a href="/login.html">Войти</a></p>
-</section></main><footer class="footer wrap"><span>QUIET ENGLISH</span><span>Personal learning, at your pace</span></footer></body></html>
+
+<main class="wrap auth-layout">
+  <section class="panel auth-card">
+    <p class="eyebrow">YOUR LEARNING SPACE</p>
+    <h1 data-ru="Создай аккаунт." data-en="Create your account.">Создай аккаунт.</h1>
+    <p class="lead" data-ru="Сохраняй план, задания и прогресс на всех своих устройствах." data-en="Save your plan, exercises and progress across devices.">Сохраняй план, задания и прогресс на всех своих устройствах.</p>
+
+    <form data-auth-form="register" data-auth-status-id="auth-status" novalidate>
+      <input type="hidden" name="age_band" value="18_plus">
+
+      <p class="fine-print" data-ru="На этапе международного пилотного запуска аккаунт могут создать только совершеннолетние пользователи — от 18 лет. Поддержка несовершеннолетних появится позднее, после отдельной проверки требований каждой страны." data-en="During the international pilot, accounts are available only to adults aged 18 or older. Support for younger learners may be introduced later after a separate review of each country's requirements.">
+        На этапе международного пилотного запуска аккаунт могут создать только совершеннолетние пользователи — от 18 лет. Поддержка несовершеннолетних появится позднее, после отдельной проверки требований каждой страны.
+      </p>
+
+      <div data-adult-fields>
+        <label data-ru="Страна проживания" data-en="Country of residence">
+          Страна проживания
+          <select name="country_code" required>
+            <option value="" data-ru="Выбери страну" data-en="Choose your country">Выбери страну</option>
+            <option value="DE" data-ru="Германия" data-en="Germany">Германия</option>
+            <option value="IT" data-ru="Италия" data-en="Italy">Италия</option>
+          </select>
+        </label>
+        <p class="fine-print" data-ru="Указывай страну своего текущего проживания. Это заявление для пилотного доступа; сервис не проверяет гражданство или фактическое местонахождение." data-en="Select your current country of residence. This is a pilot eligibility declaration; the service does not verify citizenship or physical location.">
+          Указывай страну своего текущего проживания. Это заявление для пилотного доступа; сервис не проверяет гражданство или фактическое местонахождение.
+        </p>
+        <label>Email
+          <input type="email" name="email" autocomplete="email" maxlength="254" data-required="true">
+        </label>
+        <label data-ru="Пароль (не менее 12 символов)" data-en="Password (at least 12 characters)">
+          Пароль (не менее 12 символов)
+          <input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="200" data-required="true">
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="adult_confirmed" data-required="true">
+          <span data-ru="Подтверждаю, что мне исполнилось 18 лет." data-en="I confirm that I am at least 18 years old.">Подтверждаю, что мне исполнилось 18 лет.</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="terms_accepted" data-required="true">
+          <span data-ru="Принимаю" data-en="I accept">Принимаю <a href="/terms.html">Условия использования</a>.</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="privacy_accepted" data-required="true">
+          <span data-ru="Ознакомился(ась) с" data-en="I have read the">Ознакомился(ась) с <a href="/privacy.html">Политикой конфиденциальности</a>.</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="personal_data_accepted" data-required="true">
+          <span data-ru="Отдельно соглашаюсь на обработку персональных данных по" data-en="I separately consent to personal data processing under the">Отдельно соглашаюсь на обработку персональных данных по <a href="/data-consent.html">отдельному согласию</a>.</span>
+        </label>
+      </div>
+
+      <div class="turnstile-widget" data-turnstile-captcha aria-label="Проверка безопасности"></div>
+      <p class="form-status" data-auth-status id="auth-status" aria-live="polite"></p>
+      <ul class="form-status" data-registration-blockers hidden style="margin:0;padding-left:20px;"></ul>
+      <button class="button" type="submit" disabled>
+        <span data-submit-label data-ru="Создать аккаунт" data-en="Create account">Создать аккаунт</span>
+        <span>↗</span>
+      </button>
+      <button class="button secondary" type="button" data-resend-verification hidden>Отправить письмо повторно</button>
+    </form>
+
+    <p class="auth-foot" data-ru="Уже есть аккаунт? " data-en="Already have an account? ">Уже есть аккаунт? <a href="/login.html">Войти</a></p>
+  </section>
+</main>
+<footer class="footer wrap"><span>QUIET ENGLISH</span><span>Personal learning, at your pace</span></footer>
+</body>
+</html>

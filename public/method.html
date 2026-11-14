@@ -1,38 +1,61 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-title-ru="Как устроено обучение — Quiet English" data-title-en="How learning works — Quiet English">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Quiet English — personal AI English practice, at your pace.">
-  <title>How it works — Quiet English</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
-  <script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/app.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Как устроено обучение в Quiet English: короткие занятия, обратная связь и отслеживание прогресса.">
+  <link rel="stylesheet" href="/styles.css?v=20261109-mobile-fix-2">
+  <meta name="theme-color" content="#FAFAFA">
+  <title>Как устроено обучение — Quiet English</title>
+  <script defer src="/i18n.js"></script>
+  <script defer src="/session.js"></script>
+  <script defer src="/app.js"></script>
 </head>
 <body>
   <header class="topbar wrap">
-  <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
-  <nav aria-label="Main navigation">
-    <a href="/plan.html" data-ru="План" data-en="Plan">План</a>
-    <a href="/practice.html" data-ru="Практика" data-en="Practice">Практика</a>
-    <a href="/review.html" data-ru="Повторение" data-en="Review">Повторение</a>
-    <a href="/progress.html" data-ru="Прогресс" data-en="Progress">Прогресс</a>
-    <a href="/tutor.html" data-ru="Чат" data-en="Tutor">Чат</a>
-  </nav>
-  <div class="language-switch" aria-label="Language">
-    <button type="button" data-set-lang="ru">RU</button>
-    <button type="button" data-set-lang="en">EN</button>
-    <a class="account-link" href="/login.html" data-ru="Войти" data-en="Sign in">Войти</a>
-  </div>
-</header>
-  <main class="wrap"><section class="panel page-head reveal"><p class="eyebrow">02 — THE METHOD</p><h1>Small steps.<br><em>Real progress.</em></h1><p class="lead">Три простых элемента, которые превращают практику в привычку.</p></section>
-<section class="panel reveal"><div class="three">
-  <article><span class="number">01</span><h2>Диалог</h2><p class="copy">Общайся на интересные темы и тренируй английский в живом контексте.</p></article>
-  <article><span class="number">02</span><h2>Обратная связь</h2><p class="copy">Получай понятные исправления, примеры и объяснения без перегрузки.</p></article>
-  <article><span class="number">03</span><h2>Прогресс</h2><p class="copy">Возвращайся к темам, повторяй лексику и замечай, что уже получается.</p></article>
-</div></section>
-<section class="panel reveal"><p class="eyebrow">A GOOD PLACE TO BEGIN</p><h2>One conversation<br>at a time.</h2><a class="button" href="/register.html">Создать план обучения <span>↗</span></a></section></main>
-  <footer class="footer wrap"><span>QUIET ENGLISH</span><span>Learn at your own pace · © 2026</span></footer>
+    <a class="wordmark" href="/" aria-label="Quiet English home">QUIET ENGLISH<span data-ru=" / ЛИЧНОЕ ОБУЧЕНИЕ" data-en=" / PERSONAL LEARNING"> / PERSONAL LEARNING</span></a>
+    <nav aria-label="Основная навигация"></nav>
+    <div class="language-switch" aria-label="Language"></div>
+  </header>
+
+  <main class="wrap" id="main-content">
+    <section class="panel page-head reveal">
+      <p class="eyebrow" data-ru="02 — МЕТОД" data-en="02 — THE METHOD">02 — МЕТОД</p>
+      <h1><span data-ru="Небольшие шаги." data-en="Small steps.">Небольшие шаги.</span><br><em data-ru="Заметный прогресс." data-en="Real progress.">Заметный прогресс.</em></h1>
+      <p class="lead" data-ru="Три простых элемента, которые превращают практику в устойчивую привычку." data-en="Three simple elements that turn practice into a steady learning habit.">Три простых элемента, которые превращают практику в устойчивую привычку.</p>
+    </section>
+
+    <section class="panel reveal">
+      <div class="three">
+        <article>
+          <span class="number">01</span>
+          <h2 data-ru="Практика" data-en="Practice">Практика</h2>
+          <p class="copy" data-ru="Тренируй английский на коротких заданиях и интересных темах в удобном темпе." data-en="Build your English with short exercises and relevant topics at a comfortable pace.">Тренируй английский на коротких заданиях и интересных темах в удобном темпе.</p>
+        </article>
+        <article>
+          <span class="number">02</span>
+          <h2 data-ru="Обратная связь" data-en="Feedback">Обратная связь</h2>
+          <p class="copy" data-ru="Получай понятные исправления, примеры и объяснения, чтобы видеть, как улучшить результат." data-en="Get clear corrections, examples and explanations that show how to improve.">Получай понятные исправления, примеры и объяснения, чтобы видеть, как улучшить результат.</p>
+        </article>
+        <article>
+          <span class="number">03</span>
+          <h2 data-ru="Прогресс" data-en="Progress">Прогресс</h2>
+          <p class="copy" data-ru="Возвращайся к сложным темам, повторяй лексику и отслеживай свои результаты." data-en="Revisit challenging topics, review vocabulary and track your progress.">Возвращайся к сложным темам, повторяй лексику и отслеживай свои результаты.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel reveal">
+      <p class="eyebrow" data-ru="С ЧЕГО НАЧАТЬ" data-en="A GOOD PLACE TO BEGIN">С ЧЕГО НАЧАТЬ</p>
+      <h2><span data-ru="Одно занятие" data-en="One session">Одно занятие</span><br><em data-ru="за раз." data-en="at a time.">за раз.</em></h2>
+      <p class="copy" data-ru="Начни с личного плана или выбери короткое упражнение. Не нужно проходить всё сразу." data-en="Start with your learning plan or choose a short exercise. There is no need to do everything at once.">Начни с личного плана или выбери короткое упражнение. Не нужно проходить всё сразу.</p>
+      <a class="button" href="/plan.html"><span data-ru="Открыть учебный план" data-en="Open learning plan">Открыть учебный план</span><span aria-hidden="true">↗</span></a>
+    </section>
+  </main>
+
+  <footer class="footer wrap">
+    <span>QUIET ENGLISH</span>
+    <span data-ru="Учись в своём темпе · © 2026" data-en="Learn at your own pace · © 2026">Учись в своём темпе · © 2026</span>
+  </footer>
 </body>
 </html>

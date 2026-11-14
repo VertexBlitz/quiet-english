@@ -1,0 +1,79 @@
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-quiet_english_ru}
+      POSTGRES_USER: ${POSTGRES_USER:-quiet_english}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.ru}
+    volumes:
+      - quiet_english_ru_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - private
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.ru
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      APP_REGION: ru
+      DB_SCHEMA: quiet_english_ru
+      REGISTRATION_REQUIRED_DB_SCHEMA: quiet_english_ru
+      DATABASE_URL: postgresql://${POSTGRES_USER:-quiet_english}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-quiet_english_ru}
+      REGISTRATION_ENABLED: "false"
+      REGISTRATION_LEGAL_APPROVED: "false"
+      REGISTRATION_DATABASE_ISOLATED: "false"
+      REGISTRATION_DATA_LOCALIZATION_APPROVED: "false"
+      REGISTRATION_OPERATOR_DETAILS_APPROVED: "false"
+      REGISTRATION_REGION_SERVICES_APPROVED: "false"
+      REGION_EXTERNAL_PROCESSORS_APPROVED: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/readyz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    networks:
+      - private
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env.ru}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env.ru}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - private
+
+volumes:
+  quiet_english_ru_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  private:
+    driver: bridge

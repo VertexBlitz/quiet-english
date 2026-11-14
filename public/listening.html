@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru" data-title-ru="Аудирование — Quiet English" data-title-en="Listening — Quiet English">
+<head>
+  <link rel="stylesheet" href="/styles.css?v=20261111-multilingual-cefr-1">
+
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Аудирование — Quiet English</title>
+  
+  <script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/offline-client.js"></script><script defer src="/listening.js"></script><script defer src="/listening-trainer.js"></script>
+</head>
+<body>
+<header class="topbar wrap">
+  <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
+  <nav aria-label="Main navigation">
+    <a href="/plan.html" data-ru="План" data-en="Plan">План</a>
+    <a href="/practice.html" data-ru="Практика" data-en="Practice">Практика</a><a href="/knowledge.html" data-ru="База знаний" data-en="Knowledge">База знаний</a>
+    <a href="/listening.html" data-ru="Аудирование" data-en="Listening">Аудирование</a><a href="/writing.html">Writing Lab</a><a href="/dictionary.html">Словарь</a><a href="/calendar.html">Календарь</a><a href="/studio.html">AI Coach</a>
+    <a href="/pronunciation.html" data-ru="Произношение" data-en="Speaking">Произношение</a>
+    <a href="/progress.html" data-ru="Прогресс" data-en="Progress">Прогресс</a>
+  </nav>
+  <div class="language-switch" aria-label="Language">
+    <button type="button" data-set-lang="ru">RU</button><button type="button" data-set-lang="en">EN</button>
+    <a class="account-link" href="/login.html" data-ru="Аккаунт" data-en="Account">Аккаунт</a>
+  </div>
+</header>
+<main class="wrap" data-listening-page>
+  <section class="panel page-head">
+    <p class="eyebrow">LISTENING LIBRARY</p>
+    <h1 data-listening-title>Слушай английскую речь.</h1>
+    <p class="lead" data-listening-description>Тренируй понимание устной речи на изучаемом языке. Используй упражнения своего уровня и подобранные аудиоматериалы.</p>
+  </section>
+  <section class="panel">
+    <div class="section-heading"><div><p class="eyebrow">FIND YOUR NEXT LISTEN</p><h2 data-ru="Подбери материал." data-en="Find a resource.">Подбери материал.</h2></div><span class="pill" data-library-count>14 материалов</span></div>
+    <div class="library-filters">
+      <label><span data-ru="Уровень" data-en="Level">Уровень</span><select data-level-filter><option value="all">Все уровни / All levels</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
+      <label><span data-ru="Тема" data-en="Topic">Тема</span><select data-topic-filter><option value="all">Все темы / All topics</option><option value="daily">Повседневное / Daily life</option><option value="travel">Путешествия / Travel</option><option value="study">Учёба / Study</option><option value="culture">Культура / Culture</option><option value="podcast">Подкасты / Podcasts</option></select></label>
+    </div>
+    <div class="listening-grid" data-listening-grid></div>
+    <p class="fine-print" data-ru="Внешние материалы принадлежат их издателям и открываются на исходных сайтах. Встроенные упражнения и сохранение результатов Quiet English работают с выбранным учебным языком." data-en="External resources belong to their publishers and open on the original sites. Built-in exercises and saved results in Quiet English use your selected study language.">Внешние материалы принадлежат их издателям и открываются на исходных сайтах. Встроенные упражнения и сохранение результатов Quiet English работают с выбранным учебным языком.</p>
+  </section>
+  <section class="panel listening-trainer" data-listening-trainer>
+<div class="section-heading"><div><p class="eyebrow">INTERACTIVE LISTENING LAB</p><h2>Тренажёр по своей записи.</h2></div><span class="pill">AUDIO · TRANSCRIPT · QUIZ</span></div>
+<p class="copy">Используй собственный аудиофайл или прямую ссылку на запись, к которой у тебя есть доступ. Расшифровку можно вставить вручную. Аудио не загружается на сервер Quiet English; ИИ получает только текст расшифровки для подготовки вопросов и перевода.</p>
+<div class="listening-trainer-controls">
+<label>Аудиофайл с устройства<input type="file" accept="audio/*" data-listening-file></label><button type="button" class="button secondary" data-listening-transcribe disabled>Распознать аудио локально</button>
+<label>Или прямая HTTPS-ссылка на аудио<input type="url" placeholder="https://example.com/audio.mp3" data-listening-url></label>
+<label>Уровень<select data-listening-level><option>A1</option><option>A2</option><option selected>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
+<label>Голос для озвучивания текста<select data-listening-accent aria-label="Голос для озвучивания текста"></select></label><label>Повторить фрагмент · от (сек.)<input type="number" min="0" max="300" step="1" value="0" data-listening-from></label><label>До (сек.)<input type="number" min="1" max="300" step="1" value="20" data-listening-to></label><button type="button" class="button secondary" data-listening-repeat>Повторить выбранный фрагмент</button><label>Скорость<select data-listening-speed><option value="0.75">0.75×</option><option value="0.9">0.9×</option><option value="1" selected>1×</option><option value="1.1">1.1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option></select></label>
+</div>
+<audio class="listening-audio-player" controls preload="metadata" data-listening-player hidden></audio>
+<p class="fine-print" data-listening-player-status></p>
+<label class="listening-transcript-label">Расшифровка аудио<textarea rows="8" maxlength="12000" data-listening-transcript placeholder="Paste your own transcript here..."></textarea></label>
+<div class="writing-submit-row"><span class="fine-print">Минимум 80 символов. Не вставляй чужие материалы, если у тебя нет права их использовать.</span><button class="button" type="button" data-listening-prepare>Подготовить вопросы ↗</button></div>
+<p class="form-status" data-listening-trainer-status role="status" aria-live="polite"></p>
+<div data-listening-sentences class="listening-sentence-list" hidden></div>
+<form data-listening-quiz class="listening-quiz" hidden><div data-listening-questions></div><button class="button" type="submit">Проверить ответы</button></form>
+<div data-listening-result class="listening-result" hidden aria-live="polite"></div>
+<div class="writing-submit-row"><button type="button" class="button secondary" data-listening-save-offline>Сохранить расшифровку офлайн</button><span class="fine-print" data-listening-offline-status></span></div>
+</section>
+<section class="panel split">
+    <div><p class="eyebrow">NEXT · SPEAKING</p><h2 data-ru="Теперь попробуй сказать сам." data-en="Now try saying it yourself.">Теперь попробуй сказать сам.</h2></div>
+    <div><p class="copy" data-ru="После прослушивания прочитай короткий текст вслух и сравни распознанные Whisper слова с оригиналом." data-en="After listening, read a short passage aloud and compare Whisper's transcript with the original text.">После прослушивания прочитай короткий текст вслух и сравни распознанные Whisper слова с оригиналом.</p><a class="button" href="/pronunciation.html" data-ru="Открыть Speaking Lab ↗" data-en="Open Speaking Lab ↗">Открыть Speaking Lab ↗</a></div>
+  </section>
+</main>
+</body></html>

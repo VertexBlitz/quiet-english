@@ -1,10 +1,14 @@
 import pg from 'pg';
+import { getDatabaseSchema, getPostgresSchemaOptions } from './db-schema.js';
 
 const { Pool } = pg;
+const dbSchema = getDatabaseSchema();
+
 export const pool = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.PGSSLMODE === 'disable' ? false : process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: true } : undefined,
+      options: getPostgresSchemaOptions(dbSchema),
       max: 8,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000
@@ -41,18 +45,61 @@ export async function requireUser(req, res, next) {
   }
 }
 
-export async function recordActivity(userId, { minutes = 0, completedTasks = 0 } = {}) {
+
+export async function loadActiveStudyLanguage(req, res, next) {
+  try {
+    const { rows } = await pool.query(
+      `SELECT l.language_code, l.english_name, l.native_name, l.locale,
+              l.course_status, l.speech_supported, p.preferred_language
+       FROM learner_profiles p
+       JOIN study_languages l ON l.language_code=p.active_learning_language_code
+       WHERE p.user_id=$1`,
+      [req.user.id]
+    );
+    if (!rows[0]) return res.status(409).json({ error: 'Сначала выбери изучаемый язык.' });
+    req.studyLanguage = rows[0];
+    req.studyLanguageCode = rows[0].language_code.trim();
+    req.interfaceLanguage = rows[0].preferred_language === 'en' ? 'en' : 'ru';
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+export function requireEnglishStudyLanguage(req, res, next) {
+  if (req.studyLanguageCode !== 'en') {
+    return res.status(409).json({
+      error: 'Эта функция для выбранного языка ещё готовится.'
+    });
+  }
+  next();
+}
+
+export function requireSpeechSupport(req, res, next) {
+  if (!req.studyLanguage?.speech_supported) {
+    return res.status(409).json({
+      error: 'Голосовая практика для выбранного языка ещё не подключена.'
+    });
+  }
+  next();
+}
+
+export async function recordActivity(userId, {
+  minutes = 0, completedTasks = 0, languageCode = null
+} = {}) {
   if (!pool) return;
   await pool.query(
-    `INSERT INTO daily_activity (user_id, activity_date, minutes, completed_tasks)
-     SELECT $1,
-       (NOW() AT TIME ZONE COALESCE((SELECT timezone FROM learner_profiles WHERE user_id=$1), 'UTC'))::date,
+    `INSERT INTO daily_activity
+       (user_id, language_code, activity_date, minutes, completed_tasks)
+     SELECT $1, COALESCE($4, active_learning_language_code),
+       (NOW() AT TIME ZONE COALESCE(timezone, 'UTC'))::date,
        $2, $3
-     ON CONFLICT (user_id, activity_date)
+     FROM learner_profiles WHERE user_id=$1
+     ON CONFLICT (user_id, language_code, activity_date)
      DO UPDATE SET
        minutes = daily_activity.minutes + EXCLUDED.minutes,
        completed_tasks = daily_activity.completed_tasks + EXCLUDED.completed_tasks,
        updated_at = NOW()`,
-    [userId, minutes, completedTasks]
+    [userId, minutes, completedTasks, languageCode]
   );
 }

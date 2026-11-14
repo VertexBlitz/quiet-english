@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru" data-title-ru="Writing Lab — Quiet English" data-title-en="Writing Lab — Quiet English">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Writing Lab — Quiet English</title>
+  <link rel="stylesheet" href="/styles.css?v=20261109-phase1-1">
+  <script defer src="/i18n.js"></script>
+  <script defer src="/session.js"></script>
+  <script defer src="/offline-client.js"></script>
+  <script defer src="/writing.js?v=20261107-persist-2"></script>
+</head>
+<body>
+  <header class="topbar wrap">
+    <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
+    <nav aria-label="Main navigation"></nav>
+    <div class="language-switch">
+      <button type="button" data-set-lang="ru">RU</button>
+      <button type="button" data-set-lang="en">EN</button>
+      <a class="account-link" href="/login.html">Войти</a>
+    </div>
+  </header>
+
+  <main class="wrap writing-page" id="main-content" data-writing-page>
+    <section class="panel page-head">
+      <p class="eyebrow">WRITING LAB · AI FEEDBACK</p>
+      <h1><span data-ru="Пиши свободно." data-en="Write freely.">Пиши свободно.</span><br><em data-ru="Улучшай точечно." data-en="Improve with focus.">Улучшай точечно.</em></h1>
+      <p class="lead" data-ru="ИИ разберёт письменную работу, покажет конкретные ошибки и предложит более естественную версию, сохранив твою мысль." data-en="Get focused feedback on your writing, with clear corrections and a more natural version that keeps your original meaning.">ИИ разберёт письменную работу, покажет конкретные ошибки и предложит более естественную версию, сохранив твою мысль.</p>
+    </section>
+
+    <section class="panel writing-editor-panel">
+      <div class="writing-controls">
+        <label><span data-ru="Формат работы" data-en="Writing task">Формат работы</span>
+          <select data-writing-type>
+            <option value="essay" data-ru="Эссе" data-en="Essay">Эссе</option>
+            <option value="email" data-ru="Письмо" data-en="Email">Письмо</option>
+            <option value="story" data-ru="Рассказ" data-en="Story">Рассказ</option>
+            <option value="article" data-ru="Статья" data-en="Article">Статья</option>
+            <option value="exam" data-ru="Экзаменационный ответ" data-en="Exam response">Экзаменационный ответ</option>
+          </select>
+        </label>
+        <label><span data-ru="Уровень CEFR" data-en="CEFR level">Уровень CEFR</span>
+          <select data-writing-level>
+            <option>A1</option><option>A2</option><option selected>B1</option><option>B2</option><option>C1</option><option>C2</option>
+          </select>
+        </label>
+        <label><span data-ru="Тема (необязательно)" data-en="Topic (optional)">Тема (необязательно)</span>
+          <input type="text" maxlength="160" data-writing-topic data-placeholder-ru="Например, technology and education" data-placeholder-en="For example, technology and education" placeholder="Например, technology and education">
+        </label>
+      </div>
+      <label class="writing-text-label"><span data-ru="Твой текст" data-en="Your text">Твой текст</span>
+        <textarea data-writing-text maxlength="7000" rows="13" data-placeholder-ru="Напиши свой текст на английском…" data-placeholder-en="Write your text in English…" placeholder="Напиши свой текст на английском…"></textarea>
+      </label>
+      <div class="writing-submit-row">
+        <span class="fine-print"><span data-writing-count>0</span> / 7000 · <span data-ru="Не добавляй пароли, адреса и другие личные сведения." data-en="Do not include passwords, addresses or other personal information.">Не добавляй пароли, адреса и другие личные сведения.</span></span>
+        <button class="button" type="button" data-writing-submit data-ru="Проверить текст ↗" data-en="Review writing ↗">Проверить текст ↗</button>
+      </div>
+      <p class="form-status" data-writing-status role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" data-writing-result hidden>
+      <div class="section-heading">
+        <div><p class="eyebrow">YOUR FEEDBACK</p><h2 data-ru="Разбор работы." data-en="Your feedback.">Разбор работы.</h2></div>
+        <strong class="writing-overall" data-writing-overall>—</strong>
+      </div>
+      <p class="copy" data-writing-summary></p>
+      <div class="writing-score-grid" data-writing-scores></div>
+      <div class="writing-columns">
+        <article class="writing-version">
+          <div class="eyebrow">CORRECTED VERSION</div>
+          <h3 data-ru="Исправленный текст" data-en="Corrected version">Исправленный текст</h3>
+          <p data-writing-corrected></p>
+          <button class="text-link" type="button" data-copy-corrected data-ru="Скопировать ↗" data-en="Copy ↗">Скопировать ↗</button>
+        </article>
+        <article class="writing-version">
+          <div class="eyebrow">MORE NATURAL ENGLISH</div>
+          <h3 data-ru="Более естественная версия" data-en="A more natural version">Более естественная версия</h3>
+          <p data-writing-natural></p>
+          <button class="text-link" type="button" data-copy-natural data-ru="Скопировать ↗" data-en="Copy ↗">Скопировать ↗</button>
+        </article>
+      </div>
+      <div class="writing-section"><h3 data-ru="Ошибки и объяснения" data-en="Errors and explanations">Ошибки и объяснения</h3><div class="writing-issues" data-writing-issues></div></div>
+      <div class="writing-columns">
+        <div class="writing-section"><h3 data-ru="Что уже хорошо" data-en="What you did well">Что уже хорошо</h3><ul data-writing-strengths></ul></div>
+        <div class="writing-section"><h3 data-ru="Что улучшить дальше" data-en="What to improve next">Что улучшить дальше</h3><ul data-writing-next></ul></div>
+      </div>
+      <div class="writing-section"><h3 data-ru="Повторяющиеся закономерности" data-en="Recurring patterns">Повторяющиеся закономерности</h3><div data-writing-patterns></div></div>
+      <div class="writing-submit-row">
+        <button class="button secondary" type="button" data-writing-save-offline data-ru="Сохранить разбор офлайн" data-en="Save feedback offline">Сохранить разбор офлайн</button>
+        <span class="fine-print" data-writing-save-status></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">YOUR WRITING HISTORY</p><h2 data-ru="Последние работы." data-en="Recent writing.">Последние работы.</h2></div>
+        <span class="pill" data-writing-history-count>0</span>
+      </div>
+      <div class="writing-history" data-writing-history><p class="fine-print" data-ru="Загружаем историю…" data-en="Loading your history…">Загружаем историю…</p></div>
+    </section>
+  </main>
+</body>
+</html>

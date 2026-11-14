@@ -1,13 +1,12 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-title-ru="AI-репетитор — Quiet English" data-title-en="AI tutor — Quiet English">
 <head>
+  <link rel="stylesheet" href="/styles.css?v=20261108-style-restore-1">
+
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Quiet English — personal AI English practice, at your pace.">
-  <title>English Tutor — Quiet English</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+  <title>AI Tutor — Quiet English</title>
+  
   <script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/app.js"></script>
 </head>
 <body>
@@ -15,7 +14,7 @@
   <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
   <nav aria-label="Main navigation">
     <a href="/plan.html" data-ru="План" data-en="Plan">План</a>
-    <a href="/practice.html" data-ru="Практика" data-en="Practice">Практика</a>
+    <a href="/practice.html" data-ru="Практика" data-en="Practice">Практика</a><a href="/knowledge.html" data-ru="База знаний" data-en="Knowledge">База знаний</a>
     <a href="/review.html" data-ru="Повторение" data-en="Review">Повторение</a>
     <a href="/progress.html" data-ru="Прогресс" data-en="Progress">Прогресс</a>
     <a href="/tutor.html" data-ru="Чат" data-en="Tutor">Чат</a>
@@ -29,8 +28,8 @@
   <main class="wrap">
     <section class="panel page-head reveal">
       <p class="eyebrow">03 — YOUR TUTOR</p>
-      <h1>A little practice<br><em>goes a long way.</em></h1>
-      <p class="lead">Напиши сообщение на английском или русском — начнём с твоего уровня.</p>
+      <h1 data-ru="Немного практики — большой результат." data-en="A little practice. A lot of progress.">Немного практики — большой результат.</h1>
+      <p class="lead" data-ru="Выбери сценарий или начни свободный разговор. Наставник использует твой активный учебный язык и уровень." data-en="Choose a scenario or start a free conversation. Your tutor uses your active study language and level.">Выбери сценарий или начни свободный разговор. Наставник использует твой активный учебный язык и уровень.</p>
     </section>
     <section class="panel chat-panel reveal">
       <div class="chat-head">
@@ -40,6 +39,26 @@
         </div>
         <span class="online-dot">●</span>
       </div>
+
+      <div class="conversation-starters" aria-label="Conversation practice scenarios">
+        <p class="eyebrow" data-ru="РАЗГОВОРНЫЕ СЦЕНАРИИ" data-en="GUIDED CONVERSATION">РАЗГОВОРНЫЕ СЦЕНАРИИ</p>
+        <p class="conversation-starters-note" data-ru="Выбери ситуацию. AI начнёт короткий диалог и будет задавать по одному вопросу." data-en="Choose a situation. The AI will start a short conversation and ask one question at a time.">Выбери ситуацию. AI начнёт короткий диалог и будет задавать по одному вопросу.</p>
+        <div class="conversation-starter-grid">
+          <button type="button" class="conversation-starter" data-conversation-prompt="Start a level-appropriate role-play in my currently selected study language. Scenario: ordering at a café. You are the barista. Ask one short question at a time and wait for my answer. Do not provide a script. After five learner turns, give a brief recap and three useful phrases.">
+            <strong data-ru="В кафе" data-en="At a café">В кафе</strong><span data-ru="Закажи еду и напиток" data-en="Order food and a drink">Закажи еду и напиток</span>
+          </button>
+          <button type="button" class="conversation-starter" data-conversation-prompt="Start a level-appropriate role-play in my currently selected study language. Scenario: asking for directions at a train station. You are a station employee. Ask one short question at a time and wait for my answer. Do not provide a script. After five learner turns, give a brief recap and three useful phrases.">
+            <strong data-ru="На вокзале" data-en="At a station">На вокзале</strong><span data-ru="Спроси дорогу и расписание" data-en="Ask for directions and times">Спроси дорогу и расписание</span>
+          </button>
+          <button type="button" class="conversation-starter" data-conversation-prompt="Start a level-appropriate conversation in my currently selected study language about everyday life and plans. Ask one natural question at a time and wait for my answer. Gently correct one important mistake when useful. After five learner turns, give a short recap and three useful phrases.">
+            <strong data-ru="Повседневная жизнь" data-en="Daily life">Повседневная жизнь</strong><span data-ru="Расскажи о планах и привычках" data-en="Talk about routines and plans">Расскажи о планах и привычках</span>
+          </button>
+          <button type="button" class="conversation-starter" data-conversation-prompt="Start a level-appropriate conversation in my currently selected study language about hobbies and free time. Ask one friendly question at a time and wait for my answer. Gently correct one important mistake when useful. After five learner turns, give a short recap and three useful phrases.">
+            <strong data-ru="Хобби" data-en="Hobbies">Хобби</strong><span data-ru="Обсуди интересы и свободное время" data-en="Discuss interests and free time">Обсуди интересы и свободное время</span>
+          </button>
+        </div>
+      </div>
+
       <div class="messages" id="messages" aria-live="polite">
         <div class="message assistant"><span class="speaker">TUTOR</span>Hello! I'm your English tutor. What would you like to practise today?</div>
         <div class="message user"><span class="speaker">YOU</span>I want to speak more confidently.</div>
@@ -50,7 +69,7 @@
         <input id="chat-input" name="message" placeholder="Write your message in English…" autocomplete="off" maxlength="1800" required>
         <button aria-label="Send message" type="submit" class="send">↗</button>
       </form>
-      <p class="chat-note">Сообщения отправляются в AI-сервис для создания ответа. Не вводи пароли, адрес, телефон или другие личные данные.</p>
+      <p class="chat-note" data-ru="Сообщения отправляются в AI-сервис для создания ответа. Не вводи пароли, адрес, телефон или другие личные данные." data-en="Messages are sent to the AI service to generate a response. Do not enter passwords, your address, phone number or other personal information.">Сообщения отправляются в AI-сервис для создания ответа. Не вводи пароли, адрес, телефон или другие личные данные.</p>
     </section>
   </main>
   <footer class="footer wrap"><span>QUIET ENGLISH</span><span>Learn at your own pace · © 2026</span></footer>

@@ -1,3 +1,16 @@
 node_modules/
 .env
 .DS_Store
+.env.ru
+
+# Android build outputs and signing material
+.gradle/
+android/.gradle/
+android/app/build/
+android/build/
+*.jks
+*.keystore
+android/keystore*
+
+# Local Android upload key material (never commit)
+android/signing/

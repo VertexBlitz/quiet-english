@@ -18,6 +18,17 @@ if (form) {
   const send = form.querySelector('button');
   const status = document.querySelector('#chat-status');
   const history = [];
+
+  document.querySelectorAll('[data-conversation-prompt]').forEach(button => {
+    button.addEventListener('click', () => {
+      if (send.disabled) return;
+      const prompt = button.dataset.conversationPrompt;
+      if (!prompt) return;
+      input.value = prompt;
+      form.requestSubmit();
+    });
+  });
+
   const query = new URLSearchParams(location.search);
   const topic = query.get('topic');
   let exerciseContextRef = query.get('exercise');

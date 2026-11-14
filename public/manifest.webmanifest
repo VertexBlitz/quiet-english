@@ -1,0 +1,55 @@
+{
+  "id": "/",
+  "name": "Quiet English",
+  "short_name": "Quiet English",
+  "description": "Personal English learning at your own pace.",
+  "lang": "ru",
+  "dir": "ltr",
+  "start_url": "/?source=installed-app",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#FAFAFA",
+  "theme_color": "#FAFAFA",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Мой план",
+      "short_name": "План",
+      "url": "/plan.html",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Практика",
+      "short_name": "Практика",
+      "url": "/practice.html",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Библиотека",
+      "short_name": "Библиотека",
+      "url": "/library.html",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

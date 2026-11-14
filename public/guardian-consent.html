@@ -1,15 +1,99 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Parent or guardian confirmation — Quiet English</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet"><link rel="stylesheet" href="/styles.css"><script defer src="/i18n.js"></script><script defer src="/session.js"></script><script defer src="/auth.js"></script></head><body><header class="topbar wrap">
+<!doctype html>
+<html lang="ru" data-title-ru="Согласие родителя — Quiet English" data-title-en="Guardian consent — Quiet English">
+<head>
+  <link rel="stylesheet" href="/styles.css?v=20261108-style-restore-1">
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Согласие родителя — Quiet English</title>
+  
+  <script defer src="/i18n.js"></script>
+  <script defer src="/guardian-consent.js?v=20261108-parent-consent-2"></script>
+</head>
+<body>
+<header class="topbar wrap">
   <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
-  <nav aria-label="Main navigation">
-    <a href="/plan.html" data-i18n="nav_plan" data-ru="План" data-en="Plan">План</a>
-    <a href="/practice.html" data-i18n="nav_practice" data-ru="Практика" data-en="Practice">Практика</a>
-    <a href="/review.html" data-i18n="nav_review" data-ru="Повторение" data-en="Review">Повторение</a>
-    <a href="/progress.html" data-i18n="nav_progress" data-ru="Прогресс" data-en="Progress">Прогресс</a>
-    <a href="/tutor.html" data-i18n="nav_tutor" data-ru="Чат" data-en="Tutor">Чат</a>
-  </nav>
   <div class="language-switch" aria-label="Language">
     <button type="button" data-set-lang="ru">RU</button>
     <button type="button" data-set-lang="en">EN</button>
-    <a class="account-link" href="/login.html" data-i18n="nav_account" data-ru="Аккаунт" data-en="Account">Аккаунт</a>
   </div>
-</header><main class="wrap auth-layout"><section class="panel auth-card" data-guardian-consent><p class="eyebrow">PARENT / GUARDIAN</p><h1 data-ru="Подтверждение родителя или опекуна." data-en="Parent or guardian confirmation.">Подтверждение родителя или опекуна.</h1><p data-ru="Подтверждая запрос, вы заявляете, что являетесь родителем или законным опекуном пользователя и разрешаете создание учебного аккаунта Quiet English. Перед подтверждением ознакомьтесь с политикой конфиденциальности." data-en="By confirming, you attest that you are the user's parent or legal guardian and approve the creation of a Quiet English learning account. Please read the privacy notice before confirming.">Подтверждая запрос, вы заявляете, что являетесь родителем или законным опекуном пользователя и разрешаете создание учебного аккаунта Quiet English. Перед подтверждением ознакомьтесь с политикой конфиденциальности.</p><p><a href="/privacy.html">Политика конфиденциальности</a></p><form><label class="check-row"><input type="checkbox" name="is_parent_or_guardian" required><span data-ru="Я подтверждаю, что являюсь родителем или законным опекуном." data-en="I confirm that I am the parent or legal guardian.">Я подтверждаю, что являюсь родителем или законным опекуном.</span></label><p class="form-status" data-auth-status></p><button class="button" type="submit" data-ru="Подтвердить" data-en="Confirm">Подтвердить</button></form></section></main></body></html>
+</header>
+
+<main class="wrap auth-layout">
+  <section class="panel auth-card">
+    <p class="eyebrow">PARENT / GUARDIAN</p>
+    <h1 data-ru="Подтверждение родителя." data-en="Parent approval.">Подтверждение родителя.</h1>
+    <p class="lead" data-ru="Управление созданием или удалением учебного аккаунта несовершеннолетнего пользователя." data-en="Approve or delete a minor learner's account.">Управление созданием или удалением учебного аккаунта несовершеннолетнего пользователя.</p>
+    <p class="form-status" data-guardian-status aria-live="polite">Проверяем ссылку…</p>
+
+    <section data-consent-flow hidden>
+      <p class="copy" data-consent-summary></p>
+
+      <form data-parent-signup hidden>
+        <p class="copy" data-ru="До этого шага email и пароль пользователя не собирались. После подтверждения здесь можно создать его аккаунт." data-en="The learner's email and password were not collected before this step. After approval, you can create the account here.">
+          До этого шага email и пароль пользователя не собирались. После подтверждения здесь можно создать его аккаунт.
+        </p>
+
+        <label class="check-row">
+          <input type="checkbox" name="guardian_confirmed" required>
+          <span data-ru="Подтверждаю, что я являюсь родителем или законным представителем пользователя и вправе дать это согласие." data-en="I confirm that I am the learner's parent or legal guardian and have authority to give this consent.">Подтверждаю, что я являюсь родителем или законным представителем пользователя и вправе дать это согласие.</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="minimum_age_confirmed" required>
+          <span data-ru="Подтверждаю, что пользователю уже исполнилось 13 лет." data-en="I confirm that the learner is at least 13 years old.">Подтверждаю, что пользователю уже исполнилось 13 лет.</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="terms_accepted" required>
+          <span data-ru="Принимаю" data-en="I accept">Принимаю <a href="/terms.html" target="_blank" rel="noopener">Условия использования</a> от имени пользователя.</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="privacy_accepted" required>
+          <span data-ru="Ознакомился(ась) с" data-en="I have read the">Ознакомился(ась) с <a href="/privacy.html" target="_blank" rel="noopener">Политикой конфиденциальности</a> и объясню её пользователю.</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" name="personal_data_accepted" required>
+          <span data-ru="Отдельно даю согласие на обработку персональных данных пользователя по" data-en="I separately consent to processing the learner's personal data under the">Отдельно даю согласие на обработку персональных данных пользователя по <a href="/data-consent.html" target="_blank" rel="noopener">отдельному согласию</a>.</span>
+        </label>
+
+        <label>Email пользователя
+          <input type="email" name="email" autocomplete="off" maxlength="254" required>
+        </label>
+        <label data-ru="Начальный пароль пользователя (не менее 12 символов)" data-en="Initial learner password (at least 12 characters)">
+          Начальный пароль пользователя (не менее 12 символов)
+          <input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="200" required>
+        </label>
+        <p class="fine-print" data-ru="Ссылка подтверждает доступ к почте, но сама по себе не проверяет документы или юридический статус родителя/опекуна. Если в вашей стране требуется более строгая проверка, этот способ её не заменяет." data-en="The link confirms access to this mailbox, but does not verify identity documents or legal guardianship. Where stronger verification is required, this email flow does not replace it.">
+          Ссылка подтверждает доступ к почте, но сама по себе не проверяет документы или юридический статус родителя/опекуна. Если в вашей стране требуется более строгая проверка, этот способ её не заменяет.
+        </p>
+        <button class="button" type="submit" data-ru="Подтвердить и создать аккаунт" data-en="Approve and create account">Подтвердить и создать аккаунт <span>↗</span></button>
+      </form>
+
+      <form data-parent-withdrawal hidden>
+        <p class="copy" data-ru="Подтверждение отзовет родительское согласие, удалит аккаунт пользователя и связанные учебные данные." data-en="Confirming will withdraw parental consent and delete the learner's account and associated learning data.">
+          Подтверждение отзовет родительское согласие, удалит аккаунт пользователя и связанные учебные данные.
+        </p>
+        <label class="check-row">
+          <input type="checkbox" name="confirm_withdrawal" required>
+          <span data-ru="Подтверждаю отзыв согласия и удаление аккаунта." data-en="I confirm withdrawal of consent and deletion of the account.">Подтверждаю отзыв согласия и удаление аккаунта.</span>
+        </label>
+        <button class="button" type="submit" data-ru="Отозвать согласие и удалить" data-en="Withdraw consent and delete">Отозвать согласие и удалить <span>↗</span></button>
+      </form>
+    </section>
+
+    <form data-withdrawal-request hidden>
+      <p class="copy" data-ru="Укажи email родителя и email пользователя. Если они связаны с аккаунтом несовершеннолетнего, на адрес родителя придёт подтверждение." data-en="Enter the parent email and learner email. If they match a minor's account, a confirmation link will be sent to the parent's address.">
+        Укажи email родителя и email пользователя. Если они связаны с аккаунтом несовершеннолетнего, на адрес родителя придёт подтверждение.
+      </p>
+      <label>Email родителя или опекуна
+        <input type="email" name="guardian_email" autocomplete="email" maxlength="254" required>
+      </label>
+      <label>Email пользователя
+        <input type="email" name="child_email" autocomplete="off" maxlength="254" required>
+      </label>
+      <button class="button" type="submit" data-ru="Запросить отзыв согласия" data-en="Request consent withdrawal">Запросить отзыв согласия <span>↗</span></button>
+    </form>
+  </section>
+</main>
+<footer class="footer wrap"><span>QUIET ENGLISH</span><span>Personal learning, at your pace</span></footer>
+</body>
+</html>

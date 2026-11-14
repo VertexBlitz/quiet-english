@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru" data-title-ru="Словарь — Quiet English" data-title-en="Dictionary — Quiet English">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Словарь — Quiet English</title>
+  <link rel="stylesheet" href="/styles.css?v=20261111-multilingual-cefr-1">
+  <script defer src="/i18n.js"></script>
+  <script defer src="/session.js"></script>
+  <script defer src="/offline-client.js"></script>
+  <script defer src="/dictionary.js?v=20261111-multilingual-cefr-1"></script>
+</head>
+<body>
+  <header class="topbar wrap">
+    <a class="wordmark" href="/">QUIET ENGLISH<span> / PERSONAL LEARNING</span></a>
+    <nav aria-label="Main navigation"></nav>
+    <div class="language-switch">
+      <button type="button" data-set-lang="ru">RU</button>
+      <button type="button" data-set-lang="en">EN</button>
+      <a class="account-link" href="/login.html">Войти</a>
+    </div>
+  </header>
+
+  <main class="wrap" id="main-content" data-dictionary-page>
+    <section class="panel page-head">
+      <p class="eyebrow">ENGLISH DICTIONARY</p>
+      <h1 data-ru="Слово в контексте." data-en="Words in context.">Слово в контексте.</h1>
+      <p class="lead" data-ru="Транскрипция, произношение, перевод, синонимы, антонимы, сочетаемость и примеры употребления." data-en="Explore pronunciation, translation, synonyms, antonyms, collocations and examples.">Транскрипция, произношение, перевод, синонимы, антонимы, сочетаемость и примеры употребления.</p>
+    </section>
+
+    <section class="panel">
+      <form class="dictionary-search" data-dictionary-search>
+        <label>
+          <span data-ru="Найти английское слово или фразу" data-en="Look up an English word or phrase">Найти английское слово или фразу</span>
+          <input name="word" type="search" maxlength="60" required autocomplete="off"
+            data-placeholder-ru="Например: significant, carry out"
+            data-placeholder-en="e.g. significant, carry out"
+            placeholder="Например: significant, carry out">
+        </label>
+        <button class="button" type="submit" data-ru="Найти ↗" data-en="Look up ↗">Найти ↗</button>
+      </form>
+      <p class="form-status" data-dictionary-status role="status" aria-live="polite"></p>
+      <article class="dictionary-entry" data-dictionary-entry hidden></article>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">PERSONAL WORD BANK</p><h2 data-ru="Мои слова." data-en="My words.">Мои слова.</h2></div>
+        <span class="pill" data-word-count>0</span>
+      </div>
+      <div class="dictionary-word-list" data-saved-words></div>
+    </section>
+  </main>
+</body>
+</html>
