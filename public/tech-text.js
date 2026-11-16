@@ -20,6 +20,7 @@
     canvas.className = 'tech-text-canvas';
     canvas.setAttribute('aria-hidden', 'true');
     root.appendChild(canvas);
+    root.classList.add('has-canvas-text');
     root.dataset.techTextReady = 'true';
 
     const settings = {
@@ -274,7 +275,10 @@
     function onPointerDown(event) {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       locate(event);
+      pointer.inside = true;
       pointer.index = hitTest(pointer.x, pointer.y);
+      draw(performance.now());
+      wake();
       if (pointer.index < 0) return;
       pointer.down = settings.draggable;
       const glyph = glyphs[pointer.index];
