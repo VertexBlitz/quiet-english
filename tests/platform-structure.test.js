@@ -117,7 +117,7 @@ test('offline storage and service-worker cache are present after release updates
   const dictionary = read('public/dictionary.html');
   assert.ok(offlineClient.includes('window.QuietOffline = { save, all, remove }'));
   assert.ok(offlineClient.includes('navigator.serviceWorker.register'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v12'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v13'"));
   assert.ok(serviceWorker.includes("url.pathname === '/' ? '/' : url.pathname"));
   assert.ok(serviceWorker.includes("url.pathname === '/styles.css'"));
   assert.ok(serviceWorker.includes('cache.match(request, { ignoreSearch: true })'));
@@ -242,7 +242,7 @@ test('PWA manifest, install metadata, and offline shell are configured', () => {
   assert.ok(index.includes('data-pwa-install-card'));
   assert.ok(installScript.includes('beforeinstallprompt'));
   assert.ok(installScript.includes('На экран Домой'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v12'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v13'"));
   assert.ok(serviceWorker.includes('"/manifest.webmanifest"'));
   assert.ok(serviceWorker.includes('"/library.html"'));
 });
@@ -399,9 +399,15 @@ test('mobile PWA cache refreshes the shared UI and the learning method page is b
   const home = read('public/index.html');
   const styles = read('public/styles.css');
 
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v12'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v13'"));
   assert.ok(serviceWorker.includes('"/method.html"'));
   assert.ok(serviceWorker.includes('"/pronunciation.js"'));
+  assert.ok(serviceWorker.includes('"/tech-text.js"'));
+  assert.ok(serviceWorker.includes('"/particle-text.js"'));
+  assert.ok(serviceWorker.includes('"/tech-text.css"'));
+  assert.ok(serviceWorker.includes('"/particle-text.css"'));
+  assert.ok(home.includes('data-tech-text="QUIET ENGLISH"'));
+  assert.ok(home.includes('data-particle-text'));
   assert.ok(method.includes('data-title-ru='));
   assert.ok(method.includes('data-title-en='));
   for (const phrase of ['Практика', 'Обратная связь', 'Прогресс', 'A GOOD PLACE TO BEGIN']) {
