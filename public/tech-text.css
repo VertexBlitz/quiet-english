@@ -1,0 +1,24 @@
+.tech-text-mount {
+  position: relative;
+  display: inline-block;
+  height: 1.25em;
+  line-height: 1.25;
+  vertical-align: middle;
+  white-space: nowrap;
+  user-select: none;
+  touch-action: pan-y;
+  cursor: default;
+}
+
+.tech-text-mount .tech-text-fallback {
+  visibility: hidden;
+}
+
+.tech-text-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
