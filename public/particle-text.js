@@ -24,6 +24,7 @@
     canvas.className = 'particle-text-canvas';
     canvas.setAttribute('aria-hidden', 'true');
     root.appendChild(canvas);
+    root.classList.add('has-canvas-text');
     root.dataset.particleTextReady = 'true';
 
     const settings = {
@@ -48,6 +49,14 @@
       glow: root.dataset.glow === 'true'
     };
 
+    const coarsePointerQuery = window.matchMedia?.('(pointer: coarse)');
+    const coarsePointer = !!coarsePointerQuery?.matches;
+    if (coarsePointer) {
+      settings.density = Math.max(settings.density, 6);
+      settings.pointerRepel = Math.min(settings.pointerRepel, 8);
+      settings.idleDrift = 0;
+    }
+
     const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     let reducedMotion = !!motionQuery?.matches;
     let width = 0;
@@ -65,6 +74,7 @@
     let baseRgb = [17, 17, 17];
     let highlightRgb = [133, 133, 133];
     const pointer = { active: false, x: 0, y: 0, smoothX: 0, smoothY: 0 };
+    let touchGesture = null;
 
     function rgb(value) {
       probeCtx.clearRect(0, 0, 1, 1);
@@ -94,7 +104,7 @@
       height = Math.max(1, Math.floor(rect.height));
       if (width < 8 || height < 8) return;
 
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, coarsePointer ? 1.5 : 2);
       canvas.width = Math.max(1, Math.round(width * dpr));
       canvas.height = Math.max(1, Math.round(height * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -340,6 +350,10 @@
 
     function onPointerMove(event) {
       locate(event);
+      if (touchGesture && touchGesture.pointerId === event.pointerId &&
+          Math.hypot(pointer.x - touchGesture.startX, pointer.y - touchGesture.startY) > 9) {
+        touchGesture.moved = true;
+      }
       if (!pointer.active) {
         pointer.smoothX = pointer.x;
         pointer.smoothY = pointer.y;
@@ -354,15 +368,52 @@
     }
 
     function onPointerLeave() {
+      touchGesture = null;
       pointer.active = false;
       wake();
     }
 
     function onPointerDown(event) {
       locate(event);
+      pointer.active = true;
+      pointer.smoothX = pointer.x;
+      pointer.smoothY = pointer.y;
+
+      if (event.pointerType === 'touch') {
+        touchGesture = {
+          pointerId: event.pointerId,
+          startX: pointer.x,
+          startY: pointer.y,
+          startedAt: performance.now(),
+          moved: false
+        };
+        wake();
+        return;
+      }
+
       if (settings.trigger !== 'click' && settings.clickBurst && !reducedMotion) {
         burst(pointer.x, pointer.y);
       }
+    }
+
+    function onPointerUp(event) {
+      if (event.pointerType !== 'touch') return;
+      locate(event);
+      const touch = touchGesture;
+      touchGesture = null;
+      const isTap = touch && touch.pointerId === event.pointerId && !touch.moved &&
+        performance.now() - touch.startedAt < 500;
+      if (isTap && settings.trigger !== 'click' && settings.clickBurst && !reducedMotion) {
+        burst(pointer.x, pointer.y);
+      }
+      pointer.active = false;
+      wake();
+    }
+
+    function onPointerCancel(event) {
+      if (touchGesture?.pointerId === event.pointerId) touchGesture = null;
+      if (event.pointerType === 'touch') pointer.active = false;
+      wake();
     }
 
     function onClick() {
@@ -390,6 +441,8 @@
     root.addEventListener('pointermove', onPointerMove, { passive: true });
     root.addEventListener('pointerleave', onPointerLeave, { passive: true });
     root.addEventListener('pointerdown', onPointerDown, { passive: true });
+    root.addEventListener('pointerup', onPointerUp, { passive: true });
+    root.addEventListener('pointercancel', onPointerCancel, { passive: true });
     root.addEventListener('click', onClick);
     motionQuery?.addEventListener?.('change', onMotionChange);
 
