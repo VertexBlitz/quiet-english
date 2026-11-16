@@ -5,6 +5,7 @@ A bilingual (Russian/English) personal English-learning platform built on the ex
 ## Stack
 
 - Frontend: HTML, CSS, Vanilla JavaScript
+- Landing-page background: React 19 component island, bundled with esbuild; the remaining pages stay vanilla JavaScript
 - Backend: Node.js 24, Express 5
 - Data: PostgreSQL
 - Sessions: express-session + connect-pg-simple
