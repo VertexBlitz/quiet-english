@@ -4,15 +4,17 @@
   height: 1.05em;
   line-height: 1;
   max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
   vertical-align: baseline;
   white-space: nowrap;
   touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
   isolation: isolate;
 }
 
 .particle-text-fallback {
   display: inline-block;
-  visibility: hidden;
   white-space: nowrap;
   line-height: 1;
 }
@@ -24,4 +26,14 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+.particle-text-mount.has-canvas-text .particle-text-fallback {
+  visibility: hidden;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .particle-text-mount {
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
