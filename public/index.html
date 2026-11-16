@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Quiet English — персональная платформа для изучения английского языка с AI-практикой, планом занятий и отслеживанием прогресса.">
   <link rel="stylesheet" href="/styles.css?v=20261114-dashboard-1">
+  <link rel="stylesheet" href="/tech-text.css?v=20261116-1">
+  <link rel="stylesheet" href="/particle-text.css?v=20261116-1">
   <link rel="manifest" href="/manifest.webmanifest?v=20261109-app-1">
   <meta name="theme-color" content="#FAFAFA">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,6 +15,8 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <title>Quiet English — английский с персональным AI-наставником</title>
   <script defer src="/i18n.js"></script>
+  <script defer src="/tech-text.js?v=20261116-1"></script>
+  <script defer src="/particle-text.js?v=20261116-1"></script>
   <script defer src="/session.js"></script>
   <script defer src="/offline-client.js"></script>
   <script defer src="/home-dashboard.js?v=20261114-home-1"></script>
@@ -21,7 +25,7 @@
 </head>
 <body>
   <header class="topbar wrap">
-    <a class="wordmark" href="/" aria-label="Quiet English home">QUIET ENGLISH<span data-ru=" / ЛИЧНОЕ ОБУЧЕНИЕ" data-en=" / PERSONAL LEARNING"> / PERSONAL LEARNING</span></a>
+    <a class="wordmark" href="/" aria-label="Quiet English home"><span class="tech-text-mount" data-tech-text="QUIET ENGLISH" data-font-size="12" data-font-weight="500" data-letter-spacing="0.13" data-reveal="letter" data-dash-length="3" data-dash-gap="2" data-specks="5" data-selection="true" data-labels="false" data-draggable="false" data-click-kick="false" data-sweep="false"><span class="tech-text-fallback">QUIET ENGLISH</span></span><span data-ru=" / ЛИЧНОЕ ОБУЧЕНИЕ" data-en=" / PERSONAL LEARNING"> / PERSONAL LEARNING</span></a>
     <nav aria-label="Main navigation"></nav>
     <div class="language-switch" aria-label="Language">
       <button type="button" data-set-lang="ru">RU</button>
@@ -35,7 +39,7 @@
     <section class="panel home-hero reveal">
       <div class="home-hero-copy">
         <p class="eyebrow" data-ru="АНГЛИЙСКИЙ В ТВОЁМ ТЕМПЕ" data-en="A QUIETER WAY TO LEARN">A QUIETER WAY TO LEARN</p>
-        <h1><span data-ru="Английский." data-en="English.">Английский.</span><br><em data-ru="В твоём темпе." data-en="At your pace.">В твоём темпе.</em></h1>
+        <h1><span class="particle-text-mount" data-particle-text data-particle-ru="Английский." data-particle-en="English." data-particle-size="1.6" data-density="4" data-highlight-color="#858585" data-highlight-mode="motion" data-shape="circle" data-intro="gather" data-scatter="65" data-gather-duration="1250" data-stagger="260" data-click-burst="true" data-burst-strength="0.8" data-pointer-repel="18" data-repel-radius="118" data-idle-drift="0.12" data-trigger="mount" data-font-weight="300" data-glow="false"><span class="particle-text-fallback">Английский.</span></span><br><em data-ru="В твоём темпе." data-en="At your pace.">В твоём темпе.</em></h1>
         <p class="lead" data-ru="Персональная учебная среда: понятный план, практика с AI и обратная связь по твоим результатам." data-en="A personal learning space with a clear plan, AI-powered practice and feedback based on your progress.">Персональная учебная среда: понятный план, практика с AI и обратная связь по твоим результатам.</p>
         <div class="home-actions">
           <a class="button" href="/practice.html"><span data-ru="Начать практику" data-en="Start practising">Начать практику</span><span aria-hidden="true">↗</span></a>
