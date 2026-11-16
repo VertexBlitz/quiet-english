@@ -9,13 +9,17 @@
   height: 1.25em;
   line-height: 1.25;
   vertical-align: middle;
+  max-width: 100%;
+  overflow: hidden;
   white-space: nowrap;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
   touch-action: pan-y;
   cursor: default;
 }
 
-.tech-text-mount .tech-text-fallback {
+.tech-text-mount.has-canvas-text .tech-text-fallback {
   visibility: hidden;
 }
 
@@ -26,4 +30,9 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+@media (hover: none), (pointer: coarse) {
+  .tech-text-mount {
+    touch-action: pan-y;
+  }
 }
