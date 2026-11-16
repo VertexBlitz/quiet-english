@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.js",
+    "start": "npm run build && node server.js",
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
-    "check": "node scripts/check.js",
-    "test": "node --test"
+    "check": "node scripts/check.js && npm run build",
+    "test": "node --test",
+    "build": "node scripts/build-topography.js"
   },
   "dependencies": {
     "argon2": "^0.44.0",
@@ -16,6 +17,9 @@
     "express": "^5.1.0",
     "express-rate-limit": "^8.0.1",
     "express-session": "^1.18.2",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "esbuild": "^0.28.2"
   }
 }
