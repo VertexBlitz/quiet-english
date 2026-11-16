@@ -1,3 +1,8 @@
+.wordmark .tech-text-mount {
+  color: var(--ink);
+  font-weight: 500;
+}
+
 .tech-text-mount {
   position: relative;
   display: inline-block;
