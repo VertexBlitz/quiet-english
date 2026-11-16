@@ -117,7 +117,7 @@ test('offline storage and service-worker cache are present after release updates
   const dictionary = read('public/dictionary.html');
   assert.ok(offlineClient.includes('window.QuietOffline = { save, all, remove }'));
   assert.ok(offlineClient.includes('navigator.serviceWorker.register'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v13'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v14'"));
   assert.ok(serviceWorker.includes("url.pathname === '/' ? '/' : url.pathname"));
   assert.ok(serviceWorker.includes("url.pathname === '/styles.css'"));
   assert.ok(serviceWorker.includes('cache.match(request, { ignoreSearch: true })'));
@@ -242,7 +242,7 @@ test('PWA manifest, install metadata, and offline shell are configured', () => {
   assert.ok(index.includes('data-pwa-install-card'));
   assert.ok(installScript.includes('beforeinstallprompt'));
   assert.ok(installScript.includes('На экран Домой'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v13'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v14'"));
   assert.ok(serviceWorker.includes('"/manifest.webmanifest"'));
   assert.ok(serviceWorker.includes('"/library.html"'));
 });
@@ -393,13 +393,30 @@ test('every public HTML page includes responsive viewport and site stylesheet', 
 });
 
 
+test('homepage canvas text effects support touch input and reduced mobile rendering work', () => {
+  const particle = read('public/particle-text.js');
+  const tech = read('public/tech-text.js');
+  const particleStyles = read('public/particle-text.css');
+  const techStyles = read('public/tech-text.css');
+
+  assert.ok(particle.includes("(pointer: coarse)"));
+  assert.ok(particle.includes("settings.idleDrift = 0"));
+  assert.ok(particle.includes("root.addEventListener('pointerup', onPointerUp"));
+  assert.ok(particle.includes("root.addEventListener('pointercancel', onPointerCancel"));
+  assert.ok(particle.includes("!touch.moved"));
+  assert.ok(tech.includes("pointer.inside = true"));
+  assert.ok(tech.includes("root.classList.add('has-canvas-text')"));
+  assert.ok(particleStyles.includes('.particle-text-mount.has-canvas-text .particle-text-fallback'));
+  assert.ok(techStyles.includes('.tech-text-mount.has-canvas-text .tech-text-fallback'));
+});
+
 test('mobile PWA cache refreshes the shared UI and the learning method page is bilingual', () => {
   const serviceWorker = read('public/sw.js');
   const method = read('public/method.html');
   const home = read('public/index.html');
   const styles = read('public/styles.css');
 
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v13'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v14'"));
   assert.ok(serviceWorker.includes('"/method.html"'));
   assert.ok(serviceWorker.includes('"/pronunciation.js"'));
   assert.ok(serviceWorker.includes('"/tech-text.js"'));
