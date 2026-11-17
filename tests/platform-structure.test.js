@@ -75,7 +75,7 @@ test('public registration requires legal, operator, localization and isolated da
 });
 
 test('Russian deployment secrets are excluded from Git and container build context', () => {
-  const gitignore = read('.gitignore');
+  const gitignore = read('.gitignore').replace(/\r\n?/g, '\n');
   const dockerignore = read('.dockerignore');
   assert.ok(gitignore.split(String.fromCharCode(10)).includes('.env.ru'));
   assert.ok(dockerignore.includes('.env.*'));
@@ -117,7 +117,7 @@ test('offline storage and service-worker cache are present after release updates
   const dictionary = read('public/dictionary.html');
   assert.ok(offlineClient.includes('window.QuietOffline = { save, all, remove }'));
   assert.ok(offlineClient.includes('navigator.serviceWorker.register'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v14'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v15'"));
   assert.ok(serviceWorker.includes("url.pathname === '/' ? '/' : url.pathname"));
   assert.ok(serviceWorker.includes("url.pathname === '/styles.css'"));
   assert.ok(serviceWorker.includes('cache.match(request, { ignoreSearch: true })'));
@@ -242,7 +242,7 @@ test('PWA manifest, install metadata, and offline shell are configured', () => {
   assert.ok(index.includes('data-pwa-install-card'));
   assert.ok(installScript.includes('beforeinstallprompt'));
   assert.ok(installScript.includes('На экран Домой'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v14'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v15'"));
   assert.ok(serviceWorker.includes('"/manifest.webmanifest"'));
   assert.ok(serviceWorker.includes('"/library.html"'));
 });
@@ -416,7 +416,7 @@ test('mobile PWA cache refreshes the shared UI and the learning method page is b
   const home = read('public/index.html');
   const styles = read('public/styles.css');
 
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v14'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v15'"));
   assert.ok(serviceWorker.includes('"/method.html"'));
   assert.ok(serviceWorker.includes('"/pronunciation.js"'));
   assert.ok(serviceWorker.includes('"/tech-text.js"'));
@@ -432,9 +432,29 @@ test('mobile PWA cache refreshes the shared UI and the learning method page is b
   }
   assert.ok(method.includes('viewport-fit=cover'));
   assert.ok(home.includes('viewport-fit=cover'));
-  assert.ok(home.includes('/styles.css?v=20261114-dashboard-1'));
+  assert.ok(home.includes('/styles.css?v=20261117-lavender-speaking-1'));
   assert.ok(styles.includes('background:#fff'));
   assert.ok(styles.includes('env(safe-area-inset-bottom, 0px)'));
+});
+
+test('homepage lavender layout keeps TechText and particle heading with an animated Speaking Lab stack', () => {
+  const home = read('public/index.html');
+  const styles = read('public/styles.css');
+  const serviceWorker = read('public/sw.js');
+
+  assert.ok(home.includes('<body class="home-page">'));
+  assert.ok(home.includes('data-tech-text="QUIET ENGLISH"'));
+  assert.ok(home.includes('data-particle-text'));
+  assert.ok(home.includes('data-highlight-color="#9071BD"'));
+  assert.ok(home.includes('class="home-hero-visual"'));
+  assert.ok(home.includes('class="speaking-layer speaking-layer-back"'));
+  assert.ok(home.includes('class="speaking-layer speaking-layer-mid"'));
+  assert.ok(home.includes('href="/pronunciation.html"'));
+  assert.ok(home.includes('data-aria-label-ru="Открыть Speaking Lab и перейти к практике речи"'));
+  assert.ok(styles.includes('.home-page .home-hero'));
+  assert.ok(styles.includes('@media(max-width:520px)'));
+  assert.ok(styles.includes('@media(prefers-reduced-motion:reduce)'));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v15'"));
 });
 
 

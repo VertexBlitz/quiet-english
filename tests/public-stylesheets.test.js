@@ -41,5 +41,5 @@ test('homepage restores a complete HTML document wrapper', async () => {
   assert.match(html, /^\s*<!doctype html>/i);
   assert.match(html, /<html\s+lang=["']ru["']/i);
   assert.match(html, /<head>/i);
-  assert.match(html, /<body>/i);
+  assert.match(html, /<body(?:\s[^>]*)?>/i);
 });

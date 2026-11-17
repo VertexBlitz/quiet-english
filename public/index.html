@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Quiet English — персональная платформа для изучения английского языка с AI-практикой, планом занятий и отслеживанием прогресса.">
-  <link rel="stylesheet" href="/styles.css?v=20261114-dashboard-1">
+  <link rel="stylesheet" href="/styles.css?v=20261117-lavender-speaking-1">
   <link rel="stylesheet" href="/tech-text.css?v=20261116-2">
   <link rel="stylesheet" href="/particle-text.css?v=20261116-2">
   <link rel="manifest" href="/manifest.webmanifest?v=20261109-app-1">
-  <meta name="theme-color" content="#FAFAFA">
+  <meta name="theme-color" content="#F7F4FC">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Quiet English">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -23,7 +23,7 @@
   <script defer src="/app.js"></script>
   <script defer src="/pwa-install.js?v=20261111-ios-guide-1"></script>
 </head>
-<body>
+<body class="home-page">
   <header class="topbar wrap">
     <a class="wordmark" href="/" aria-label="Quiet English home"><span class="tech-text-mount" data-tech-text="QUIET ENGLISH" data-font-size="12" data-font-weight="500" data-letter-spacing="0.13" data-reveal="letter" data-dash-length="3" data-dash-gap="2" data-specks="5" data-selection="true" data-labels="false" data-draggable="false" data-click-kick="false" data-sweep="false"><span class="tech-text-fallback">QUIET ENGLISH</span></span><span data-ru=" / ЛИЧНОЕ ОБУЧЕНИЕ" data-en=" / PERSONAL LEARNING"> / PERSONAL LEARNING</span></a>
     <nav aria-label="Main navigation"></nav>
@@ -35,21 +35,38 @@
   </header>
 
 
-  <main class="wrap" id="main-content">
-    <section class="panel home-hero reveal">
+  <main class="wrap home-main" id="main-content">
+    <section class="panel home-hero reveal" aria-labelledby="home-title">
       <div class="home-hero-copy">
         <p class="eyebrow" data-ru="АНГЛИЙСКИЙ В ТВОЁМ ТЕМПЕ" data-en="A QUIETER WAY TO LEARN">A QUIETER WAY TO LEARN</p>
-        <h1><span class="particle-text-mount" data-particle-text data-particle-ru="Английский." data-particle-en="English." data-particle-size="1.6" data-density="4" data-highlight-color="#858585" data-highlight-mode="motion" data-shape="circle" data-intro="gather" data-scatter="65" data-gather-duration="1250" data-stagger="260" data-click-burst="true" data-burst-strength="0.8" data-pointer-repel="18" data-repel-radius="118" data-idle-drift="0.12" data-trigger="mount" data-font-weight="300" data-glow="false"><span class="particle-text-fallback">Английский.</span></span><br><em data-ru="В твоём темпе." data-en="At your pace.">В твоём темпе.</em></h1>
+        <h1 id="home-title"><span class="particle-text-mount" data-particle-text data-particle-ru="Английский." data-particle-en="English." data-particle-size="1.6" data-density="4" data-highlight-color="#9071BD" data-highlight-mode="motion" data-shape="circle" data-intro="gather" data-scatter="65" data-gather-duration="1250" data-stagger="260" data-click-burst="true" data-burst-strength="0.8" data-pointer-repel="18" data-repel-radius="118" data-idle-drift="0.12" data-trigger="mount" data-font-weight="300" data-glow="false"><span class="particle-text-fallback">Английский.</span></span><br><em data-ru="В твоём темпе." data-en="At your pace.">В твоём темпе.</em></h1>
         <p class="lead" data-ru="Персональная учебная среда: понятный план, практика с AI и обратная связь по твоим результатам." data-en="A personal learning space with a clear plan, AI-powered practice and feedback based on your progress.">Персональная учебная среда: понятный план, практика с AI и обратная связь по твоим результатам.</p>
         <div class="home-actions">
-          <a class="button" href="/practice.html"><span data-ru="Начать практику" data-en="Start practising">Начать практику</span><span aria-hidden="true">↗</span></a>
+          <a class="button home-primary-button" href="/practice.html"><span data-ru="Начать практику" data-en="Start practising">Начать практику</span><span class="button-arrow" aria-hidden="true">↗</span></a>
           <a class="text-link" href="/method.html" data-ru="Как устроено обучение →" data-en="How learning works →">Как устроено обучение →</a>
         </div>
       </div>
-      <div class="home-hero-note">
-        <span class="home-note-index">01 / 04</span>
-        <strong data-ru="Учебный маршрут, который развивается вместе с тобой." data-en="A learning path that adapts as you grow.">Учебный маршрут, который развивается вместе с тобой.</strong>
-        <span data-ru="Уровни CEFR · короткие занятия · реальные результаты" data-en="CEFR levels · focused sessions · real progress">Уровни CEFR · короткие занятия · реальные результаты</span>
+      <div class="home-hero-visual">
+        <div class="speaking-orbit" aria-hidden="true"></div>
+        <div class="speaking-layer speaking-layer-back" aria-hidden="true"></div>
+        <div class="speaking-layer speaking-layer-mid" aria-hidden="true"></div>
+        <a class="speaking-lab-card" href="/pronunciation.html" data-aria-label-ru="Открыть Speaking Lab и перейти к практике речи" data-aria-label-en="Open Speaking Lab and start speaking practice" aria-label="Открыть Speaking Lab и перейти к практике речи">
+          <div class="lab-card-top">
+            <span class="lab-pill"><span class="lab-live-dot" aria-hidden="true"></span><span data-ru="SPEAKING LAB" data-en="SPEAKING LAB">SPEAKING LAB</span></span>
+            <span class="lab-card-index">01 / 03</span>
+          </div>
+          <div class="lab-card-prompt">
+            <p class="lab-card-label" data-ru="КОРОТКАЯ ПРАКТИКА · 3 МИН" data-en="A SHORT PRACTICE · 3 MIN">КОРОТКАЯ ПРАКТИКА · 3 МИН</p>
+            <p class="lab-card-sentence" data-ru="I have an idea worth sharing." data-en="I have an idea worth sharing.">I have an idea worth sharing.</p>
+            <p class="lab-card-hint" data-ru="Произнеси фразу и услышь свой прогресс." data-en="Say it aloud and notice your progress.">Произнеси фразу и услышь свой прогресс.</p>
+          </div>
+          <div class="lab-waveform" aria-hidden="true">
+            <span style="--i:1;--h:12px"></span><span style="--i:2;--h:22px"></span><span style="--i:3;--h:16px"></span><span style="--i:4;--h:30px"></span><span style="--i:5;--h:19px"></span><span style="--i:6;--h:35px"></span><span style="--i:7;--h:24px"></span><span style="--i:8;--h:15px"></span><span style="--i:9;--h:27px"></span><span style="--i:10;--h:18px"></span><span style="--i:11;--h:32px"></span><span style="--i:12;--h:21px"></span><span style="--i:13;--h:13px"></span><span style="--i:14;--h:26px"></span><span style="--i:15;--h:17px"></span><span style="--i:16;--h:30px"></span><span style="--i:17;--h:20px"></span><span style="--i:18;--h:11px"></span>
+          </div>
+          <div class="lab-card-footer"><span data-ru="СЛУШАЙ · ПОВТОРЯЙ · РАСТИ" data-en="LISTEN · REPEAT · GROW">СЛУШАЙ · ПОВТОРЯЙ · РАСТИ</span><span class="lab-card-arrow" aria-hidden="true">↗</span></div>
+        </a>
+        <div class="lab-float-note"><span class="lab-float-icon" aria-hidden="true">✳</span><span data-ru="Твоя мысль. Твой голос." data-en="Your thought. Your voice.">Твоя мысль. Твой голос.</span></div>
+        <span class="lab-orbit-caption" aria-hidden="true">VOICE · LANGUAGE · FEEDBACK</span>
       </div>
     </section>
 
