@@ -82,16 +82,11 @@ test('Russian deployment secrets are excluded from Git and container build conte
   assert.ok(dockerignore.includes('!.env.ru.example'));
 });
 
-test('public pages use local font fallbacks except for the approved homepage Inter font', () => {
+test('all public pages use local font fallbacks instead of third-party Google Fonts', () => {
   const pages = fs.readdirSync(path.join(process.cwd(), 'public')).filter(file => file.endsWith('.html'));
   assert.ok(pages.length > 0);
   for (const page of pages) {
     const html = read('public/' + page);
-    if (page === 'index.html') {
-      assert.ok(html.includes('fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap'));
-      assert.ok(html.includes('rel="preconnect" href="https://fonts.gstatic.com" crossorigin'));
-      continue;
-    }
     assert.ok(!html.includes('fonts.googleapis.com'), page + ' still loads Google Fonts');
     assert.ok(!html.includes('fonts.gstatic.com'), page + ' still contacts Google Fonts assets');
   }
@@ -122,7 +117,7 @@ test('offline storage and service-worker cache are present after release updates
   const dictionary = read('public/dictionary.html');
   assert.ok(offlineClient.includes('window.QuietOffline = { save, all, remove }'));
   assert.ok(offlineClient.includes('navigator.serviceWorker.register'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v16'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v15'"));
   assert.ok(serviceWorker.includes("url.pathname === '/' ? '/' : url.pathname"));
   assert.ok(serviceWorker.includes("url.pathname === '/styles.css'"));
   assert.ok(serviceWorker.includes('cache.match(request, { ignoreSearch: true })'));
@@ -247,7 +242,7 @@ test('PWA manifest, install metadata, and offline shell are configured', () => {
   assert.ok(index.includes('data-pwa-install-card'));
   assert.ok(installScript.includes('beforeinstallprompt'));
   assert.ok(installScript.includes('На экран Домой'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v16'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v15'"));
   assert.ok(serviceWorker.includes('"/manifest.webmanifest"'));
   assert.ok(serviceWorker.includes('"/library.html"'));
 });
@@ -421,15 +416,15 @@ test('mobile PWA cache refreshes the shared UI and the learning method page is b
   const home = read('public/index.html');
   const styles = read('public/styles.css');
 
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v16'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v15'"));
   assert.ok(serviceWorker.includes('"/method.html"'));
   assert.ok(serviceWorker.includes('"/pronunciation.js"'));
   assert.ok(serviceWorker.includes('"/tech-text.js"'));
   assert.ok(serviceWorker.includes('"/particle-text.js"'));
   assert.ok(serviceWorker.includes('"/tech-text.css"'));
   assert.ok(serviceWorker.includes('"/particle-text.css"'));
-  assert.ok(home.includes('id="hero-hands"'));
-  assert.ok(home.includes('/home-hands.js?v=20261120-dot-matrix-hands-1'));
+  assert.ok(home.includes('data-tech-text="QUIET ENGLISH"'));
+  assert.ok(home.includes('data-particle-text'));
   assert.ok(method.includes('data-title-ru='));
   assert.ok(method.includes('data-title-en='));
   for (const phrase of ['Практика', 'Обратная связь', 'Прогресс', 'A GOOD PLACE TO BEGIN']) {
@@ -437,28 +432,29 @@ test('mobile PWA cache refreshes the shared UI and the learning method page is b
   }
   assert.ok(method.includes('viewport-fit=cover'));
   assert.ok(home.includes('viewport-fit=cover'));
-  assert.ok(home.includes('/styles.css?v=20261120-dot-matrix-hands-1'));
+  assert.ok(home.includes('/styles.css?v=20261117-lavender-speaking-1'));
   assert.ok(styles.includes('background:#fff'));
   assert.ok(styles.includes('env(safe-area-inset-bottom, 0px)'));
 });
 
-test('homepage uses a localized dot-matrix hands hero and keeps its Preview cache current', () => {
+test('homepage lavender layout keeps TechText and particle heading with an animated Speaking Lab stack', () => {
   const home = read('public/index.html');
   const styles = read('public/styles.css');
   const serviceWorker = read('public/sw.js');
 
   assert.ok(home.includes('<body class="home-page">'));
-  assert.ok(home.includes('id="hero-hands"'));
-  assert.ok(home.includes('src="/home-hands.js?v=20261120-dot-matrix-hands-1"'));
-  assert.ok(home.includes('data-ru="В своём ритме." data-en="In your own rhythm."'));
-  assert.ok(home.includes('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap'));
-  assert.ok(home.includes('class="home-skill-strip"'));
-  assert.ok(styles.includes('.home-page .hero-hands'));
-  assert.ok(styles.includes('linear-gradient(90deg,#ffcf5a,#7dffa8,#5ad7ff,#9b7bff,#ff6fd8,#ffb36b)'));
-  assert.ok(styles.includes('@media(max-width:760px)'));
+  assert.ok(home.includes('data-tech-text="QUIET ENGLISH"'));
+  assert.ok(home.includes('data-particle-text'));
+  assert.ok(home.includes('data-highlight-color="#9071BD"'));
+  assert.ok(home.includes('class="home-hero-visual"'));
+  assert.ok(home.includes('class="speaking-layer speaking-layer-back"'));
+  assert.ok(home.includes('class="speaking-layer speaking-layer-mid"'));
+  assert.ok(home.includes('href="/pronunciation.html"'));
+  assert.ok(home.includes('data-aria-label-ru="Открыть Speaking Lab и перейти к практике речи"'));
+  assert.ok(styles.includes('.home-page .home-hero'));
+  assert.ok(styles.includes('@media(max-width:520px)'));
   assert.ok(styles.includes('@media(prefers-reduced-motion:reduce)'));
-  assert.ok(serviceWorker.includes('"/home-hands.js"'));
-  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v16'"));
+  assert.ok(serviceWorker.includes("const CACHE='quiet-english-shell-v15'"));
 });
 
 
